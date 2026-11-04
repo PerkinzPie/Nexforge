@@ -114,7 +114,7 @@
   {#if info?.screenshots.length}
     <ul class="shots" aria-label="Screenshots">
       {#each info.screenshots as url, i (url)}
-        <li><button type="button" class="shot" aria-label="Screenshot {i + 1}" onclick={() => (shot = url)}>
+        <li><button type="button" class="shot skel" aria-label="Screenshot {i + 1}" onclick={() => (shot = url)}>
           <Image {url} alt="" />
         </button></li>
       {/each}
@@ -123,7 +123,12 @@
 
   <div class="cols">
     <div class="main">
-      {#if info?.about.length || hit?.summary || !target.source}
+      {#if target.source && !info && !error && !hit?.summary}
+        <section class="block" aria-busy="true" aria-label="Loading description">
+          <h2 class="h2">About</h2>
+          {#each ["92%", "86%", "60%"] as w}<span class="skel" style:width={w} style:height="12px"></span>{/each}
+        </section>
+      {:else if info?.about.length || hit?.summary || !target.source}
         <section class="block">
           <h2 class="h2">About</h2>
           {#if info?.about.length}
@@ -155,7 +160,15 @@
           </div>
         </section>
       {:else if target.source && !info && !error}
-        <p class="dim">Loading versions…</p>
+        <section class="block" aria-busy="true" aria-label="Loading versions">
+          <h2 class="h2">Versions</h2>
+          <div class="panel">
+            {#each { length: 3 } as _}
+              <div class="rel"><div class="rl"><span class="skel" style:width="64px" style:height="14px"></span><span class="skel" style:width="90px" style:height="11px"></span></div>
+                <span class="skel" style:width="55%" style:height="11px"></span></div>
+            {/each}
+          </div>
+        </section>
       {/if}
     </div>
 
@@ -198,7 +211,7 @@
   .acts { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
   .nobuild { font-size: 12px; font-weight: 600; color: var(--attention); }
   .shots { display: flex; gap: 10px; margin: 0; padding: 0 0 6px; list-style: none; overflow-x: auto; }
-  .shot { flex: 0 0 auto; width: 240px; height: 135px; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); overflow: hidden; cursor: zoom-in; }
+  .shot { flex: 0 0 auto; width: 240px; height: 135px; padding: 0; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); overflow: hidden; cursor: zoom-in; }
   .cols { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 20px; align-items: start; }
   .main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
   .block { display: flex; flex-direction: column; gap: 8px; }
@@ -217,5 +230,5 @@
   dt { font-size: 11px; color: var(--text-2); }
   dd { margin: 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
   .lightbox { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 40px; background: rgba(0, 0, 0, 0.85); cursor: zoom-out; }
-  .lightbox :global(img) { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+  .lightbox :global(img) { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--r-md); }
 </style>

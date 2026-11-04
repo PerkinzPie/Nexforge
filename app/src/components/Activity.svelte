@@ -18,7 +18,7 @@
 {/each}
 
 <style>
-  .job { width: 320px; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--raised); }
+  .job { width: 320px; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--raised); }
   .top { display: flex; align-items: baseline; gap: 10px; }
   .t { font-size: 13px; font-weight: 700; margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .p { font-size: 12px; font-weight: 700; color: var(--accent-text); font-variant-numeric: tabular-nums; }

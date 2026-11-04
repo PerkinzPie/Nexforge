@@ -45,8 +45,8 @@
 
 <style>
   nav { flex: 0 0 64px; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0 12px; background: var(--rail); border-right: 1px solid var(--divider); }
-  .crest { display: flex; padding: 4px; margin-bottom: 12px; border: 0; border-radius: 10px; background: none; cursor: pointer; }
-  .item { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: var(--text-3); cursor: pointer; }
+  .crest { display: flex; padding: 4px; margin-bottom: 12px; border: 0; border-radius: var(--r-sm); background: none; cursor: pointer; }
+  .item { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 40px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-3); cursor: pointer; }
   .item:hover { background: var(--surface); color: var(--text); }
   .item.on { background: var(--accent-tint); color: var(--accent-text); box-shadow: inset 0 0 0 1px #5a2c33; }
   .item.new { color: var(--good); }

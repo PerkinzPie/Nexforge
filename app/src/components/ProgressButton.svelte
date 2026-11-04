@@ -32,7 +32,7 @@
 {/if}
 
 <style>
-  .pb { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 88px; height: 28px; padding: 0 12px; border-radius: 7px; background: var(--accent-tint); overflow: hidden; }
+  .pb { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 88px; height: 28px; padding: 0 12px; border-radius: var(--r-sm); background: var(--accent-tint); overflow: hidden; }
   .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent-fill); transition: width 0.25s linear; }
   /* Size unknown, or unpacking: a solid block slides across (no gradients). */
   .fill.indeterminate { width: 35% !important; animation: slide-block 1.1s ease-in-out infinite; }

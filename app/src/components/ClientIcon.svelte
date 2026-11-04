@@ -31,5 +31,5 @@
 
 <style>
   .ci { flex: 0 0 auto; object-fit: contain; }
-  .ft { border-radius: 9px; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; color: #fff; flex: 0 0 auto; }
+  .ft { border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; color: #fff; flex: 0 0 auto; }
 </style>

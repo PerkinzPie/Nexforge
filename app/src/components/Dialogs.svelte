@@ -126,7 +126,7 @@
 <style>
   .scrim { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: 24px; }
   .dlg-wrap { width: 520px; max-width: 100%; }
-  .dlg { width: 100%; max-width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+  .dlg { width: 100%; max-width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); }
   .head { display: flex; align-items: center; gap: 12px; }
   h2 { margin: 0 auto 0 0; font-size: 15px; font-weight: 700; }
   p { margin: 0; line-height: 1.4; }

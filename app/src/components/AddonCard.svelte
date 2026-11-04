@@ -6,6 +6,7 @@
   import Tile from "./Tile.svelte";
   import type { Hit } from "../lib/api";
   import { count } from "../lib/format";
+  import { clickRow } from "../lib/menu";
   import { store } from "../lib/store.svelte";
 
   let { hit, onopen, oninstall }: { hit: Hit; onopen: () => void; oninstall: (anyway: boolean) => void } = $props();
@@ -16,8 +17,9 @@
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
 </script>
 
-<div class="card-a">
-  <button type="button" class="open" onclick={onopen} aria-label="Details for {hit.name}">
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (the name button opens it from the keyboard) -->
+<div class="card-a" onclick={(e) => clickRow(e, onopen)}>
+  <button type="button" class="open" data-row-open aria-label="Details for {hit.name}">
     <Tile name={hit.name} iconUrl={hit.iconUrl} size={64} />
     <span class="t">
       <span class="n">{hit.name}</span>
@@ -45,7 +47,7 @@
 </div>
 
 <style>
-  .card-a { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+  .card-a { cursor: pointer; position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
   .card-a:hover { background: var(--raised); }
   .open { display: flex; align-items: center; gap: 14px; flex: 1 1 auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
   .t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -58,5 +60,5 @@
   .get { color: var(--accent-text); }
   .get:hover { background: var(--accent-tint); color: var(--accent-text); }
   .done { display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; color: var(--good); }
-  .pct { display: flex; align-items: center; height: 28px; padding: 0 8px; border-radius: 7px; background: var(--accent-tint); color: var(--accent-text); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pct { display: flex; align-items: center; height: 28px; padding: 0 8px; border-radius: var(--r-sm); background: var(--accent-tint); color: var(--accent-text); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
 </style>

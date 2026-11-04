@@ -1,12 +1,14 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import PageHead from "../components/PageHead.svelte";
+  import UpdateActions from "../components/UpdateActions.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
   import RowMenu from "../components/RowMenu.svelte";
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
   import type { Addon } from "../lib/api";
-  import { ago, plural } from "../lib/format";
-  import { addonMenu, openDetails } from "../lib/menu";
+  import { plural } from "../lib/format";
+  import { addonMenu, clickRow, openDetails } from "../lib/menu";
   import { store, type InstalledTab } from "../lib/store.svelte";
 
   let { filterInput = $bindable() }: { filterInput?: HTMLInputElement } = $props();
@@ -20,11 +22,6 @@
     { id: "attention", label: "Can't update", n: store.attentionCount, tone: "var(--attention)" },
     { id: "pinned", label: "Pinned", n: store.pinnedCount },
   ]);
-  let now = $state(Date.now());
-  $effect(() => {
-    const t = setInterval(() => (now = Date.now()), 30_000);
-    return () => clearInterval(t);
-  });
 
   // Left/Right move between tabs, as in any tab list.
   function tabKeys(e: KeyboardEvent) {
@@ -49,20 +46,11 @@
     };
     return [...list].sort((x, y) => rank(x) - rank(y) || x.name.localeCompare(y.name));
   });
-  const updatable = $derived(store.updates.filter((a) => !a.pinned));
 
 </script>
 
 <div class="page">
-  <div class="page-head">
-    <h1 class="h1 title">Installed</h1>
-    <button type="button" class="btn" onclick={() => store.check()} disabled={store.checking || !store.current}>
-      <Icon name="refresh" size={15} stroke={2.2} />{store.checking ? "Checking…" : "Check now"}
-    </button>
-    <button type="button" class="btn" class:btn-primary={updatable.length > 0} onclick={() => store.updateAll()} disabled={!updatable.length}>
-      <Icon name="download" size={15} stroke={2.4} />{updatable.length ? `Update all ${updatable.length}` : "Update all"}
-    </button>
-  </div>
+  <PageHead title="Installed"><UpdateActions /></PageHead>
 
   {#if !store.snap?.installations.length}
     <div class="notice attn">
@@ -90,7 +78,6 @@
         {/each}
       </div>
       <div class="tools">
-        {#if store.checking}<span class="checked">Checking…</span>{:else if store.checkedAt && !store.updates.length}<span class="checked ok" data-tip="Checked {ago(store.checkedAt, now)}"><Icon name="check" size={13} stroke={2.6} />Up to date</span>{/if}
         <div class="search">
           <label for="filter" class="sr">Filter installed addons</label>
           <Icon name="search" size={15} colour="var(--text-3)" />
@@ -106,9 +93,10 @@
             {@const busy = store.busy[a.id]}
             {@const pct = store.progress[a.id]}
             {@const next = s?.release && (s.kind === "available" || s.kind === "pinned") ? s.release.version : null}
-            <tr>
+            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (the name button opens it from the keyboard) -->
+            <tr class="open-row" onclick={(e) => clickRow(e, () => openDetails(a))}>
               <td>
-                <button type="button" class="who" onclick={() => openDetails(a)} aria-label="Details for {a.name}">
+                <button type="button" class="who" data-row-open aria-label="Details for {a.name}">
                   <Tile name={a.name} iconUrl={a.iconUrl} size={32} unknown={!a.managed} />
                   <span class="names">
                     <span class="n">{a.name}</span>
@@ -142,11 +130,11 @@
                 {:else if s?.kind === "failed" || s?.kind === "unavailable"}
                   <span class="warn" title={s.message ?? ""}><Icon name="warn" size={12} stroke={2.4} />{s.kind === "failed" ? "Check failed" : "Needs key"}</span>
                 {:else if s?.kind === "up_to_date" || s?.kind === "skipped"}
-                  <span class="ok"><Icon name="check" size={14} stroke={2.6} />Up to date</span>
+                  <span class="quiet">Up to date</span>
                 {:else if a.flavourMismatch}
                   <span class="warn"><Icon name="warn" size={12} stroke={2.4} />No {flavour} TOC</span>
                 {:else}
-                  <span class="dim state">{store.checking ? "Checking…" : "Not checked"}</span>
+                  {#if store.checking}<span class="skel pillskel" aria-label="Checking"></span>{:else}<span class="quiet">Not checked</span>{/if}
                 {/if}
               </td>
               <td><RowMenu label="More actions for {a.name}" items={addonMenu(a)} /></td>
@@ -167,7 +155,6 @@
 </div>
 
 <style>
-  .title { margin-right: auto; }
   .list { overflow: hidden; }
   .tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 8px 0 8px; border-bottom: 1px solid var(--border); }
   .tablist { display: flex; align-items: center; gap: 4px; }
@@ -177,13 +164,14 @@
   .tab.on { color: var(--text); }
   .tab.on::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--text); }
   .tools { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-bottom: 4px; }
-  .checked { font-size: 12px; color: var(--text-3); white-space: nowrap; }
-  .checked.ok { color: var(--good); }
   table { margin: 0; }
   tbody tr:first-child td { border-top: 0; }
   .small { font-size: 11px; }
   .who { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-  .who:hover .n { text-decoration: underline; text-underline-offset: 3px; }
+  .open-row { cursor: pointer; }
+  .open-row:hover td { background: var(--raised); }
+  .quiet { font-size: 12px; color: var(--text-3); }
+  .pillskel { display: block; width: 76px; height: 14px; }
   .names { display: flex; flex-direction: column; gap: 0; min-width: 0; line-height: 1.3; }
   .n { font-weight: 700; }
   .ver { display: flex; flex-direction: column; gap: 6px; }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import ClientIcon from "../components/ClientIcon.svelte";
+  import PageHead from "../components/PageHead.svelte";
   import wordmark from "../assets/nexabyte-wordmark.svg";
   import { api, type Settings, type SettingsInput } from "../lib/api";
   import { store } from "../lib/store.svelte";
@@ -49,9 +50,7 @@
 </script>
 
 <div class="page">
-  <div class="page-title">
-    <h1 class="h1">Settings</h1>
-  </div>
+  <PageHead title="Settings" />
 
   {#if s}
     <div class="secs narrow">
@@ -172,7 +171,7 @@
   .toggle .t.off { color: var(--text-3); }
   .toggle input[type="checkbox"] { width: 18px; height: 18px; }
   .end { justify-content: flex-end; }
-  .about { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+  .about { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
   .ab { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 20px; }
   .abt { display: flex; flex-direction: column; gap: 4px; margin-right: auto; font-size: 12px; color: var(--text-soft); }
   .abt .wm { font-size: 20px; color: #fff; }

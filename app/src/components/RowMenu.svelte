@@ -64,8 +64,8 @@
 />
 
 <style>
-  .menu { position: fixed; z-index: 70; padding: 6px; border-radius: 10px; border: 1px solid var(--border); background: var(--raised); display: flex; flex-direction: column; gap: 2px; }
-  .menu button { height: 34px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text); font: 600 13px var(--sans); text-align: left; cursor: pointer; white-space: nowrap; }
+  .menu { position: fixed; z-index: 70; padding: 6px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--raised); display: flex; flex-direction: column; gap: 2px; }
+  .menu button { height: 34px; padding: 0 10px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text); font: 600 13px var(--sans); text-align: left; cursor: pointer; white-space: nowrap; }
   .menu button:hover:not(:disabled), .menu button:focus-visible { background: var(--raised-hover); outline: none; }
   .menu button:disabled { color: var(--text-3); cursor: default; }
   .menu .danger { color: var(--accent-text); }

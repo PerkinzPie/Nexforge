@@ -17,7 +17,7 @@
   });
 
   const [bg, fg] = $derived(tint(name));
-  const radius = $derived(size >= 44 ? 12 : size >= 40 ? 11 : 10);
+  const radius = $derived(size >= 60 ? 8 : size >= 40 ? 6 : 5);
   const font = $derived(Math.round(size * 0.4));
 </script>
 

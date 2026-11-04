@@ -1,14 +1,16 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import PageHead from "../components/PageHead.svelte";
+  import UpdateActions from "../components/UpdateActions.svelte";
+  import { clickRow, openDetails } from "../lib/menu";
   import ProgressButton from "../components/ProgressButton.svelte";
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
   import { api } from "../lib/api";
-  import { plural, shortDate, size, when } from "../lib/format";
+  import { shortDate, size, when } from "../lib/format";
   import { store } from "../lib/store.svelte";
 
   const cards = $derived(store.addons.filter((a) => store.status(a.id)?.kind === "available" || (store.busy[a.id] === "Updating")));
-  const updatable = $derived(store.updates.filter((a) => !a.pinned));
 
   // Bulk update checks carry no notes for WoWInterface or CurseForge; fetch
   // them once per card (keyed by addon and version).
@@ -22,26 +24,13 @@
       const key = `${a.id}@${r?.version}`;
       if (!r || r.notes.length || asked.has(key)) continue;
       asked.add(key);
-      api.releaseNotes(inst, a.id).then((n) => (fetched[key] = n)).catch(() => {});
+      api.releaseNotes(inst, a.id).then((n) => (fetched[key] = n)).catch(() => (fetched[key] = { lines: [], hasMore: false }));
     }
   });
 </script>
 
 <div class="page">
-  <div class="page-head">
-    <div class="page-title">
-      <h1 class="h1">Updates</h1>
-      <span class="dim">
-        {#if store.checkedAt}{plural(store.updates.length, "update")} available{:else if store.checking}Checking…{:else}Not checked yet{/if}
-      </span>
-    </div>
-    <button type="button" class="btn" onclick={() => store.check()} disabled={store.checking || !store.current}>
-      <Icon name="refresh" size={15} stroke={2.2} />{store.checking ? "Checking…" : "Check now"}
-    </button>
-    <button type="button" class="btn" class:btn-primary={updatable.length > 0} onclick={() => store.updateAll()} disabled={!updatable.length}>
-      <Icon name="download" size={15} stroke={2.4} />Update all ({updatable.length})
-    </button>
-  </div>
+  <PageHead title="Updates"><UpdateActions /></PageHead>
 
   {#each store.sourceErrors as e (e.source)}
     <div class="notice err narrow"><Icon name="warn" size={16} /><span><strong>{e.sourceLabel}:</strong> {e.message}</span></div>
@@ -55,10 +44,11 @@
       {@const pct = store.progress[a.id]}
       {@const extra = fetched[`${a.id}@${r?.version}`]}
       {@const notes = r?.notes.length ? r.notes : (extra?.lines ?? [])}
-      <div class="card" class:active={!!busy}>
+      <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (the name button opens it from the keyboard) -->
+      <div class="card open-card" class:active={!!busy} onclick={(e) => clickRow(e, () => openDetails(a))}>
         <div class="top">
           <Tile name={a.name} iconUrl={a.iconUrl} size={36} />
-          <div class="meta">
+          <button type="button" class="meta" data-row-open aria-label="Details for {a.name}">
             <span class="n">{a.name}</span>
             <span class="line">
               <span class="num">{a.version} {#if r}<span class="dim">→</span> <strong>{r.version}</strong>{/if}</span>
@@ -66,12 +56,14 @@
               {#if r && (r.publishedAt || r.size)}<span class="dim small">{[r.publishedAt ? `Released ${shortDate(r.publishedAt)}` : "", size(r.size)].filter(Boolean).join(" · ")}</span>{/if}
 
             </span>
-          </div>
+          </button>
           {#if r && !busy}<button type="button" class="btn btn-quiet" onclick={() => store.skip(a, r.version)}>Skip {r.version}</button>{/if}
           {#if r || busy}<ProgressButton label="Update" busy={busy ?? null} {pct} onclick={() => store.update(a.id)} />{/if}
         </div>
         {#if notes.length}
           <ul class="notes">{#each notes as n}<li>{n}</li>{/each}</ul>
+        {:else if r && !fetched[`${a.id}@${r.version}`]}
+          <div class="skels" aria-label="Loading release notes"><span class="skel" style:width="62%"></span><span class="skel" style:width="44%"></span></div>
         {/if}
         {#if a.website && (r?.hasMoreNotes || extra?.hasMore || !notes.length)}
           <a href={a.website} class="more" onclick={(e) => { e.preventDefault(); api.openUrl(a.website!).catch((err) => store.say("err", err.message)); }}>Full release notes</a>
@@ -109,7 +101,11 @@
 <style>
   .list { display: flex; flex-direction: column; gap: 12px; }
   .top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-  .meta { display: flex; flex-direction: column; gap: 2px; margin-right: auto; min-width: 0; }
+  .meta { display: flex; flex-direction: column; gap: 2px; margin-right: auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .open-card { cursor: pointer; }
+  .open-card:hover { background: var(--raised); }
+  .skels { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 2px 18px; }
+  .skels .skel { height: 12px; }
   .n { font-size: 15px; font-weight: 700; }
   .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .line strong { color: var(--text); font-weight: 600; }

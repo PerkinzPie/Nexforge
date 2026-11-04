@@ -22,3 +22,11 @@ export function addonMenu(a: Addon, opts: { details?: boolean } = {}): Item[] {
 export function openDetails(a: Addon) {
   store.detail = { name: a.name, iconUrl: a.iconUrl, source: a.managed ? a.source : null, sourceId: a.sourceId, addonId: a.id };
 }
+
+/** A click anywhere on a row or card opens it, except on its own controls. */
+export function clickRow(e: MouseEvent, open: () => void) {
+  const t = e.target as Element;
+  if (t.closest("a, input, select, [role=menu], button:not([data-row-open])")) return;
+  if (window.getSelection()?.toString()) return;
+  open();
+}

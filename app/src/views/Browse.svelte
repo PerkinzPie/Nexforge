@@ -1,12 +1,15 @@
 <script lang="ts">
   import AddonCard from "../components/AddonCard.svelte";
   import Icon from "../components/Icon.svelte";
+  import PageHead from "../components/PageHead.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
   import RowMenu from "../components/RowMenu.svelte";
+  import SkeletonCard from "../components/SkeletonCard.svelte";
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
   import { api, type Hit } from "../lib/api";
   import { ago, count } from "../lib/format";
+  import { clickRow } from "../lib/menu";
   import { store } from "../lib/store.svelte";
 
   // The top bar owns the search box.
@@ -16,8 +19,13 @@
   let hits = $state<Hit[]>([]);
   let errors = $state<{ sourceLabel: string; message: string }[]>([]);
   let loading = $state(false);
+  /** The query the current `hits` answer; anything else is stale. */
+  let hitsFor = $state<string | null>(null);
   let seq = 0;
   let popular = $state<Hit[]>([]);
+  /** False until the first answer, so the grids show placeholders, not nothing. */
+  let popLoaded = $state(false);
+  let topLoaded = $state(false);
   /** With nothing typed and a host chip picked: that host's most downloaded. */
   let top = $state<Hit[]>([]);
   /** Bumped when the catalogue finishes refreshing, to re-run search. */
@@ -31,7 +39,7 @@
   $effect(() => {
     const inst = store.current;
     void refreshed;
-    api.popular(inst).then((p) => (popular = p)).catch(() => (popular = []));
+    api.popular(inst).then((p) => (popular = p)).catch(() => (popular = [])).finally(() => (popLoaded = true));
   });
 
   $effect(() => {
@@ -42,7 +50,8 @@
       top = [];
       return;
     }
-    api.popular(inst, src).then((p) => (top = p)).catch(() => (top = []));
+    topLoaded = false;
+    api.popular(inst, src).then((p) => (top = p)).catch(() => (top = [])).finally(() => (topLoaded = true));
   });
 
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
@@ -62,6 +71,7 @@
         const r = await api.search(inst, q);
         if (mine !== seq) return;
         hits = r.hits;
+        hitsFor = q;
         errors = r.errors;
       } catch (e) {
         if (mine === seq) errors = [{ sourceLabel: "Search", message: (e as Error).message }];
@@ -79,6 +89,7 @@
           .filter((h) => (query.trim() ? true : h.source === "github"))
           .filter((h) => source === "all" || h.source === source),
   );
+  const stale = $derived(hitsFor !== query.trim());
   const shown = $derived(inSource.filter((h) => !onlyFlavour || h.forFlavour || h.flavourUnknown));
   /** Results with no build listed for this client (hidden unless asked for). */
   const other = $derived(inSource.filter((h) => noBuild(h)).length);
@@ -105,12 +116,11 @@
 </script>
 
 <div class="page">
-  <div class="page-head">
-    <h1 class="h1 title">Browse</h1>
+  <PageHead title="Browse">
     <button type="button" class="btn" onclick={() => (store.dialog = { kind: "install" })} disabled={!store.current}>
       <Icon name="link" size={15} stroke={2.2} />Install from URL…
     </button>
-  </div>
+  </PageHead>
 
   <div class="filters narrow">
     <button type="button" class="chip" class:on={source === "all"} onclick={() => (source = "all")}>All sources</button>
@@ -126,22 +136,38 @@
     <div class="notice err narrow"><Icon name="warn" size={16} /><span><strong>{e.sourceLabel}:</strong> {e.message}</span></div>
   {/each}
 
-  {#if !query.trim() && source === "all" && popular.length}
-    <section class="popular narrow" aria-labelledby="pop-h">
+  {#if !query.trim() && source === "all" && (popular.length || !popLoaded)}
+    <section class="popular narrow" aria-labelledby="pop-h" aria-busy={!popLoaded}>
       <h2 class="h2" id="pop-h">Popular this month</h2>
       <div class="grid">
-        {#each popular as h (h.spec)}
-          <AddonCard hit={h} onopen={() => openHit(h)} oninstall={(anyway) => install(h, anyway)} />
-        {/each}
+        {#if !popLoaded}
+          {#each { length: 6 } as _}<SkeletonCard />{/each}
+        {:else}
+          {#each popular as h (h.spec)}
+            <AddonCard hit={h} onopen={() => openHit(h)} oninstall={(anyway) => install(h, anyway)} />
+          {/each}
+        {/if}
       </div>
     </section>
   {/if}
 
   <div class="results narrow">
-    {#if query.trim() || (loading && !hits.length)}
-      <span class="dim count">{loading && !hits.length ? "Searching…" : `${shown.length} result${shown.length === 1 ? "" : "s"}`}</span>
+    {#if query.trim() && shown.length && !(loading && stale)}
+      <span class="dim count">{shown.length} result{shown.length === 1 ? "" : "s"}</span>
     {/if}
-    {#if shown.length && !query.trim()}
+    {#if !query.trim() && (source === "all" ? loading && stale : !topLoaded)}
+      <section class="popular" aria-busy="true">
+        <h2 class="h2">{source === "all" ? "On GitHub" : `Most downloaded on ${chips.find((c) => c.id === source)?.label ?? ""}`}</h2>
+        <div class="grid">{#each { length: 4 } as _}<SkeletonCard />{/each}</div>
+      </section>
+    {:else if query.trim() && loading && stale}
+      <div class="panel" aria-busy="true" aria-label="Searching">
+        {#each { length: 5 } as _}
+          <div class="row hit sk"><span class="skel" style:width="36px" style:height="36px"></span>
+            <span class="body"><span class="skel" style:width="32%" style:height="12px"></span><span class="skel" style:width="68%" style:height="11px"></span></span></div>
+        {/each}
+      </div>
+    {:else if shown.length && !query.trim()}
       <section class="popular" aria-labelledby="list-h">
         <h2 class="h2" id="list-h">{source === "all" ? "On GitHub" : `Most downloaded on ${chips.find((c) => c.id === source)?.label ?? ""}`}</h2>
         <div class="grid">
@@ -155,8 +181,9 @@
         {#each shown as h (h.spec)}
           {@const busy = store.busy[h.spec]}
           {@const pct = store.progress[h.spec]}
-          <div class="row hit">
-            <button type="button" class="open" onclick={() => openHit(h)} aria-label="Details for {h.name}">
+          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (the name button opens it from the keyboard) -->
+          <div class="row hit open-row" onclick={(e) => clickRow(e, () => openHit(h))}>
+            <button type="button" class="open" data-row-open aria-label="Details for {h.name}">
             <Tile name={h.name} iconUrl={h.iconUrl} size={36} />
             <span class="body">
               <span class="line">
@@ -206,8 +233,9 @@
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
   /* Tile and text open the details page; actions stay separate buttons. */
   .open { display: flex; align-items: center; gap: 12px; flex: 1 1 auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-  .title { margin-right: auto; }
-  .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: -8px; }
+  .open-row { cursor: pointer; }
+  .open-row:hover { background: var(--raised); }
+  .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .results { display: flex; flex-direction: column; gap: 10px; }
   .count { font-size: 12px; font-weight: 600; }
   .body { display: flex; flex-direction: column; gap: 2px; flex: 1 1 300px; min-width: 0; }
