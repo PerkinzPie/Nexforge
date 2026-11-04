@@ -73,7 +73,7 @@
     </div>
 
     <div class="actions">
-      <button type="button" class="btn" onclick={addFolder}>Add a folder…</button>
+      <button type="button" class="btn" onclick={addFolder}>Add a folder</button>
       <button type="button" class="btn btn-primary" disabled={rows === null || !rows.length} onclick={() => store.finishFirstRun()}>Done</button>
     </div>
   </div>

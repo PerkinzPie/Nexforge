@@ -1,7 +1,7 @@
 <script lang="ts">
   // Line icons from Lucide (lucide.dev, ISC licence: assets/LICENSE-lucide.txt),
   // named for what they mean here rather than what they draw.
-  export type IconName = "installed" | "updates" | "browse" | "settings" | "chevrons" | "refresh" | "download" | "more" | "check" | "pin" | "warn" | "search" | "link" | "home" | "globe" | "shield" | "x" | "folder" | "user" | "back" | "external";
+  export type IconName = "installed" | "updates" | "browse" | "settings" | "chevrons" | "refresh" | "download" | "more" | "check" | "pin" | "warn" | "search" | "link" | "home" | "globe" | "shield" | "x" | "folder" | "user" | "back" | "external" | "alert";
   let { name, size = 16, stroke = 2, colour = "currentColor" }: { name: IconName; size?: number; stroke?: number; colour?: string } = $props();
 </script>
 
@@ -27,5 +27,6 @@
     {:else if name === "user"}<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /> <circle cx="12" cy="7" r="4" />
     {:else if name === "back"}<path d="m15 18-6-6 6-6" />
     {:else if name === "external"}<path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    {:else if name === "alert"}<circle cx="12" cy="12" r="10" /> <line x1="12" x2="12" y1="8" y2="12" /> <line x1="12" x2="12.01" y1="16" y2="16" />
     {/if}
 </svg>

@@ -303,9 +303,7 @@ impl CurseForge {
         match e {
             Error::Http {
                 status: 401 | 403, ..
-            } => Error::Other(
-                "CurseForge refused the API key. Check it, or save a new one with `nexforge key set curseforge`.".into(),
-            ),
+            } => Error::CurseForgeKeyRejected,
             other => other,
         }
     }

@@ -64,13 +64,13 @@
             <ClientIcon id={i.id} flavour={i.flavour} size={28} />
             <div class="lbl"><span class="t">{i.label}</span><span class="mono s">{i.path}</span></div>
             {#if !i.detected}<span class="pill pill-attn">No AddOns folder</span>{/if}
-            <button type="button" class="btn btn-sm" onclick={() => pick(i.id)}>Change…</button>
+            <button type="button" class="btn btn-sm" onclick={() => pick(i.id)}>Change</button>
           </div>
         {:else}
           <div class="frow"><div class="lbl"><span class="t">No installation found</span></div></div>
         {/each}
         <div class="frow end">
-          <button type="button" class="btn btn-sm" onclick={() => pick(null)}>Add installation…</button>
+          <button type="button" class="btn btn-sm" onclick={() => pick(null)}>Add installation</button>
         </div>
         </div>
       </section>
@@ -103,7 +103,7 @@
             <button type="button" class="btn btn-sm btn-quiet" onclick={() => clearKey("github")}>Remove token</button>
           {:else}
             <Tip text="Optional. Raises GitHub's limit from 60 to 5,000 requests an hour.">
-              {#snippet children({ props })}<button {...mergeProps(props, { onclick: () => (store.dialog = { kind: "key", name: "github" }) })} type="button" class="btn btn-sm">Add token…</button>{/snippet}
+              {#snippet children({ props })}<button {...mergeProps(props, { onclick: () => (store.dialog = { kind: "key", name: "github" }) })} type="button" class="btn btn-sm">Add token</button>{/snippet}
             </Tip>
           {/if}
           <input id="src-github" type="checkbox" checked={s.github} onchange={(e) => save({ github: e.currentTarget.checked })} />
@@ -116,10 +116,10 @@
           <label class="t" for="src-cf">CurseForge</label>
           {#if s.keyCurseforge}
             <button type="button" class="btn btn-sm btn-quiet" onclick={() => clearKey("curseforge")}>Remove key</button>
-            <button type="button" class="btn btn-sm" onclick={() => (store.dialog = { kind: "key", name: "curseforge" })}>Replace key…</button>
+            <button type="button" class="btn btn-sm" onclick={() => (store.dialog = { kind: "key", name: "curseforge" })}>Replace key</button>
           {:else}
             <Tip text="Free from console.curseforge.com. Some authors block downloads outside the CurseForge app.">
-              {#snippet children({ props })}<button {...mergeProps(props, { onclick: () => (store.dialog = { kind: "key", name: "curseforge" }) })} type="button" class="btn btn-sm">Add key…</button>{/snippet}
+              {#snippet children({ props })}<button {...mergeProps(props, { onclick: () => (store.dialog = { kind: "key", name: "curseforge" }) })} type="button" class="btn btn-sm">Add key</button>{/snippet}
             </Tip>
           {/if}
           <input id="src-cf" type="checkbox" checked={s.curseforge} disabled={!s.keyCurseforge}

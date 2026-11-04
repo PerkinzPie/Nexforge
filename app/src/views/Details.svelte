@@ -4,6 +4,7 @@
   import Gallery from "../components/Gallery.svelte";
   import Icon from "../components/Icon.svelte";
   import Image from "../components/Image.svelte";
+  import NoBuild from "../components/NoBuild.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
   import RowMenu from "../components/RowMenu.svelte";
   import SourceTag from "../components/SourceTag.svelte";
@@ -20,6 +21,9 @@
   let galleryOpen = $state(false);
   let galleryAt = $state(0);
   const shots = $derived(info?.screenshots ?? []);
+  // Only promise screenshots we know are coming: on WoWInterface the icon is
+  // the first screenshot's thumbnail; GitHub has none; CurseForge can't say.
+  const expectShots = $derived(target.source === "wowinterface" && !!target.iconUrl);
   const thumbs = $derived(info && info.screenshotThumbs.length === shots.length ? info.screenshotThumbs : shots);
   function view(i: number) {
     galleryAt = i;
@@ -87,7 +91,7 @@
       <Tile name={target.name} iconUrl={info?.iconUrl ?? target.iconUrl} size={64} unknown={!target.source} />
     {/if}
     <div class="who">
-      <h1 class="h1">{info?.name ?? target.name}</h1>
+      <span class="tl"><h1 class="h1">{info?.name ?? target.name}</h1>{#if noBuild}<NoBuild text="No {flavour} build listed. It may not load in {flavour}." size={17} />{/if}</span>
       <span class="by">
         {#if authors.length}<span class="dim"><Icon name="user" size={13} stroke={2.2} />{authors.join(", ")}</span>{/if}
         {#if label}<SourceTag label={label} />{/if}
@@ -112,7 +116,6 @@
         {:else if busy}
           <ProgressButton label="Install" busy={busy} pct={store.progress[hit.spec]} onclick={() => {}} />
         {:else if noBuild}
-          <span class="nobuild">No {flavour} build</span>
           <RowMenu label="More actions for {hit.name}" items={[{ label: "Install anyway", run: () => install(true) }]} />
         {:else}
           <button type="button" class="btn btn-primary" onclick={() => install(false)}><Icon name="download" size={15} stroke={2.4} />Install</button>
@@ -136,7 +139,7 @@
         {/each}
       </ul>
     </section>
-  {:else if target.source && !info && !error}
+  {:else if expectShots && !info && !error}
     <section class="block" aria-busy="true" aria-label="Loading screenshots">
       <h2 class="h2">Screenshots</h2>
       <ul class="shots">{#each { length: 3 } as _}<li><span class="shot skel"></span></li>{/each}</ul>
@@ -221,11 +224,11 @@
   .back { align-self: flex-start; margin: -8px 0 -8px -10px; gap: 4px; }
   .head { display: flex; align-items: center; gap: 16px; }
   .who { display: flex; flex-direction: column; gap: 4px; min-width: 0; margin-right: auto; }
+  .tl { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .who .h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .by { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; }
   .by .dim { display: inline-flex; align-items: center; gap: 5px; }
   .acts { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-  .nobuild { font-size: 12px; font-weight: 600; color: var(--attention); }
   .shots { display: flex; gap: 10px; margin: 0; padding: 0 0 6px; list-style: none; overflow-x: auto; }
   .shot { display: block; flex: 0 0 auto; width: 224px; height: 126px; padding: 0; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); overflow: hidden; cursor: zoom-in; }
   .shot:hover { border-color: var(--text-3); }

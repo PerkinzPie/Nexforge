@@ -1,6 +1,7 @@
 <script lang="ts">
   import AddonCard from "../components/AddonCard.svelte";
   import Icon from "../components/Icon.svelte";
+  import NoBuild from "../components/NoBuild.svelte";
   import PageHead from "../components/PageHead.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
   import RowMenu from "../components/RowMenu.svelte";
@@ -118,7 +119,7 @@
 <div class="page">
   <PageHead title="Browse">
     <button type="button" class="btn" onclick={() => (store.dialog = { kind: "install" })} disabled={!store.current}>
-      <Icon name="link" size={15} stroke={2.2} />Install from URL…
+      <Icon name="link" size={15} stroke={2.2} />Install from URL
     </button>
   </PageHead>
 
@@ -133,7 +134,7 @@
   </div>
 
   {#each errors as e (e.sourceLabel)}
-    <div class="notice err narrow"><Icon name="warn" size={16} /><span><strong>{e.sourceLabel}:</strong> {e.message}</span></div>
+    <div class="notice err narrow"><Icon name="warn" size={16} /><span>{#if !e.message.startsWith(e.sourceLabel)}<strong>{e.sourceLabel}:</strong> {/if}{e.message}</span></div>
   {/each}
 
   {#if !query.trim() && source === "all" && (popular.length || !popLoaded)}
@@ -188,6 +189,7 @@
             <span class="body">
               <span class="line">
                 <span class="n">{h.name}</span>
+                {#if noBuild(h)}<NoBuild text="No {flavour} build" size={14} />{/if}
                 {#if h.authors.length}<span class="dim small">{h.authors.slice(0, 2).join(", ")}</span>{/if}
                 <SourceTag label={h.sourceLabel} />
                 {#each h.alsoOn as o (o)}<SourceTag label={o} muted />{/each}
@@ -195,14 +197,10 @@
               {#if h.summary}<span class="desc" title={h.summary}>{h.summary}</span>{/if}
             </span>
             </button>
-            {#if noBuild(h)}
-              <span class="side nobuild">No {flavour} build</span>
-            {:else}
-              <span class="side dim">
-                {#if h.downloads}<span>{count(h.downloads)} downloads</span>{/if}
-                {#if h.updatedAt}<span>Updated {ago(h.updatedAt)}</span>{/if}
-              </span>
-            {/if}
+            <span class="side dim">
+              {#if h.downloads}<span>{count(h.downloads)} downloads</span>{/if}
+              {#if h.updatedAt}<span>Updated {ago(h.updatedAt)}</span>{/if}
+            </span>
             <div class="act">
               {#if h.installed}
                 <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
@@ -252,7 +250,6 @@
   .act { flex: 0 0 auto; min-width: 88px; display: flex; justify-content: flex-end; }
   .n { font-size: 13px; font-weight: 700; }
   .small { font-size: 12px; }
-  .nobuild { font-size: 11px; font-weight: 600; color: var(--attention); }
   .done { animation: pop 0.3s ease-out; }
   @keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: none; opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .done { animation: none; } }

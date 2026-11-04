@@ -235,10 +235,7 @@ async fn without_a_key_curseforge_is_off() {
         .resolve_spec("https://www.curseforge.com/wow/addons/dungeonjournal")
         .await
         .unwrap_err();
-    assert!(
-        err.to_string().contains("nexforge key set curseforge"),
-        "{err}"
-    );
+    assert!(matches!(err, Error::CurseForgeKeyNeeded), "{err}");
     assert!(
         f.hits().is_empty(),
         "nothing is sent to CurseForge without a key"

@@ -11,10 +11,10 @@ export function addonMenu(a: Addon, opts: { details?: boolean } = {}): Item[] {
   if (a.managed) items.push({ label: a.pinned ? "Unpin" : "Pin (never update)", run: () => store.setPinned(a, !a.pinned) });
   if (s?.release && (s.kind === "available" || s.kind === "pinned"))
     items.push({ label: `Skip ${s.release.version}`, run: () => store.skip(a, s.release!.version) });
-  items.push({ label: a.managed ? "Change source…" : "Identify source…", run: () => (store.dialog = { kind: "install", adopt: a }) });
+  items.push({ label: a.managed ? "Change source" : "Identify source", run: () => (store.dialog = { kind: "install", adopt: a }) });
   items.push({ label: "Open folder", run: () => api.open("addon", store.current!, a.id).catch((e) => store.say("err", e.message)) });
   if (a.website) items.push({ label: "Open website", run: () => api.openUrl(a.website!).catch((e) => store.say("err", e.message)) });
-  items.push({ label: "Remove…", danger: true, run: () => (store.dialog = { kind: "remove", addon: a }) });
+  items.push({ label: "Remove", danger: true, run: () => (store.dialog = { kind: "remove", addon: a }) });
   return items;
 }
 

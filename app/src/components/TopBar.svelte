@@ -46,7 +46,7 @@
             {/each}
           </DropdownMenu.RadioGroup>
           <DropdownMenu.Separator class="dd-sep" />
-          <DropdownMenu.Item class="dd-item" onSelect={() => (store.view = "settings")}>Add or change installations…</DropdownMenu.Item>
+          <DropdownMenu.Item class="dd-item" onSelect={() => (store.view = "settings")}>Add or change installations</DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

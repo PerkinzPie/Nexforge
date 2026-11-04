@@ -33,7 +33,7 @@
   <PageHead title="Updates"><UpdateActions /></PageHead>
 
   {#each store.sourceErrors as e (e.source)}
-    <div class="notice err narrow"><Icon name="warn" size={16} /><span><strong>{e.sourceLabel}:</strong> {e.message}</span></div>
+    <div class="notice err narrow"><Icon name="warn" size={16} /><span>{#if !e.message.startsWith(e.sourceLabel)}<strong>{e.sourceLabel}:</strong> {/if}{e.message}</span></div>
   {/each}
 
   <div class="list narrow">

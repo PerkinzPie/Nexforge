@@ -246,12 +246,12 @@ impl Manager {
     }
 
     fn require_source(&self, id: SourceId) -> Result<&Arc<dyn Source>> {
-        self.source(id).ok_or_else(|| {
-            Error::Unsupported(match id {
-                SourceId::Curseforge => "CurseForge needs an API key. Get one at console.curseforge.com, then run `nexforge key set curseforge`.".to_string(),
-                SourceId::Wago => "Wago needs a paid API key, and Nexforge does not support it yet.".to_string(),
-                _ => format!("{} is turned off in Settings.", id.label()),
-            })
+        self.source(id).ok_or_else(|| match id {
+            SourceId::Curseforge => Error::CurseForgeKeyNeeded,
+            SourceId::Wago => Error::Unsupported(
+                "Wago needs a paid API key, and Nexforge does not support it yet.".to_string(),
+            ),
+            _ => Error::Unsupported(format!("{} is turned off in Settings.", id.label())),
         })
     }
 
@@ -519,7 +519,7 @@ impl Manager {
         if spec.to_ascii_lowercase().contains("curseforge.com/")
             && self.source(SourceId::Curseforge).is_none()
         {
-            return Err(Error::Unsupported("That is a CurseForge address. CurseForge needs an API key: get one at console.curseforge.com, then run `nexforge key set curseforge`.".into()));
+            return Err(Error::CurseForgeKeyNeeded);
         }
         if let Some(k) = crate::known::find(spec) {
             return Ok((SourceId::Github, k.source_id()));

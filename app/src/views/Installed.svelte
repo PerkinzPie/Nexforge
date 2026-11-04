@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Tabs } from "bits-ui";
   import Icon from "../components/Icon.svelte";
+  import NoBuild from "../components/NoBuild.svelte";
   import PageHead from "../components/PageHead.svelte";
   import UpdateActions from "../components/UpdateActions.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
@@ -53,7 +54,7 @@
   {/if}
 
   {#each store.sourceErrors as e (e.source)}
-    <div class="notice err"><Icon name="warn" size={16} /><span><strong>{e.sourceLabel}:</strong> {e.message}</span></div>
+    <div class="notice err"><Icon name="warn" size={16} /><span>{#if !e.message.startsWith(e.sourceLabel)}<strong>{e.sourceLabel}:</strong> {/if}{e.message}</span></div>
   {/each}
 
   <Tabs.Root value={store.tab} onValueChange={(v) => (store.tab = v as InstalledTab)} class="panel list">
@@ -120,13 +121,13 @@
                 {:else if s?.kind === "available"}
                   <button type="button" class="btn btn-row" onclick={() => store.update(a.id)}>Update</button>
                 {:else if s?.kind === "no_build"}
-                  <span class="warn"><Icon name="warn" size={12} stroke={2.4} />No {flavour} build</span>
+                  <NoBuild text="No {flavour} build listed. It may not load in {flavour}." />
                 {:else if s?.kind === "failed" || s?.kind === "unavailable"}
                   <span class="warn" title={s.message ?? ""}><Icon name="warn" size={12} stroke={2.4} />{s.kind === "failed" ? "Check failed" : "Needs key"}</span>
                 {:else if s?.kind === "up_to_date" || s?.kind === "skipped"}
                   <span class="quiet">Up to date</span>
                 {:else if a.flavourMismatch}
-                  <span class="warn"><Icon name="warn" size={12} stroke={2.4} />No {flavour} TOC</span>
+                  <NoBuild text="Its TOC doesn't list {flavour}. It may not load." />
                 {:else}
                   {#if store.checking}<span class="skel pillskel" aria-label="Checking"></span>{:else}<span class="quiet">Not checked</span>{/if}
                 {/if}

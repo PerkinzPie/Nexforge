@@ -194,6 +194,19 @@ async fn main() {
     let cli = Cli::parse();
     if let Err(e) = run(cli).await {
         eprintln!("error: {e:#}");
+        // The core's wording points at the app's Settings; say the CLI way too.
+        let key_problem = e.chain().any(|c| {
+            matches!(
+                c.downcast_ref::<nexforge_core::Error>(),
+                Some(
+                    nexforge_core::Error::CurseForgeKeyNeeded
+                        | nexforge_core::Error::CurseForgeKeyRejected
+                )
+            )
+        });
+        if key_problem {
+            eprintln!("hint: run `nexforge key set curseforge` to save a key.");
+        }
         std::process::exit(1);
     }
 }

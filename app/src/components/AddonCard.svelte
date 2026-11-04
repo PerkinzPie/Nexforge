@@ -3,6 +3,7 @@
   // and author/downloads. The card opens details; the corner button installs.
   import { mergeProps } from "bits-ui";
   import Icon from "./Icon.svelte";
+  import NoBuild from "./NoBuild.svelte";
   import Tip from "./Tip.svelte";
   import RowMenu from "./RowMenu.svelte";
   import Tile from "./Tile.svelte";
@@ -24,8 +25,8 @@
   <button type="button" class="open" data-row-open aria-label="Details for {hit.name}">
     <Tile name={hit.name} iconUrl={hit.iconUrl} size={64} />
     <span class="t">
-      <span class="n">{hit.name}</span>
-      {#if hit.summary}<span class="s">{hit.summary}</span>{:else if noBuild}<span class="s nb">No {flavour} build</span>{/if}
+      <span class="nl"><span class="n">{hit.name}</span>{#if noBuild}<NoBuild text="No {flavour} build" size={14} />{/if}</span>
+      {#if hit.summary}<span class="s">{hit.summary}</span>{/if}
       <span class="m">
         {#if hit.authors.length}<span><Icon name="user" size={12} stroke={2.2} />{hit.authors[0]}</span>{/if}
         {#if hit.downloads}<span><Icon name="download" size={12} stroke={2.2} />{count(hit.downloads)}</span>{/if}
@@ -59,7 +60,7 @@
   .t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .n { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .s { font-size: 12px; color: var(--text-soft); line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .s.nb { color: var(--attention); }
+  .nl { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .m { display: flex; gap: 12px; font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; }
   .m > span { display: inline-flex; align-items: center; gap: 4px; }
   .a { flex: 0 0 auto; align-self: flex-start; display: flex; }

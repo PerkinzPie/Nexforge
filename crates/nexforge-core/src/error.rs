@@ -78,6 +78,12 @@ pub enum Error {
 
     #[error("{0}")]
     Other(String),
+
+    /// Fixed in Settings under Sources; the CLI adds its own hint.
+    #[error("CurseForge needs an API key.")]
+    CurseForgeKeyNeeded,
+    #[error("CurseForge refused the API key.")]
+    CurseForgeKeyRejected,
 }
 
 impl Error {
