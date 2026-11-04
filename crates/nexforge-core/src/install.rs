@@ -845,6 +845,7 @@ mod tests {
             changelog: None,
             sha256: Some("00".repeat(32)),
             md5: None,
+            file_id: None,
         };
         let err = engine
             .install(&mut t, entry(), &rel, &|_, _| {})

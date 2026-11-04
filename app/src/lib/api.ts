@@ -76,6 +76,7 @@ export const api = {
   image: (url: string) => call<string>("image", { url }),
   refreshCatalogue: (force: boolean) => call<CatalogueInfo>("refresh_catalogue", { force }),
   popular: (installationId: string | null) => call<Hit[]>("popular", { installationId }),
+  releaseNotes: (installationId: string, id: string) => call<{ lines: string[]; hasMore: boolean }>("release_notes", { installationId, id }),
   clientIcon: (installationId: string) => call<string | null>("client_icon", { installationId }),
   settings: () => call<Settings>("settings"),
   saveSettings: (s: SettingsInput) => call<Settings>("save_settings", { s }),

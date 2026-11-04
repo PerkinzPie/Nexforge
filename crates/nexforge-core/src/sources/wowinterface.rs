@@ -246,6 +246,7 @@ impl Source for WowInterface {
             changelog: s(&d, "UIChangeLog"),
             sha256: None,
             md5: s(&d, "UIMD5").map(|m| m.to_ascii_lowercase()),
+            file_id: None,
         }])
     }
 
@@ -291,6 +292,7 @@ impl Source for WowInterface {
                     changelog: None,
                     sha256: None,
                     md5: None,
+                    file_id: None,
                 },
             );
         }

@@ -327,6 +327,19 @@ impl Manager {
         })
     }
 
+    /// Release notes for the release an update would install.
+    pub async fn notes(&self, entry: &AddonEntry, flavour: Flavour) -> Result<Option<String>> {
+        let source = entry
+            .source
+            .ok_or_else(|| Error::NotManaged(format!("{} has no source.", entry.name)))?;
+        let src = self.require_source(source)?;
+        let rels = src.releases(&entry.source_id, flavour).await?;
+        let Some(r) = pick_release(&rels, flavour, entry.channel) else {
+            return Ok(None);
+        };
+        src.changelog(&entry.source_id, r).await
+    }
+
     /// Update one addon. Returns `None` when already up to date.
     pub async fn update(
         &self,

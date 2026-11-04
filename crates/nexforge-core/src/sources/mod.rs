@@ -119,6 +119,9 @@ pub struct Release {
     pub sha256: Option<String>,
     /// WoWInterface publishes MD5 rather than SHA-256.
     pub md5: Option<String>,
+    /// The host's id for this file (CurseForge), for fetching its changelog.
+    #[serde(default)]
+    pub file_id: Option<String>,
 }
 
 impl Release {
@@ -187,6 +190,12 @@ pub trait Source: Send + Sync {
         Ok(vec![])
     }
 
+    /// Release notes for `release`. Most hosts include them with the
+    /// release; CurseForge has a separate endpoint.
+    async fn changelog(&self, _source_id: &str, release: &Release) -> Result<Option<String>> {
+        Ok(release.changelog.clone())
+    }
+
     /// "Install from URL": map a web address on this host to a source id.
     async fn resolve_url(&self, url: &str) -> Result<Option<String>>;
 
@@ -250,6 +259,7 @@ mod tests {
             changelog: None,
             sha256: None,
             md5: None,
+            file_id: None,
         }
     }
 

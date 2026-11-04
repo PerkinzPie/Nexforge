@@ -9,6 +9,22 @@
 
   const cards = $derived(store.addons.filter((a) => store.status(a.id)?.kind === "available" || (store.busy[a.id] === "Updating")));
   const updatable = $derived(store.updates.filter((a) => !a.pinned));
+
+  // Bulk update checks carry no notes for WoWInterface or CurseForge; fetch
+  // them once per card (keyed by addon and version).
+  let fetched = $state<Record<string, { lines: string[]; hasMore: boolean }>>({});
+  const asked = new Set<string>();
+  $effect(() => {
+    const inst = store.current;
+    if (!inst) return;
+    for (const a of cards) {
+      const r = store.status(a.id)?.release;
+      const key = `${a.id}@${r?.version}`;
+      if (!r || r.notes.length || asked.has(key)) continue;
+      asked.add(key);
+      api.releaseNotes(inst, a.id).then((n) => (fetched[key] = n)).catch(() => {});
+    }
+  });
 </script>
 
 <div class="page">
@@ -37,6 +53,8 @@
       {@const r = s?.release}
       {@const busy = store.busy[a.id]}
       {@const pct = store.progress[a.id]}
+      {@const extra = fetched[`${a.id}@${r?.version}`]}
+      {@const notes = r?.notes.length ? r.notes : (extra?.lines ?? [])}
       <div class="card" class:active={!!busy}>
         <div class="top">
           <Tile name={a.name} iconUrl={a.iconUrl} size={44} />
@@ -52,10 +70,10 @@
           {#if r && !busy}<button type="button" class="btn btn-quiet" onclick={() => store.skip(a, r.version)}>Skip {r.version}</button>{/if}
           {#if r || busy}<ProgressButton label="Update" busy={busy ?? null} {pct} onclick={() => store.update(a.id)} />{/if}
         </div>
-        {#if r?.notes.length}
-          <ul class="notes">{#each r.notes as n}<li>{n}</li>{/each}</ul>
+        {#if notes.length}
+          <ul class="notes">{#each notes as n}<li>{n}</li>{/each}</ul>
         {/if}
-        {#if a.website && (r?.hasMoreNotes || !r?.notes.length)}
+        {#if a.website && (r?.hasMoreNotes || extra?.hasMore || !notes.length)}
           <a href={a.website} class="more" onclick={(e) => { e.preventDefault(); api.openUrl(a.website!).catch((err) => store.say("err", err.message)); }}>Full release notes</a>
         {/if}
       </div>

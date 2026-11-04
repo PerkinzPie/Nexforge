@@ -457,6 +457,23 @@ async fn search(installation_id: Option<String>, query: String) -> Res<SearchDto
     })
 }
 
+/// Release notes for an addon's pending update (fetched on demand: bulk
+/// update checks do not carry them for WoWInterface or CurseForge).
+#[tauri::command]
+async fn release_notes(installation_id: String, id: String) -> Res<NotesDto> {
+    let mgr = manager()?;
+    let inst = installation(&mgr, &installation_id)?;
+    let state = load_state(&inst)?;
+    let entry = state
+        .get(&id)
+        .cloned()
+        .ok_or_else(|| err(Error::UnknownAddon(id.clone())))?;
+    let text = mgr.notes(&entry, inst.flavour).await.map_err(err)?;
+    let lines = dto::note_lines(text.as_deref(), 3);
+    let has_more = dto::note_lines(text.as_deref(), 4).len() > lines.len();
+    Ok(NotesDto { lines, has_more })
+}
+
 /// Refill the Browse catalogue (at most daily unless `force`).
 #[tauri::command]
 async fn refresh_catalogue(force: bool) -> Res<CatalogueDto> {
@@ -795,6 +812,7 @@ pub fn run() {
             client_icon,
             refresh_catalogue,
             popular,
+            release_notes,
             addon_info,
             settings,
             save_settings,

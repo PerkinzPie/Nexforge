@@ -187,6 +187,7 @@ pub fn note_lines(changelog: Option<&str>, max: usize) -> Vec<String> {
             l.strip_prefix("- ")
                 .or_else(|| l.strip_prefix("* "))
                 .or_else(|| l.strip_prefix("• "))
+                .or_else(|| l.strip_prefix("[*]"))
         })
         .map(clean)
         .filter(|l| !l.is_empty())
@@ -362,6 +363,13 @@ impl HitDto {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct NotesDto {
+    pub lines: Vec<String>,
+    pub has_more: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CatalogueDto {
     pub total: u64,
     pub refreshed_at: Option<DateTime<Utc>>,
@@ -429,6 +437,14 @@ mod tests {
         assert_eq!(
             note_lines(Some("[b]Hello[/b] world"), 3),
             vec!["Hello world"]
+        );
+        // WoWInterface changelogs are BBCode lists.
+        assert_eq!(
+            note_lines(
+                Some("[list]\n[*]Fixed bars\n[*][b]New[/b] raid\n[/list]"),
+                3
+            ),
+            vec!["Fixed bars", "New raid"]
         );
         assert!(note_lines(None, 3).is_empty());
     }

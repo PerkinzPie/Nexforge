@@ -173,6 +173,46 @@ struct CfFileIndex {
     release_type: u8,
 }
 
+/// CurseForge changelogs are HTML: list items become "- " lines, block
+/// tags become line breaks, other tags are dropped, common entities decoded.
+pub fn html_to_text(html: &str) -> String {
+    let mut out = String::new();
+    let mut rest = html;
+    while let Some(i) = rest.find('<') {
+        out.push_str(&rest[..i]);
+        let Some(j) = rest[i..].find('>') else {
+            rest = &rest[i..];
+            break;
+        };
+        let tag = rest[i + 1..i + j].trim().to_ascii_lowercase();
+        let name = tag
+            .trim_start_matches('/')
+            .split([' ', '/'])
+            .next()
+            .unwrap_or("");
+        match name {
+            "li" if !tag.starts_with('/') => out.push_str("\n- "),
+            "br" | "p" | "div" | "ul" | "ol" | "h1" | "h2" | "h3" | "h4" => out.push('\n'),
+            _ => {}
+        }
+        rest = &rest[i + j + 1..];
+    }
+    out.push_str(rest);
+    let decoded = out
+        .replace("&nbsp;", " ")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&amp;", "&");
+    decoded
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && *l != "-")
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn bad(message: impl ToString) -> Error {
     Error::BadResponse {
         host: "api.curseforge.com".into(),
@@ -236,6 +276,7 @@ fn to_release(f: &CfFile) -> Release {
             .iter()
             .find(|h| h.algo == 2)
             .map(|h| h.value.to_ascii_lowercase()),
+        file_id: Some(f.id.to_string()),
     }
 }
 
@@ -359,6 +400,22 @@ impl Source for CurseForge {
         Ok(files.iter().map(to_release).collect())
     }
 
+    /// `GET /mods/{id}/files/{fileId}/changelog` (HTML), as plain lines.
+    async fn changelog(&self, source_id: &str, release: &Release) -> Result<Option<String>> {
+        let id = check_id(source_id)?;
+        let Some(file) = release.file_id.as_deref() else {
+            return Ok(release.changelog.clone());
+        };
+        let html: String = self
+            .get_json(self.get(
+                &format!("/mods/{id}/files/{file}/changelog"),
+                format!("changelog for CurseForge project {id}"),
+                Duration::from_secs(24 * 3600),
+            ))
+            .await?;
+        Ok(Some(html_to_text(&html)).filter(|t| !t.trim().is_empty()))
+    }
+
     /// `curseforge.com/wow/addons/<slug>` (looked up by slug) or
     /// `curseforge.com/projects/<id>`.
     async fn resolve_url(&self, url: &str) -> Result<Option<String>> {
@@ -437,6 +494,7 @@ impl Source for CurseForge {
                         changelog: None,
                         sha256: None,
                         md5: None,
+                        file_id: None,
                     })
             });
             if let Some(r) = release {
@@ -466,6 +524,10 @@ mod tests {
         assert_eq!(
             version_of("", "DungeonJournal-v1.4.2.zip"),
             "DungeonJournal-v1.4.2"
+        );
+        assert_eq!(
+            html_to_text("<p>v1.4.2</p><ul><li>Fixed <b>quest</b> pins</li><li>Added &quot;Forever&quot; raids &amp; more</li></ul>"),
+            "v1.4.2\n- Fixed quest pins\n- Added \"Forever\" raids & more"
         );
     }
 }

@@ -148,6 +148,7 @@ fn base_release(r: &GhRelease, a: &GhAsset, version: String, flavours: Vec<Flavo
             .and_then(|d| d.strip_prefix("sha256:"))
             .map(str::to_ascii_lowercase),
         md5: None,
+        file_id: None,
     }
 }
 
