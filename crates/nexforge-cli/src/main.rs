@@ -110,9 +110,9 @@ enum Cmd {
     Kept {
         id: String,
     },
-    /// Store, clear or list keys in the OS credential store (github token, curseforge, wago).
+    /// Store, clear, list or test keys in the OS credential store (github token, curseforge, wago).
     Key {
-        #[arg(value_parser = ["set", "clear", "status"])]
+        #[arg(value_parser = ["set", "clear", "status", "test"])]
         action: String,
         #[arg(value_parser = ["github", "wago", "curseforge"])]
         name: Option<String>,
@@ -215,6 +215,7 @@ async fn run(cli: Cli) -> Result<()> {
     match &cli.cmd {
         Cmd::Detect { root, save } => detect(&cli, root, *save),
         Cmd::Toc { path } => toc(path, cli.flavour),
+        Cmd::Key { action, name } if action == "test" => key_test(&cli, name.as_deref()).await,
         Cmd::Key { action, name } => key(&cli, action, name.as_deref()),
         Cmd::Search { query } => {
             let mgr = Manager::open(paths(&cli)?)?;
@@ -386,6 +387,58 @@ async fn search(mgr: &Manager, q: &str, flavour: Flavour) -> Result<()> {
             format!("{}:{}", h.source, h.source_id),
             fl
         );
+    }
+    Ok(())
+}
+
+/// Check the saved CurseForge key: its shape (never the value) and one
+/// request to the API with it.
+async fn key_test(cli: &Cli, name: Option<&str>) -> Result<()> {
+    use nexforge_core::net::{Fetch, Get, Net};
+    if name != Some("curseforge") {
+        bail!("Only the CurseForge key can be tested: `nexforge key test curseforge`.");
+    }
+    let Some(k) = keys::get("curseforge")? else {
+        bail!("No CurseForge key is saved.");
+    };
+    let odd: Vec<char> = k
+        .chars()
+        .filter(|c| c.is_whitespace() || !c.is_ascii() || matches!(c, '"' | '\'' | '`'))
+        .collect();
+    println!("length      {}", k.chars().count());
+    println!(
+        "format      {}",
+        if k.starts_with("$2a$10$") {
+            "starts like a CurseForge key ($2a$10$...)"
+        } else {
+            "does not start with $2a$10$ like CurseForge keys do"
+        }
+    );
+    println!(
+        "odd chars   {}",
+        if odd.is_empty() {
+            "none".to_string()
+        } else {
+            format!("{} (spaces, quotes or non-ASCII)", odd.len())
+        }
+    );
+    let paths = paths(cli)?;
+    let net = Net::new(Some(paths.network_log()), None)?;
+    let url = format!(
+        "{}/games/{}",
+        nexforge_core::sources::curseforge::API,
+        nexforge_core::sources::curseforge::GAME_ID
+    );
+    match net
+        .get_text(
+            Get::new(url, "CurseForge key test")
+                .header("Accept", "application/json")
+                .header("x-api-key", k),
+        )
+        .await
+    {
+        Ok(body) => println!("api         accepted ({} bytes)", body.len()),
+        Err(e) => println!("api         {e}"),
     }
     Ok(())
 }
