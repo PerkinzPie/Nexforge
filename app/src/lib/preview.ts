@@ -16,14 +16,14 @@ const a = (id: string, name: string, author: string, folders: number, source: st
   id, name, author, folders: Array.from({ length: folders }, (_, i) => (i ? `${name}_${i}` : name)),
   source, sourceLabel: { github: "GitHub", wowinterface: "WoWInterface", curseforge: "CurseForge", wago: "Wago" }[source ?? ""] ?? "Unknown",
   sourceId: source ? id : "", version, pinned: false, skippedVersion: "", flavourMismatch: false,
-  managed: source !== null, website: null, iconUrl: null, knownIds: [], ...extra,
+  managed: source !== null, website: null, iconUrl: null, knownIds: [], kept: [], ...extra,
 });
 
 const addons: Addon[] = [
   a("questie", "Questie", "AeroScripts", 4, "github", "10.4.1"),
   a("dbm", "Deadly Boss Mods", "MysticalOS", 9, "github", "11.2.9"),
   a("details", "Details! Damage Meter", "Terciob", 5, "curseforge", "12.4.0"),
-  a("weakauras", "WeakAuras", "WeakAuras team", 5, "github", "5.19.4"),
+  a("weakauras", "WeakAuras", "WeakAuras team", 5, "github", "5.19.4", { kept: ["5.19.3", "5.19.2"] }),
   a("bagnon", "Bagnon", "Tuller", 3, "wowinterface", "11.0.5"),
   a("atlasloot", "AtlasLoot Classic", "Lag123", 6, "github", "3.4.6", { pinned: true, skippedVersion: "3.4.8" }),
   a("leatrix", "Leatrix Plus", "Leatrix", 1, "curseforge", "1.15.84"),
@@ -101,6 +101,15 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
     }
     case "check": await wait(600); return { ...check, checkedAt: new Date().toISOString() };
     case "recent": return recent;
+    case "rollback": {
+      await wait(400);
+      const ad = addons.find((x) => x.id === args.id)!;
+      const to = args.to ?? ad.kept[0];
+      const from = ad.version;
+      ad.kept = [from, ...ad.kept.filter((k) => k !== to)];
+      ad.version = to;
+      return { from, to };
+    }
     case "details": {
       await wait(300);
       const h = hits.find((x) => x.source === args.source && x.sourceId === args.sourceId);

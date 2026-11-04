@@ -133,6 +133,11 @@ async fn snapshot(installation_id: Option<String>, writes: State<'_, Writes>) ->
                 }
             }
             let mut dto = AddonDto::from(a);
+            for k in engine.kept_for(&inst.id, &a.id) {
+                if k.version != a.installed_version && !dto.kept.contains(&k.version) {
+                    dto.kept.push(k.version);
+                }
+            }
             if dto.icon_url.is_none() {
                 dto.icon_url = a
                     .source
@@ -389,6 +394,7 @@ async fn skip(
 async fn rollback(
     installation_id: String,
     id: String,
+    to: Option<String>,
     writes: State<'_, Writes>,
 ) -> Res<RollbackDto> {
     let mgr = manager()?;
@@ -401,7 +407,10 @@ async fn rollback(
         state: &mut state,
         state_path: &path,
     };
-    let (from, to) = mgr.engine().rollback(&mut t, &id, None).map_err(err)?;
+    let (from, to) = mgr
+        .engine()
+        .rollback(&mut t, &id, to.as_deref())
+        .map_err(err)?;
     Ok(RollbackDto { from, to })
 }
 

@@ -11,6 +11,8 @@ export interface Addon {
   source: string | null; sourceLabel: string; sourceId: string; version: string;
   pinned: boolean; skippedVersion: string; flavourMismatch: boolean; managed: boolean;
   website: string | null; iconUrl: string | null; knownIds: [string, string][];
+  /** Kept versions to roll back to, newest first. */
+  kept: string[];
 }
 export interface Settings {
   checkOnLaunch: boolean; autoApply: boolean; keepPreviousVersions: number; selfUpdateCheck: boolean;
@@ -78,7 +80,7 @@ export const api = {
   restore: (installationId: string, id: string) => call<Addon>("restore", { installationId, id }),
   setPinned: (installationId: string, id: string, pinned: boolean) => call<void>("set_pinned", { installationId, id, pinned }),
   skip: (installationId: string, id: string, version: string) => call<void>("skip", { installationId, id, version }),
-  rollback: (installationId: string, id: string) => call<{ from: string; to: string }>("rollback", { installationId, id }),
+  rollback: (installationId: string, id: string, to: string | null = null) => call<{ from: string; to: string }>("rollback", { installationId, id, to }),
   recent: (installationId: string) => call<Recent[]>("recent", { installationId }),
   search: (installationId: string | null, query: string) => call<SearchResult>("search", { installationId, query }),
   image: (url: string) => call<string>("image", { url }),

@@ -5,7 +5,7 @@ import { store } from "../store.svelte";
 const addon = (id: string, extra: Partial<Addon> = {}): Addon => ({
   id, name: id, author: null, folders: [id], source: "github", sourceLabel: "GitHub", sourceId: `o/${id}`,
   version: "1.0", pinned: false, skippedVersion: "", flavourMismatch: false, managed: true,
-  website: null, iconUrl: null, knownIds: [], ...extra,
+  website: null, iconUrl: null, knownIds: [], kept: [], ...extra,
 });
 const status = (id: string, kind: AddonStatus["kind"]): AddonStatus => ({ id, kind, release: null, message: null });
 

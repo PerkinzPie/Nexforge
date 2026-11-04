@@ -248,10 +248,10 @@ class Store {
     await this.load();
   }
 
-  async rollback(id: string, name: string) {
+  async rollback(id: string, name: string, to: string | null = null) {
     const inst = this.current;
     if (!inst) return;
-    const r = await this.run(id, "Rolling back", () => api.rollback(inst, id), (r) =>
+    const r = await this.run(id, "Rolling back", () => api.rollback(inst, id, to), (r) =>
       `Rolled ${name} back to ${r.to}.`,
     );
     if (r) {

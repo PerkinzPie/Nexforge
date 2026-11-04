@@ -174,10 +174,14 @@
               <div class="rel">
                 <div class="rl">
                   <span class="rv">{r.version}</span>
-                  {#if addon && addon.version === r.version}<span class="pill pill-ok">Installed</span>{/if}
+                  {#if addon && addon.version === r.version}<span class="pill pill-ok">Installed</span>
+                  {:else if addon?.kept.includes(r.version)}<span class="pill pill-off">Kept</span>{/if}
                   {#if r.channel !== "stable"}<span class="tag">{r.channel}</span>{/if}
                   <span class="dim small">{[r.publishedAt ? shortDate(r.publishedAt) : "", size(r.size)].filter(Boolean).join(" · ")}</span>
                   <span class="fl">{#each r.flavours as f (f)}<span class="tag" class:on={f === flavour}>{f}</span>{/each}</span>
+                  {#if addon && addon.version !== r.version && addon.kept.includes(r.version)}
+                    <RowMenu label="Actions for {r.version}" items={[{ label: `Roll back to ${r.version}`, run: () => store.rollback(addon.id, addon.name, r.version) }]} />
+                  {/if}
                 </div>
                 {#if r.notes.length}<ul class="notes">{#each r.notes as n}<li>{n}</li>{/each}</ul>{/if}
               </div>

@@ -69,6 +69,8 @@ pub struct AddonDto {
     pub icon_url: Option<String>,
     /// IDs from the TOCs, for "Identify source" suggestions.
     pub known_ids: Vec<(String, String)>,
+    /// Kept versions it can roll back to, newest first (not the installed one).
+    pub kept: Vec<String>,
 }
 
 impl From<&AddonEntry> for AddonDto {
@@ -96,6 +98,7 @@ impl From<&AddonEntry> for AddonDto {
                 _ => None,
             },
             known_ids,
+            kept: vec![],
         }
     }
 }
