@@ -215,9 +215,15 @@ async fn adopt_all(writes: State<'_, Writes>) -> Res<Vec<AdoptedDto>> {
 
 /// Re-adopt the AddOns folder (keeps managed entries as they are).
 #[tauri::command]
+/// Look at the AddOns folder again (addons copied in by hand, or deleted).
+/// Writes addons.toml only when something changed; returns how many addons
+/// are new. Managed entries are never altered, and AddOns is never touched.
 async fn reconcile_now(installation_id: String, writes: State<'_, Writes>) -> Res<usize> {
     let mgr = manager()?;
     let inst = installation(&mgr, &installation_id)?;
+    if !inst.addons_dir().is_dir() {
+        return Ok(0);
+    }
     let _w = writes.0.lock().await;
     let existing = load_state(&inst)?;
     let r = reconcile(
@@ -227,8 +233,26 @@ async fn reconcile_now(installation_id: String, writes: State<'_, Writes>) -> Re
         &mgr.available_sources(),
     )
     .map_err(err)?;
+    let shape = |f: &AddonsFile| {
+        let mut v: Vec<(String, Vec<String>)> = f
+            .addons
+            .iter()
+            .map(|a| (a.id.clone(), a.folders.clone()))
+            .collect();
+        v.sort();
+        v
+    };
+    if shape(&r.file) == shape(&existing) {
+        return Ok(0);
+    }
+    let new = r
+        .file
+        .addons
+        .iter()
+        .filter(|a| existing.get(&a.id).is_none())
+        .count();
     r.file.save(&inst.state_file()).map_err(err)?;
-    Ok(r.adopted.len() + r.unmanaged.len())
+    Ok(new)
 }
 
 #[tauri::command]

@@ -114,7 +114,13 @@ class Store {
     }
     if (this.snap?.adoptedNow) {
       this.say("ok", `Adopted ${this.addons.length} addons.`);
+    } else {
+      await this.rescan();
     }
+    // Back from copying addons in by hand: look again (at most every few seconds).
+    window.addEventListener("focus", () => {
+      if (Date.now() - this.#rescannedAt > 3000) this.rescan();
+    });
     if (this.snap?.settings.checkOnLaunch && this.current) {
       await this.check();
       if (this.snap?.settings.autoApply) await this.updateAll();
@@ -162,7 +168,24 @@ class Store {
   async switchTo(id: string) {
     if (id === this.current) return;
     await this.load(id);
+    await this.rescan();
     if (this.snap?.settings.checkOnLaunch) await this.check();
+  }
+
+  #rescannedAt = 0;
+  /** Pick up addons added to (or removed from) the AddOns folder by hand. */
+  async rescan() {
+    const inst = this.current;
+    if (!inst || this.firstRun) return;
+    this.#rescannedAt = Date.now();
+    try {
+      const added = await api.reconcile(inst);
+      if (inst !== this.current) return;
+      await this.load();
+      if (added) this.say("ok", added === 1 ? "Found 1 new addon." : `Found ${added} new addons.`);
+    } catch {
+      // A folder we can't read stays as it was; the next look tries again.
+    }
   }
 
   async check() {

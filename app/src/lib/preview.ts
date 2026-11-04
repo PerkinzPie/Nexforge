@@ -101,6 +101,7 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
     }
     case "check": await wait(600); return { ...check, checkedAt: new Date().toISOString() };
     case "recent": return recent;
+    case "reconcile_now": return 0;
     case "rollback": {
       await wait(400);
       const ad = addons.find((x) => x.id === args.id)!;
