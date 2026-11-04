@@ -13,6 +13,16 @@
 
   const cards = $derived(store.addons.filter((a) => store.status(a.id)?.kind === "available" || (store.busy[a.id] === "Updating")));
 
+  // Opening Updates before anything was checked (launch checks off, or a
+  // different client) checks once for this client; it only lists updates.
+  let triedFor: string | null = null;
+  $effect(() => {
+    const inst = store.current;
+    if (!inst || store.checkedAt || store.checking || triedFor === inst) return;
+    triedFor = inst;
+    store.check();
+  });
+
   // Bulk update checks carry no notes for WoWInterface or CurseForge; fetch
   // them once per card (keyed by addon and version).
   let fetched = $state<Record<string, { lines: string[]; hasMore: boolean }>>({});
@@ -71,9 +81,18 @@
         {/if}
       </div>
     {:else}
-      <div class="panel empty">
-        {#if !store.checkedAt}Not checked yet.{:else}<span class="ok"><Icon name="check" size={14} stroke={2.6} />All up to date</span>{/if}
-      </div>
+      {#if store.checking && !store.checkedAt}
+        <div class="skcards" aria-busy="true" aria-label="Checking for updates">
+          {#each { length: 2 } as _}
+            <div class="card skcard"><span class="skel" style:width="36px" style:height="36px"></span>
+              <span class="skl"><span class="skel" style:width="40%" style:height="13px"></span><span class="skel" style:width="25%" style:height="11px"></span></span></div>
+          {/each}
+        </div>
+      {:else}
+        <div class="panel empty">
+          {#if !store.checkedAt}Not checked yet.{:else}<span class="ok"><Icon name="check" size={14} stroke={2.6} />All up to date</span>{/if}
+        </div>
+      {/if}
     {/each}
   </div>
 
@@ -107,6 +126,9 @@
   .top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
   .meta { display: flex; flex-direction: column; gap: 2px; margin-right: auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
   .open-card { cursor: pointer; }
+  .skcards { display: flex; flex-direction: column; gap: 12px; }
+  .skcard { flex-direction: row; align-items: center; }
+  .skl { display: flex; flex-direction: column; gap: 7px; flex: 1; }
   .open-card:hover { background: var(--raised); }
   .skels { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 2px 18px; }
   .skels .skel { height: 12px; }
