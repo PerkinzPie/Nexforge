@@ -4,6 +4,7 @@
   import UpdateActions from "../components/UpdateActions.svelte";
   import { clickRow, openDetails } from "../lib/menu";
   import ProgressButton from "../components/ProgressButton.svelte";
+  import RowMenu from "../components/RowMenu.svelte";
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
   import { api } from "../lib/api";
@@ -81,16 +82,19 @@
       <h2 class="h2">Recently updated</h2>
       <div class="panel">
         {#each store.recent as r (r.id)}
-          <div class="row">
-            <Tile name={r.name} size={32} />
-            <div class="rmeta">
+          {@const a = store.addons.find((x) => x.id === r.id)}
+          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (the name button opens it from the keyboard) -->
+          <div class="row" class:open-card={!!a} onclick={(e) => a && clickRow(e, () => openDetails(a))}>
+            <Tile name={r.name} iconUrl={a?.iconUrl ?? null} size={32} />
+            <button type="button" class="rmeta" data-row-open aria-label="Details for {r.name}" disabled={!a}>
               <span class="rn">{r.name}</span>
               <span class="dim small">{r.from} → {r.to} · {when(r.at)}</span>
-            </div>
-            <span class="tag">{r.from} kept</span>
-            <button type="button" class="btn btn-quiet" disabled={!!store.busy[r.id]} onclick={() => store.rollback(r.id, r.name)}>
-              {store.busy[r.id] === "Rolling back" ? "Rolling back…" : "Roll back"}
             </button>
+            {#if store.busy[r.id]}
+              <span class="dim small">{store.busy[r.id]}…</span>
+            {:else}
+              <RowMenu label="More actions for {r.name}" items={[{ label: `Roll back to ${r.from}`, run: () => store.rollback(r.id, r.name) }]} />
+            {/if}
           </div>
         {/each}
       </div>
@@ -112,6 +116,7 @@
   .small { font-size: 11px; }
   .more { font-size: 12px; font-weight: 700; }
   .recent { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
-  .rmeta { display: flex; flex-direction: column; gap: 0; margin-right: auto; }
+  .rmeta { display: flex; flex-direction: column; gap: 0; margin-right: auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .rmeta:disabled { cursor: default; }
   .rn { font-size: 13px; font-weight: 700; }
 </style>

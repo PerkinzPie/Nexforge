@@ -35,13 +35,20 @@ pub fn compare(a: &str, b: &str) -> Option<Ordering> {
             o => return Some(o),
         }
     }
-    // Same numbers: equal if both are plain ("v12.4" vs "12.4.0"), otherwise
-    // the text differs ("1.2.3" vs "1.2.3-beta") and they are unordered.
+    // Same numbers: equal if both are plain ("v12.4" vs "12.4.0", or a file
+    // name around the number, "ForeverDungeonJournal1.6.6.zip" vs "1.6.6"),
+    // otherwise the text differs ("1.2.3" vs "1.2.3-beta") and they are
+    // unordered.
     let plain = |s: &str| {
-        s.trim()
-            .trim_start_matches(['v', 'V'])
-            .chars()
-            .all(|c| c.is_ascii_digit() || c == '.')
+        let s = s.trim();
+        let s = s
+            .strip_suffix(".zip")
+            .or_else(|| s.strip_suffix(".ZIP"))
+            .unwrap_or(s);
+        let Some(start) = s.find(|c: char| c.is_ascii_digit()) else {
+            return false;
+        };
+        s[start..].chars().all(|c| c.is_ascii_digit() || c == '.')
     };
     (plain(a) && plain(b)).then_some(Ordering::Equal)
 }
@@ -75,5 +82,9 @@ mod tests {
         assert!(is_newer("1.2.3-beta", "1.2.3"));
         assert!(is_newer("abc", ""));
         assert!(is_newer("release-b", "release-a"));
+        // A version once recorded as the file name is the same version.
+        assert!(!is_newer("1.6.6", "ForeverDungeonJournal1.6.6.zip"));
+        assert!(is_newer("1.6.7", "ForeverDungeonJournal1.6.6.zip"));
+        assert!(is_newer("1.6.6-beta", "ForeverDungeonJournal1.6.6.zip"));
     }
 }
