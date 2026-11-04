@@ -13,5 +13,5 @@
 </Tip>
 
 <style>
-  .nb { display: inline-flex; flex: 0 0 auto; color: var(--attention); cursor: help; }
+  .nb { display: inline-flex; flex: 0 0 auto; color: var(--attention); }
 </style>
