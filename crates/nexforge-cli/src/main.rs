@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
     about = "A fast, trustworthy WoW addon manager. No account, no telemetry."
 )]
 struct Cli {
-    /// Where Nexforge keeps config, backups and logs (default: %APPDATA%\Nexabyte\Nexforge, or NEXFORGE_HOME).
+    /// Where Nexforge keeps config, backups and logs (default: %LOCALAPPDATA%\Nexabyte\Nexforge, or NEXFORGE_HOME).
     #[arg(long, global = true, value_name = "DIR")]
     data_dir: Option<PathBuf>,
     /// Installation id from config.toml (e.g. forever).

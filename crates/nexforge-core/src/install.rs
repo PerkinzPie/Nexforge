@@ -82,7 +82,12 @@ impl Engine {
 
     /// Kept versions of an addon, newest first.
     pub fn kept_versions(&self, t: &Target<'_>, addon: &str) -> Vec<Kept> {
-        let mut k = Self::read_index(&self.backup_dir(t, addon)).kept;
+        self.kept_for(&t.installation.id, addon)
+    }
+
+    /// Kept versions of an addon in an installation, newest first.
+    pub fn kept_for(&self, installation_id: &str, addon: &str) -> Vec<Kept> {
+        let mut k = Self::read_index(&self.paths.backups(installation_id, addon)).kept;
         k.sort_by_key(|a| std::cmp::Reverse(a.saved_at));
         k
     }

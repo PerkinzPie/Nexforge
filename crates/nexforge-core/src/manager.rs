@@ -289,6 +289,38 @@ impl Manager {
         Ok(Some((from, done)))
     }
 
+    /// An icon or screenshot, from the disk cache (7 days) or an image host.
+    pub async fn image(&self, url: &str) -> Result<crate::net::Image> {
+        use sha2::{Digest, Sha256};
+        let key: String = Sha256::digest(url.as_bytes())[..16]
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        let dir = self.paths.image_cache();
+        let (body, kind) = (dir.join(&key), dir.join(format!("{key}.type")));
+        let fresh = std::fs::metadata(&body)
+            .and_then(|m| m.modified())
+            .ok()
+            .and_then(|t| t.elapsed().ok())
+            .is_some_and(|age| age < std::time::Duration::from_secs(7 * 24 * 3600));
+        if fresh {
+            if let (Ok(bytes), Ok(content_type)) =
+                (std::fs::read(&body), std::fs::read_to_string(&kind))
+            {
+                return Ok(crate::net::Image {
+                    bytes,
+                    content_type,
+                });
+            }
+        }
+        let img = self.fetch.get_image(url, "addon icon").await?;
+        if std::fs::create_dir_all(&dir).is_ok() {
+            let _ = std::fs::write(&body, &img.bytes);
+            let _ = std::fs::write(&kind, &img.content_type);
+        }
+        Ok(img)
+    }
+
     /// Search every enabled source. GitHub answers from the bundled index, so
     /// it never blocks on the network; a failing source is reported, not fatal.
     pub async fn search(

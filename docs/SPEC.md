@@ -161,7 +161,7 @@ Single window, 1280×820 default, min 960×640. Left sidebar (indigo), content o
 Every screen below has a mockup in `docs/mockups/`. Build to the mockup; they are the signed-off design.
 
 ### 4.1 Sidebar
-Crest + "NEXFORGE" wordmark (Jost). Installation switcher card (flavour tile, name, "14 addons · 3 updates"). Nav: Installed (count), Updates (coral badge), Browse, Settings. Footer: last-checked with a status dot, "No account, no telemetry. Network log" link, Nexabyte mark and "NEXABYTE ENTERTAINMENT".
+Crest + "NEXFORGE" wordmark (Jost). Installation switcher card (flavour tile, name, "14 addons · 3 updates"). Nav: Installed (count), Updates (coral badge), Browse, Settings. Footer: last-checked with a status dot, a "Network log" link, Nexabyte mark and "NEXABYTE ENTERTAINMENT". (The "No account, no telemetry" line was dropped from the UI on 2026-11-04; the promise stands, it just is not shown.)
 
 ### 4.2 Installed (`Main`)
 Header: title, "addons.toml is in sync" line, Filter input, Check now, Update all (n).
@@ -174,7 +174,7 @@ One card per update: icon, name, `old → new`, source, released date + size, re
 
 ### 4.4 Browse
 Header with "Local index of 4 sources · n addons · refreshed x ago", Install from URL.
-Big search input. Source chips (All, GitHub, Wago, WoWInterface, CurseForge) + "Forever builds only" checkbox (on by default). Results: icon, name, author, source dot + "also on …", summary, updated/version/downloads, Install / Installed / "Install anyway" when only another flavour exists. Below: "Popular for Forever this week" card row (from Wago popular + WoWInterface top downloads).
+Big search input. Source chips (All, GitHub, Wago, WoWInterface, CurseForge) + a "Builds for" dropdown listing the player's installed clients plus "Any flavour" (default: the current installation). Picking a client filters to its builds and makes it the install target, the same switch as the sidebar (changed from a "Forever builds only" checkbox on 2026-11-04). Results: icon, name, author, source dot + "also on …", summary, updated/version/downloads, Install / Installed / "Install anyway" when only another flavour exists. Below: "Popular for Forever this week" card row (from Wago popular + WoWInterface top downloads).
 
 ### 4.5 Settings
 Game installations (flavour tile, path, Detected pill, Change; Add installation). Updates (check on launch ON, auto-apply OFF, keep previous versions = 3). Sources (GitHub, WoWInterface enabled; Wago key saved/Replace; CurseForge No key/Add key, with the opt-out caveat). Privacy and diagnostics (self-update check OFF, Open log, Open data folder). About panel on indigo with the Nexabyte wordmark.

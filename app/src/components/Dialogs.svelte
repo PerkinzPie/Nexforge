@@ -1,0 +1,131 @@
+<script lang="ts">
+  // Install from URL / Identify source / Remove / API key / Install anyway.
+  import Icon from "./Icon.svelte";
+  import { api } from "../lib/api";
+  import { store } from "../lib/store.svelte";
+
+  let value = $state("");
+  let working = $state(false);
+  let error = $state<string | null>(null);
+  let input = $state<HTMLInputElement | null>(null);
+
+  const d = $derived(store.dialog);
+  const flavour = $derived(store.snap?.flavourShort ?? "Forever");
+
+  $effect(() => {
+    if (!d) return;
+    error = null;
+    working = false;
+    value = d.kind === "install" ? (d.initial ?? suggestion(d.adopt)) : "";
+    queueMicrotask(() => input?.focus());
+  });
+
+  function suggestion(a: typeof store.addons[number] | undefined): string {
+    if (!a) return "";
+    // A host ID from the addon's own TOC is the best first guess.
+    const known = a.knownIds.find(([s]) => s !== "wago" && (s !== "curseforge" || store.snap?.sourcesOn.includes("curseforge")));
+    return known ? `${known[0]}:${known[1]}` : "";
+  }
+
+  function close() {
+    if (!working) store.dialog = null;
+  }
+
+  async function submit(e: SubmitEvent) {
+    e.preventDefault();
+    if (!d || working) return;
+    working = true;
+    error = null;
+    try {
+      if (d.kind === "install") {
+        const spec = value.trim();
+        if (!spec) throw new Error("Paste a link or type an addon name.");
+        store.dialog = null;
+        const ok = await store.install(spec, d.adopt ?? null, false);
+        if (!ok && store.toast?.text.includes("No release of")) {
+          store.dialog = { kind: "anyway", spec, name: spec };
+          store.toast = null;
+        }
+        return;
+      }
+      if (d.kind === "anyway") {
+        store.dialog = null;
+        await store.install(d.spec, null, true);
+        return;
+      }
+      if (d.kind === "remove") {
+        store.dialog = null;
+        await store.remove(d.addon);
+        return;
+      }
+      if (d.kind === "key") {
+        const s = await api.setKey(d.name, value);
+        if (store.snap) store.snap.settings = s;
+        store.dialog = null;
+        store.say("ok", d.name === "curseforge" ? "CurseForge key saved to Windows Credential Manager. CurseForge is on." : "GitHub token saved to Windows Credential Manager.");
+        await store.load();
+      }
+    } catch (err) {
+      error = (err as Error).message;
+    } finally {
+      working = false;
+    }
+  }
+</script>
+
+{#if d}
+  <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) close(); }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="dlg-title" class="dlg-wrap">
+    <form class="dlg" onsubmit={submit}>
+      <div class="head">
+        <h2 id="dlg-title">
+          {#if d.kind === "install"}{d.adopt ? `Identify source for ${d.adopt.name}` : "Install from URL"}
+          {:else if d.kind === "remove"}Remove {d.addon.name}?
+          {:else if d.kind === "key"}{d.name === "curseforge" ? "CurseForge API key" : "GitHub token"}
+          {:else}No {flavour} build listed{/if}
+        </h2>
+        <button type="button" class="btn btn-icon" aria-label="Close" onclick={close}><Icon name="x" /></button>
+      </div>
+
+      {#if d.kind === "install"}
+        <p class="dim">Paste a GitHub, WoWInterface or CurseForge address, type <span class="mono">github:owner/repo</span> or <span class="mono">wowi:12345</span>, or an addon name from Browse.
+          {#if d.adopt}Its folders ({d.adopt.folders.join(", ")}) will be backed up and replaced by the release you pick.{/if}</p>
+        <label class="sr" for="dlg-in">Address or name</label>
+        <input id="dlg-in" class="text-input" bind:this={input} bind:value placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false" />
+      {:else if d.kind === "remove"}
+        <p class="dim">Deletes {d.addon.folders.length === 1 ? "the folder" : `its ${d.addon.folders.length} folders`} ({d.addon.folders.join(", ")}) from AddOns. A zip copy is kept in the data folder first. Your settings in WTF are not touched.</p>
+      {:else if d.kind === "key"}
+        <p class="dim">{d.name === "curseforge"
+          ? "Stored in Windows Credential Manager, never in a file. Some authors do not allow downloads outside the CurseForge app; those addons show as unavailable."
+          : "Optional. Raises GitHub's limit from 60 to 5,000 requests an hour. Stored in Windows Credential Manager."}</p>
+        <label class="sr" for="dlg-key">Key</label>
+        <input id="dlg-key" class="text-input" type="password" bind:this={input} bind:value autocomplete="off" spellcheck="false" />
+      {:else}
+        <p class="dim">The host does not say this release runs on {flavour}. Install the newest release anyway? It may not load in game.</p>
+      {/if}
+
+      {#if error}<p class="err" role="alert">{error}</p>{/if}
+
+      <div class="actions">
+        <button type="button" class="btn" onclick={close} disabled={working}>Cancel</button>
+        <button type="submit" class="btn btn-primary" disabled={working}>
+          {#if d.kind === "install"}Install{:else if d.kind === "remove"}Remove{:else if d.kind === "key"}Save key{:else}Install anyway{/if}
+        </button>
+      </div>
+    </form>
+    </div>
+  </div>
+{/if}
+
+<svelte:window onkeydown={(e) => { if (d && e.key === "Escape") close(); }} />
+
+<style>
+  .scrim { position: fixed; inset: 0; z-index: 50; background: rgba(8, 8, 14, 0.6); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .dlg-wrap { width: 520px; max-width: 100%; }
+  .dlg { width: 100%; max-width: 100%; display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); }
+  .head { display: flex; align-items: center; gap: 12px; }
+  h2 { margin: 0 auto 0 0; font-size: 16px; font-weight: 800; }
+  p { margin: 0; line-height: 1.55; }
+  .err { color: var(--accent-text); font-weight: 600; }
+  .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+</style>

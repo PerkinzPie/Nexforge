@@ -3,3 +3,4 @@
 /app/dist
 /app/src-tauri/target
 *.log
+/app/src-tauri/gen
