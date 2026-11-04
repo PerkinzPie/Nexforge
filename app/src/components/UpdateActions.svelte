@@ -13,7 +13,7 @@
 <Tip text={store.checkedAt ? `Last refreshed ${ago(store.checkedAt)}` : "Not refreshed yet"} side="bottom">
   {#snippet children({ props })}
     <button {...mergeProps(props, { onclick: () => store.refresh() })} type="button" class="btn" disabled={store.checking || !store.current}>
-      <Icon name="refresh" size={15} stroke={2.2} />{store.checking ? "Refreshing…" : "Refresh"}
+      <Icon name="refresh" size={15} stroke={2.2} />Refresh
     </button>
   {/snippet}
 </Tip>
