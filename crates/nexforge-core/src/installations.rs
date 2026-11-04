@@ -167,6 +167,9 @@ pub fn detect_in(root: &Path) -> (Vec<Installation>, Vec<Skipped>) {
 
 /// Likely `World of Warcraft` roots on this machine.
 pub fn default_roots() -> Vec<PathBuf> {
+    // Only Windows and macOS have known install locations; elsewhere the
+    // player points Nexforge at the folder.
+    #[cfg_attr(not(any(windows, target_os = "macos")), allow(unused_mut))]
     let mut out = Vec::new();
     #[cfg(windows)]
     {
