@@ -25,7 +25,7 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy -p nexforge-core -p nexforge-cli --all-targets -- -D warnings
       # Tests use recorded fixtures only; no live network.
-      - run: cargo test -p nexforge-core -p nexforge-cli
+      - run: cargo test -p nexforge-core -p nexforge-cli --no-fail-fast
 
   app:
     name: Desktop app (Windows)

@@ -348,7 +348,11 @@ channel = "stable"
         .unwrap();
         assert_eq!(c.keep_previous_versions, 3);
         assert!(c.sources.github && !c.sources.curseforge);
-        assert!(c.installations[0].path.ends_with("_forever_"));
+        // Compare as text: a Windows path is one component on other systems.
+        assert!(c.installations[0]
+            .path
+            .to_string_lossy()
+            .ends_with(r"World of Warcraft\_forever_"));
     }
 
     #[test]
