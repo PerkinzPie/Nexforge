@@ -377,11 +377,18 @@ impl Source for CurseForge {
 
     async fn resolve(&self, source_id: &str) -> Result<AddonInfo> {
         let m = self.get_mod(check_id(source_id)?).await?;
+        // (full, thumbnail) per screenshot; the full image stands in for a missing thumbnail.
+        let (screenshots, screenshot_thumbs) = m
+            .screenshots
+            .into_iter()
+            .filter_map(|s| s.url.map(|u| (u.clone(), s.thumbnail_url.unwrap_or(u))))
+            .unzip();
         Ok(AddonInfo {
             name: m.name,
             authors: m.authors.into_iter().map(|a| a.name).collect(),
             icon_url: m.logo.and_then(|l| l.thumbnail_url.or(l.url)),
-            screenshots: m.screenshots.into_iter().filter_map(|s| s.url).collect(),
+            screenshots,
+            screenshot_thumbs,
             summary: m.summary,
             description: None,
             url: m.links.and_then(|l| l.website_url),

@@ -131,7 +131,7 @@
                   {#if store.checking}<span class="skel pillskel" aria-label="Checking"></span>{:else}<span class="quiet">Not checked</span>{/if}
                 {/if}
               </td>
-              <td><RowMenu label="More actions for {a.name}" items={addonMenu(a)} /></td>
+              <td class="actions"><RowMenu label="More actions for {a.name}" items={addonMenu(a)} /></td>
             </tr>
           {/each}
         </tbody>

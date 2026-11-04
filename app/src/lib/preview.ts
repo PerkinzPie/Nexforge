@@ -107,7 +107,8 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
       const ad = addons.find((x) => x.source === args.source && x.sourceId === args.sourceId);
       const name = h?.name ?? ad?.name ?? String(args.sourceId);
       return {
-        name, authors: h?.authors ?? (ad?.author ? [ad.author] : []), iconUrl: h?.iconUrl ?? null, screenshots: [],
+        name, authors: h?.authors ?? (ad?.author ? [ad.author] : []), iconUrl: h?.iconUrl ?? null,
+        screenshots: [1, 2, 3, 4, 5].map((n) => `preview://shot/${n}`), screenshotThumbs: [1, 2, 3, 4, 5].map((n) => `preview://shot/${n}`),
         summary: h?.summary ?? null,
         about: [h?.summary ?? `${name} for World of Warcraft.`, "Sample description paragraph from the host, shown in the browser preview only."],
         url: `https://example.invalid/${args.sourceId}`,
@@ -140,7 +141,15 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
     case "restore": { await wait(600); if (removed) addons.push(removed); return removed; }
     case "skip": return null;
     case "set_pinned": { const x = addons.find((y) => y.id === args.id); if (x) x.pinned = args.pinned; return null; }
-    case "image": throw new Error("no images in preview");
+    case "image": {
+      // Sample screenshots for the browser preview: a tinted frame with its number.
+      const m = /^preview:\/\/shot\/(\d+)$/.exec(String(args.url));
+      if (!m) throw new Error("no images in preview");
+      await wait(250);
+      const hue = [210, 160, 30, 280, 350][(Number(m[1]) - 1) % 5];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><rect width="1280" height="720" fill="hsl(${hue} 30% 22%)"/><rect x="80" y="80" width="420" height="260" rx="8" fill="hsl(${hue} 30% 32%)"/><text x="640" y="400" font-family="sans-serif" font-size="96" fill="hsl(${hue} 40% 75%)" text-anchor="middle">Screenshot ${m[1]}</text></svg>`;
+      return `data:image/svg+xml;base64,${btoa(svg)}`;
+    }
     case "self_update": return settings.selfUpdateCheck ? { version: "0.2.0", url: "https://github.com/PerkinzPie/Nexforge/releases" } : null;
     case "refresh_catalogue": await wait(300); return { total: 8264, refreshedAt: new Date().toISOString(), errors: [] };
     case "popular": return args.source ? hits.filter((h) => h.source === args.source) : hits.filter((h) => h.forFlavour).map((h) => ({ ...h }));

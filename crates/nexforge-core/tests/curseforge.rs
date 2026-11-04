@@ -113,6 +113,11 @@ async fn releases_flavours_and_search() {
         .unwrap()
         .starts_with("https://media.forgecdn.net/"));
     assert_eq!(info.screenshots.len(), 1);
+    assert_eq!(
+        info.screenshot_thumbs.len(),
+        1,
+        "one thumbnail per screenshot"
+    );
 
     let hits = cf.search("dungeon", Flavour::Forever).await.unwrap();
     assert_eq!(hits[0].source_id, "1707971");

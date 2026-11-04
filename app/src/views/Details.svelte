@@ -1,6 +1,7 @@
 <script lang="ts">
   // One addon: what it is, its screenshots, versions, and the same actions as
   // its row. Paints from what the row already knew, then fills in from the host.
+  import Gallery from "../components/Gallery.svelte";
   import Icon from "../components/Icon.svelte";
   import Image from "../components/Image.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
@@ -16,7 +17,14 @@
 
   let info = $state<Details | null>(null);
   let error = $state<string | null>(null);
-  let shot = $state<string | null>(null);
+  let galleryOpen = $state(false);
+  let galleryAt = $state(0);
+  const shots = $derived(info?.screenshots ?? []);
+  const thumbs = $derived(info && info.screenshotThumbs.length === shots.length ? info.screenshotThumbs : shots);
+  function view(i: number) {
+    galleryAt = i;
+    galleryOpen = true;
+  }
 
   $effect(() => {
     const t = target;
@@ -71,7 +79,13 @@
   </button>
 
   <header class="head">
-    <Tile name={target.name} iconUrl={info?.iconUrl ?? target.iconUrl} size={64} unknown={!target.source} />
+    {#if shots.length}
+      <button type="button" class="art" aria-label="View screenshots of {target.name}" onclick={() => view(0)}>
+        <Tile name={target.name} iconUrl={info?.iconUrl ?? target.iconUrl} size={64} />
+      </button>
+    {:else}
+      <Tile name={target.name} iconUrl={info?.iconUrl ?? target.iconUrl} size={64} unknown={!target.source} />
+    {/if}
     <div class="who">
       <h1 class="h1">{info?.name ?? target.name}</h1>
       <span class="by">
@@ -111,14 +125,22 @@
     <div class="notice err"><Icon name="warn" size={16} /><span>{error}</span></div>
   {/if}
 
-  {#if info?.screenshots.length}
-    <ul class="shots" aria-label="Screenshots">
-      {#each info.screenshots as url, i (url)}
-        <li><button type="button" class="shot skel" aria-label="Screenshot {i + 1}" onclick={() => (shot = url)}>
-          <Image {url} alt="" />
-        </button></li>
-      {/each}
-    </ul>
+  {#if shots.length}
+    <section class="block" aria-labelledby="shots-h">
+      <h2 class="h2" id="shots-h">Screenshots <span class="dim n">{shots.length}</span></h2>
+      <ul class="shots">
+        {#each thumbs as url, i (i)}
+          <li><button type="button" class="shot" aria-label="View screenshot {i + 1} of {shots.length}" onclick={() => view(i)}>
+            <Image {url} alt="" />
+          </button></li>
+        {/each}
+      </ul>
+    </section>
+  {:else if target.source && !info && !error}
+    <section class="block" aria-busy="true" aria-label="Loading screenshots">
+      <h2 class="h2">Screenshots</h2>
+      <ul class="shots">{#each { length: 3 } as _}<li><span class="shot skel"></span></li>{/each}</ul>
+    </section>
   {/if}
 
   <div class="cols">
@@ -193,13 +215,7 @@
   </div>
 </div>
 
-{#if shot}
-  <div class="lightbox" role="presentation" onclick={() => (shot = null)}>
-    <Image url={shot} alt="Screenshot" />
-  </div>
-{/if}
-
-<svelte:window onkeydown={(e) => { if (shot && e.key === "Escape") shot = null; }} />
+<Gallery bind:open={galleryOpen} bind:index={galleryAt} images={shots} {thumbs} name={info?.name ?? target.name} />
 
 <style>
   .back { align-self: flex-start; margin: -8px 0 -8px -10px; gap: 4px; }
@@ -211,7 +227,10 @@
   .acts { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
   .nobuild { font-size: 12px; font-weight: 600; color: var(--attention); }
   .shots { display: flex; gap: 10px; margin: 0; padding: 0 0 6px; list-style: none; overflow-x: auto; }
-  .shot { flex: 0 0 auto; width: 240px; height: 135px; padding: 0; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); overflow: hidden; cursor: zoom-in; }
+  .shot { display: block; flex: 0 0 auto; width: 224px; height: 126px; padding: 0; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); overflow: hidden; cursor: zoom-in; }
+  .shot:hover { border-color: var(--text-3); }
+  .h2 .n { font-weight: 600; margin-left: 4px; }
+  .art { display: flex; padding: 0; border: 0; background: none; border-radius: 8px; cursor: zoom-in; }
   .cols { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 20px; align-items: start; }
   .main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
   .block { display: flex; flex-direction: column; gap: 8px; }
@@ -229,6 +248,4 @@
   .fact { display: flex; flex-direction: column; gap: 0; padding: 6px 14px; }
   dt { font-size: 11px; color: var(--text-2); }
   dd { margin: 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
-  .lightbox { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 40px; background: rgba(0, 0, 0, 0.85); cursor: zoom-out; }
-  .lightbox :global(img) { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--r-md); }
 </style>

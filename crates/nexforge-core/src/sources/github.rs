@@ -316,6 +316,7 @@ impl Source for GitHub {
             // GitHub has no addon screenshots.
             icon_url: r.owner.avatar_url,
             screenshots: vec![],
+            screenshot_thumbs: vec![],
             summary: r.description,
             description: None,
             url: Some(r.html_url),

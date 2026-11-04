@@ -142,6 +142,9 @@ pub struct AddonInfo {
     /// Full-size screenshots, if the host lists any.
     #[serde(default)]
     pub screenshots: Vec<String>,
+    /// Small versions of `screenshots`, same order; empty if the host has none.
+    #[serde(default)]
+    pub screenshot_thumbs: Vec<String>,
     pub summary: Option<String>,
     /// The host's long description (may hold markup), for the details view.
     #[serde(default)]

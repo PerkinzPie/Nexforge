@@ -445,6 +445,8 @@ pub struct DetailsDto {
     pub authors: Vec<String>,
     pub icon_url: Option<String>,
     pub screenshots: Vec<String>,
+    /// Same order as `screenshots`; empty means use the full images.
+    pub screenshot_thumbs: Vec<String>,
     pub summary: Option<String>,
     pub about: Vec<String>,
     pub url: Option<String>,

@@ -43,7 +43,7 @@ export interface Hit {
 export interface SearchResult { hits: Hit[]; errors: SourceError[] }
 export interface HistoryItem { version: string; publishedAt: string | null; size: number | null; channel: string; flavours: string[]; notes: string[] }
 export interface Details {
-  name: string; authors: string[]; iconUrl: string | null; screenshots: string[]; summary: string | null;
+  name: string; authors: string[]; iconUrl: string | null; screenshots: string[]; screenshotThumbs: string[]; summary: string | null;
   about: string[]; url: string | null; releases: HistoryItem[];
 }
 export interface Adopted { installation: Installation; addons: number; managed: number }

@@ -727,6 +727,7 @@ async fn details(source: String, source_id: String) -> Res<DetailsDto> {
         name: info.name,
         authors: info.authors,
         icon_url: info.icon_url,
+        screenshot_thumbs: info.screenshot_thumbs.into_iter().take(12).collect(),
         screenshots: info.screenshots.into_iter().take(12).collect(),
         summary: info.summary,
         url: info.url,

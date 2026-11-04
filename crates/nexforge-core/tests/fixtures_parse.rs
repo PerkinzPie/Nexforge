@@ -324,6 +324,10 @@ async fn wowinterface_details_and_batch() {
         info.screenshots,
         vec!["https://cdn-wow.mmoui.com/preview/pvw75842.jpg"]
     );
+    assert_eq!(
+        info.screenshot_thumbs,
+        vec!["https://cdn-wow.mmoui.com/preview/tiny/pvw75842.jpg"]
+    );
     assert!(nexforge_core::net::image_host_allowed("cdn-wow.mmoui.com"));
 
     // No Forever compatibility listed yet (pre-launch), so nothing for Forever.

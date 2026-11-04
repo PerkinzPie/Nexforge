@@ -202,18 +202,23 @@ impl Source for WowInterface {
             list.into_iter()
                 .find(|e| s(e, "UID").as_deref() == Some(source_id))
         });
-        let (icon_url, screenshots) = match &entry {
-            Some(e) => (
-                images(e, "UIIMG_Thumbs").into_iter().next(),
-                images(e, "UIIMGs"),
-            ),
-            None => (None, vec![]),
+        let (screenshots, thumbs) = match &entry {
+            Some(e) => (images(e, "UIIMGs"), images(e, "UIIMG_Thumbs")),
+            None => (vec![], vec![]),
+        };
+        let icon_url = thumbs.first().cloned();
+        // Thumbnails line up with full images only when the counts match.
+        let screenshot_thumbs = if thumbs.len() == screenshots.len() {
+            thumbs
+        } else {
+            vec![]
         };
         Ok(AddonInfo {
             name: s(&d, "UIName").unwrap_or_else(|| source_id.to_string()),
             authors: s(&d, "UIAuthorName").into_iter().collect(),
             icon_url,
             screenshots,
+            screenshot_thumbs,
             summary: s(&d, "UIDescription").map(|t| t.chars().take(300).collect()),
             description: s(&d, "UIDescription"),
             url: Some(format!(
