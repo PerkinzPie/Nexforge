@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
+  import RowMenu from "../components/RowMenu.svelte";
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
   import { api, type Hit } from "../lib/api";
@@ -45,14 +46,7 @@
   });
 
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
-
-  // "Install anyway" says what it installs: the nearest build that is listed.
-  const ORDER = ["Classic Era", "Anniversary", "Forever", "Retail"];
-  function otherBuild(h: Hit): string {
-    const pick = ORDER.find((f) => h.flavours.includes(f)) ?? h.flavours[0];
-    return pick ? `Install ${pick} build` : "Install anyway";
-  }
-  const anywayTip = $derived(`No ${flavour} build is listed. It may not load in ${flavour}.`);
+  const noBuild = (h: Hit) => !h.forFlavour && !h.flavourUnknown;
   const on = $derived(store.snap?.sourcesOn ?? []);
 
   // Debounced search; the GitHub index answers instantly, hosts in place.
@@ -165,8 +159,11 @@
             <div class="pt"><span class="pn">{h.name}</span>{#if h.authors.length}<span class="dim tiny">{h.authors[0]}</span>{/if}</div>
             {#if h.installed}
               <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
-            {:else if !h.forFlavour && !h.flavourUnknown}
-              <ProgressButton label={otherBuild(h)} tip={anywayTip} ghost busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, true)} />
+            {:else if noBuild(h) && !store.busy[h.spec]}
+              <div class="pa">
+                <span class="nobuild">No {flavour} build</span>
+                <RowMenu label="More actions for {h.name}" items={[{ label: "Install anyway", run: () => install(h, true) }]} />
+              </div>
             {:else}
               <ProgressButton label="Install" busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, false)} />
             {/if}
@@ -185,7 +182,7 @@
         {#each shown as h (h.spec)}
           {@const busy = store.busy[h.spec]}
           {@const pct = store.progress[h.spec]}
-          <div class="row">
+          <div class="row hit">
             <Tile name={h.name} iconUrl={h.iconUrl} size={40} />
             <div class="body">
               <span class="line">
@@ -194,8 +191,8 @@
                 <SourceTag label={h.sourceLabel} />
                 {#each h.alsoOn as o (o)}<SourceTag label={o} muted />{/each}
               </span>
-              {#if h.summary}<span class="desc">{h.summary}</span>{/if}
-              {#if !h.forFlavour && !h.flavourUnknown}
+              {#if h.summary}<span class="desc" title={h.summary}>{h.summary}</span>{/if}
+              {#if noBuild(h)}
                 <span class="nobuild">No {flavour} build</span>
               {:else}
                 <span class="dim tiny">
@@ -203,13 +200,15 @@
                 </span>
               {/if}
             </div>
-            {#if h.installed}
-              <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
-            {:else if !h.forFlavour && !h.flavourUnknown}
-              <ProgressButton label={otherBuild(h)} tip={anywayTip} ghost busy={busy ?? null} {pct} onclick={() => install(h, true)} />
-            {:else}
-              <ProgressButton label="Install" busy={busy ?? null} {pct} onclick={() => install(h, false)} />
-            {/if}
+            <div class="act">
+              {#if h.installed}
+                <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
+              {:else if noBuild(h) && !busy}
+                <RowMenu label="More actions for {h.name}" items={[{ label: "Install anyway", run: () => install(h, true) }]} />
+              {:else}
+                <ProgressButton label="Install" busy={busy ?? null} {pct} onclick={() => install(h, noBuild(h))} />
+              {/if}
+            </div>
           </div>
         {/each}
       </div>
@@ -238,7 +237,18 @@
   .results { display: flex; flex-direction: column; gap: 10px; }
   .count { font-size: 12.5px; font-weight: 600; }
   .body { display: flex; flex-direction: column; gap: 4px; flex: 1 1 300px; min-width: 0; }
-  .line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  /* Every result row is the same height whatever it holds: one line each for
+     name, summary and details, centred in a fixed box. */
+  .hit { flex-wrap: nowrap; }
+  .hit .body { height: 68px; justify-content: center; }
+  .hit .line { height: 22px; }
+  .hit .body > .tiny, .hit .body > .nobuild { line-height: 18px; }
+  .hit .desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .line { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; min-width: 0; overflow: hidden; }
+  .line > :global(*) { flex-shrink: 0; }
+  .line .n, .line .small { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .act { flex: 0 0 auto; min-width: 104px; display: flex; justify-content: flex-end; }
+  .pa { display: flex; align-items: center; justify-content: space-between; gap: 8px; align-self: stretch; }
   .n { font-size: 14.5px; font-weight: 800; }
   .small { font-size: 12px; }
   .tiny { font-size: 11.5px; }

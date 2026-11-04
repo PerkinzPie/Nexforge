@@ -7,7 +7,6 @@
     pct = null,
     ghost = false,
     disabled = false,
-    tip = undefined,
     onclick,
   }: {
     label: string;
@@ -15,8 +14,6 @@
     pct?: number | null;
     ghost?: boolean;
     disabled?: boolean;
-    /** Tooltip (shown on hover and focus). */
-    tip?: string;
     onclick: () => void;
   } = $props();
 
@@ -31,7 +28,7 @@
     <span class="txt">{text}</span>
   </span>
 {:else}
-  <button type="button" class="btn" class:btn-row={!ghost} class:btn-ghost={ghost} {disabled} {onclick} data-tip={tip}>{label}</button>
+  <button type="button" class="btn" class:btn-row={!ghost} class:btn-ghost={ghost} {disabled} {onclick}>{label}</button>
 {/if}
 
 <style>
