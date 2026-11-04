@@ -8,6 +8,7 @@
   import Installed from "./views/Installed.svelte";
   import Settings from "./views/Settings.svelte";
   import Updates from "./views/Updates.svelte";
+  import Welcome from "./views/Welcome.svelte";
 
   let filterInput = $state<HTMLInputElement>();
   let searchInput = $state<HTMLInputElement>();
@@ -45,6 +46,8 @@
       <div class="page"><div class="notice err"><span>{store.loadError}</span></div></div>
     {:else if !store.snap}
       <!-- Local state loads in milliseconds; no spinner. -->
+    {:else if store.firstRun}
+      <Welcome />
     {:else if store.view === "installed"}
       <Installed bind:filterInput />
     {:else if store.view === "updates"}

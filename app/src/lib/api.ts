@@ -21,7 +21,7 @@ export interface Settings {
 export interface Snapshot {
   installations: Installation[]; current: string | null;
   flavour: string; flavourLabel: string; flavourShort: string;
-  addons: Addon[]; stateExists: boolean; addonsDirExists: boolean; adoptedNow: boolean;
+  addons: Addon[]; stateExists: boolean; addonsDirExists: boolean; adoptedNow: boolean; firstRun: boolean;
   lastRun: { at: string; count: number } | null;
   settings: Settings; sourcesOn: string[];
 }
@@ -41,6 +41,7 @@ export interface Hit {
   downloads: number | null; updatedAt: string | null; iconUrl: string | null; installed: boolean; alsoOn: string[];
 }
 export interface SearchResult { hits: Hit[]; errors: SourceError[] }
+export interface Adopted { installation: Installation; addons: number; managed: number }
 export interface CatalogueInfo { total: number; refreshedAt: string | null; errors: SourceError[] }
 export type SettingsInput = Pick<Settings, "checkOnLaunch" | "autoApply" | "keepPreviousVersions" | "selfUpdateCheck" | "github" | "wowinterface" | "curseforge">;
 
@@ -62,6 +63,7 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 export const api = {
   snapshot: (installationId: string | null) => call<Snapshot>("snapshot", { installationId }),
   reconcile: (installationId: string) => call<number>("reconcile_now", { installationId }),
+  adoptAll: () => call<Adopted[]>("adopt_all"),
   check: (installationId: string) => call<CheckResult>("check", { installationId }),
   update: (installationId: string, id: string) => call<Addon | null>("update", { installationId, id }),
   install: (installationId: string, spec: string, adopt: string | null, anyway: boolean) =>

@@ -67,6 +67,9 @@ fn load_state(inst: &Installation) -> Res<AddonsFile> {
 #[tauri::command]
 async fn snapshot(installation_id: Option<String>, writes: State<'_, Writes>) -> Res<Snapshot> {
     let mut mgr = manager()?;
+    // First run: no config yet. The UI shows the welcome screen, which
+    // adopts every client (see `adopt_all`).
+    let first_run = !mgr.paths.config_file().exists();
     ensure_installations(&mut mgr)?;
     let installs: Vec<InstallationDto> = mgr
         .config
@@ -84,13 +87,16 @@ async fn snapshot(installation_id: Option<String>, writes: State<'_, Writes>) ->
                 .map(|i| i.id.clone())
         });
     let Some(current) = current else {
-        return Ok(Snapshot::empty(installs, settings_dto(&mgr)));
+        let mut s = Snapshot::empty(installs, settings_dto(&mgr));
+        s.first_run = first_run;
+        return Ok(s);
     };
     let inst = installation(&mgr, &current)?;
     let mut adopted_now = false;
     // First open of an installation: adopt its AddOns folder. Reconcile only
-    // writes addons.toml; it never moves or deletes anything.
-    if !inst.state_file().exists() && inst.addons_dir().is_dir() {
+    // writes addons.toml; it never moves or deletes anything. On first run
+    // the welcome screen does this for every client instead.
+    if !first_run && !inst.state_file().exists() && inst.addons_dir().is_dir() {
         let _w = writes.0.lock().await;
         if !inst.state_file().exists() {
             let r = reconcile(
@@ -150,6 +156,7 @@ async fn snapshot(installation_id: Option<String>, writes: State<'_, Writes>) ->
         state_exists: inst.state_file().exists(),
         addons_dir_exists: inst.addons_dir().is_dir(),
         adopted_now,
+        first_run,
         last_run,
         settings: settings_dto(&mgr),
         sources_on: mgr
@@ -158,6 +165,47 @@ async fn snapshot(installation_id: Option<String>, writes: State<'_, Writes>) ->
             .map(|s| s.as_str().to_string())
             .collect(),
     })
+}
+
+/// First run: adopt every client's AddOns folder that has no addons.toml yet.
+/// Reconcile only writes addons.toml; nothing in AddOns is moved or deleted.
+#[tauri::command]
+async fn adopt_all(writes: State<'_, Writes>) -> Res<Vec<AdoptedDto>> {
+    let mut mgr = manager()?;
+    ensure_installations(&mut mgr)?;
+    let _w = writes.0.lock().await;
+    let mut out = Vec::new();
+    for c in &mgr.config.installations {
+        let inst = Installation::from_config(c);
+        if !inst.addons_dir().is_dir() {
+            out.push(AdoptedDto {
+                installation: InstallationDto::from(&inst),
+                addons: 0,
+                managed: 0,
+            });
+            continue;
+        }
+        let existing = load_state(&inst)?;
+        let file = if inst.state_file().exists() {
+            existing
+        } else {
+            let r = reconcile(
+                &inst.addons_dir(),
+                inst.flavour,
+                &existing,
+                &mgr.available_sources(),
+            )
+            .map_err(err)?;
+            r.file.save(&inst.state_file()).map_err(err)?;
+            r.file
+        };
+        out.push(AdoptedDto {
+            installation: InstallationDto::from(&inst),
+            addons: file.addons.len(),
+            managed: file.addons.iter().filter(|a| a.is_managed()).count(),
+        });
+    }
+    Ok(out)
 }
 
 /// Re-adopt the AddOns folder (keeps managed entries as they are).
@@ -797,6 +845,7 @@ pub fn run() {
         .manage(Writes::default())
         .invoke_handler(tauri::generate_handler![
             snapshot,
+            adopt_all,
             reconcile_now,
             check,
             update,

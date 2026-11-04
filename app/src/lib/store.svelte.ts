@@ -31,6 +31,8 @@ class Store {
   dialog = $state<Dialog | null>(null);
   filter = $state("");
   tab = $state<InstalledTab>("all");
+  /** Show the welcome screen (no config existed at launch). */
+  firstRun = $state(false);
   readonly preview = !inTauri;
 
   #toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -84,6 +86,10 @@ class Store {
       if (p.id in this.progress || p.id in this.busy) this.progress[p.id] = p.percent;
     });
     await this.load(null);
+    if (this.snap?.firstRun) {
+      this.firstRun = true;
+      return; // the welcome screen adopts, then calls finishFirstRun()
+    }
     if (this.snap?.adoptedNow) {
       this.say("ok", `Adopted ${this.addons.length} addons.`);
     }
@@ -91,6 +97,12 @@ class Store {
       await this.check();
       if (this.snap?.settings.autoApply) await this.updateAll();
     }
+  }
+
+  async finishFirstRun() {
+    this.firstRun = false;
+    await this.load(null);
+    if (this.snap?.settings.checkOnLaunch && this.current) await this.check();
   }
 
   /** Re-read local state (fast; no network). */

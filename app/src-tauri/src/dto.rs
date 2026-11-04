@@ -120,6 +120,8 @@ pub struct Snapshot {
     pub addons_dir_exists: bool,
     /// True when this snapshot just adopted the AddOns folder (first open).
     pub adopted_now: bool,
+    /// No config existed before this launch: show the welcome screen.
+    pub first_run: bool,
     pub last_run: Option<LastRun>,
     pub settings: SettingsDto,
     /// Sources usable right now (enabled, and keyed where needed).
@@ -138,6 +140,7 @@ impl Snapshot {
             state_exists: false,
             addons_dir_exists: false,
             adopted_now: false,
+            first_run: false,
             last_run: None,
             settings,
             sources_on: vec![],
@@ -359,6 +362,14 @@ impl HitDto {
             also_on: vec![],
         }
     }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdoptedDto {
+    pub installation: InstallationDto,
+    pub addons: usize,
+    pub managed: usize,
 }
 
 #[derive(Serialize)]

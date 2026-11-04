@@ -72,11 +72,13 @@ const snap = (current: string | null): Snapshot => ({
   ],
   current: current ?? "forever", flavour: "forever", flavourLabel: "WoW Forever", flavourShort: "Forever",
   addons, stateExists: true, addonsDirExists: true, adoptedNow: false,
+  firstRun: typeof location !== "undefined" && location.search.includes("firstrun") && !welcomed,
   lastRun: { at: new Date(Date.now() - 20 * 3600 * 1000).toISOString(), count: 2 },
   settings, sourcesOn: ["github", "wowinterface"],
 });
 
 let listeners: ((p: Progress) => void)[] = [];
+let welcomed = false;
 let removed: Addon | undefined;
 export function onPreviewProgress(cb: (p: Progress) => void) {
   listeners.push(cb);
@@ -88,6 +90,15 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export async function preview(cmd: string, args: Record<string, any>): Promise<unknown> {
   switch (cmd) {
     case "snapshot": return snap(args.installationId);
+    case "adopt_all": {
+      await wait(900);
+      welcomed = true;
+      const s = snap(null);
+      return [
+        { installation: s.installations[0], addons: 0, managed: 0 },
+        { installation: s.installations[1], addons: 46, managed: 12 },
+      ];
+    }
     case "check": await wait(600); return { ...check, checkedAt: new Date().toISOString() };
     case "recent": return recent;
     case "search": await wait(250); return { hits: hits.filter((h) => h.name.toLowerCase().includes(String(args.query).toLowerCase()) || "bag".includes(String(args.query).toLowerCase())), errors: [] };
