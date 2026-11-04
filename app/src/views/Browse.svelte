@@ -17,6 +17,8 @@
   let loading = $state(false);
   let seq = 0;
   let popular = $state<Hit[]>([]);
+  /** With nothing typed and a host chip picked: that host's most downloaded. */
+  let top = $state<Hit[]>([]);
   /** Bumped when the catalogue finishes refreshing, to re-run search. */
   let refreshed = $state(0);
 
@@ -31,7 +33,26 @@
     api.popular(inst).then((p) => (popular = p)).catch(() => (popular = []));
   });
 
+  $effect(() => {
+    const inst = store.current;
+    const src = source;
+    void refreshed;
+    if (src === "all" || src === "github") {
+      top = [];
+      return;
+    }
+    api.popular(inst, src).then((p) => (top = p)).catch(() => (top = []));
+  });
+
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
+
+  // "Install anyway" says what it installs: the nearest build that is listed.
+  const ORDER = ["Classic Era", "Anniversary", "Forever", "Retail"];
+  function otherBuild(h: Hit): string {
+    const pick = ORDER.find((f) => h.flavours.includes(f)) ?? h.flavours[0];
+    return pick ? `Install ${pick} build` : "Install anyway";
+  }
+  const anywayTip = $derived(`No ${flavour} build is listed. It may not load in ${flavour}.`);
   const on = $derived(store.snap?.sourcesOn ?? []);
 
   // Debounced search; the GitHub index answers instantly, hosts in place.
@@ -57,9 +78,11 @@
   });
 
   const inSource = $derived(
-    hits
-      .filter((h) => (query.trim() ? true : h.source === "github"))
-      .filter((h) => source === "all" || h.source === source),
+    !query.trim() && source !== "all" && source !== "github"
+      ? top
+      : hits
+          .filter((h) => (query.trim() ? true : h.source === "github"))
+          .filter((h) => source === "all" || h.source === source),
   );
   const shown = $derived(inSource.filter((h) => !onlyFlavour || h.forFlavour || h.flavourUnknown));
   /** Results the "Builds for" filter hid (no build listed for this client). */
@@ -88,6 +111,7 @@
     if (ok) {
       hits = hits.map((x) => (x.spec === h.spec ? { ...x, installed: true } : x));
       popular = popular.map((x) => (x.spec === h.spec ? { ...x, installed: true } : x));
+      top = top.map((x) => (x.spec === h.spec ? { ...x, installed: true } : x));
     }
     else if (!anyway && store.toast?.text.includes("No release of")) {
       store.toast = null;
@@ -131,7 +155,7 @@
     <div class="notice err narrow"><Icon name="warn" size={16} /><span><strong>{e.sourceLabel}:</strong> {e.message}</span></div>
   {/each}
 
-  {#if !query.trim() && popular.length}
+  {#if !query.trim() && source === "all" && popular.length}
     <section class="popular narrow" aria-labelledby="pop-h">
       <h2 class="h2" id="pop-h">Popular this month</h2>
       <div class="pops">
@@ -142,7 +166,7 @@
             {#if h.installed}
               <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
             {:else if !h.forFlavour && !h.flavourUnknown}
-              <ProgressButton label="Install anyway" ghost busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, true)} />
+              <ProgressButton label={otherBuild(h)} tip={anywayTip} ghost busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, true)} />
             {:else}
               <ProgressButton label="Install" busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, false)} />
             {/if}
@@ -182,7 +206,7 @@
             {#if h.installed}
               <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
             {:else if !h.forFlavour && !h.flavourUnknown}
-              <ProgressButton label="Install anyway" ghost busy={busy ?? null} {pct} onclick={() => install(h, true)} />
+              <ProgressButton label={otherBuild(h)} tip={anywayTip} ghost busy={busy ?? null} {pct} onclick={() => install(h, true)} />
             {:else}
               <ProgressButton label="Install" busy={busy ?? null} {pct} onclick={() => install(h, false)} />
             {/if}

@@ -224,6 +224,25 @@ impl Catalogue {
         rows.collect::<rusqlite::Result<Vec<_>>>().map_err(db_err)
     }
 
+    /// Most downloaded of all time from one host (Browse with nothing typed
+    /// and a host chip picked).
+    pub fn top_of_source(&self, source: SourceId, limit: usize) -> Result<Vec<CatalogueEntry>> {
+        let conn = self.lock();
+        let mut stmt = conn
+            .prepare(
+                "SELECT source, source_id, name, authors, summary, flavours,
+                        downloads, downloads_monthly, updated_at, icon_url
+                 FROM entries WHERE source = ?1
+                 ORDER BY coalesce(downloads, 0) DESC, name
+                 LIMIT ?2",
+            )
+            .map_err(db_err)?;
+        let rows = stmt
+            .query_map(params![source.as_str(), limit as i64], row)
+            .map_err(db_err)?;
+        rows.collect::<rusqlite::Result<Vec<_>>>().map_err(db_err)
+    }
+
     /// The icon known for one addon, if any.
     pub fn icon(&self, source: SourceId, source_id: &str) -> Option<String> {
         self.lock()
@@ -515,6 +534,13 @@ mod tests {
             .map(|x| x.name)
             .collect();
         assert_eq!(names, ["C", "A"]);
+        let top: Vec<String> = c
+            .top_of_source(SourceId::Wowinterface, 2)
+            .unwrap()
+            .into_iter()
+            .map(|x| x.name)
+            .collect();
+        assert_eq!(top, ["B", "C"], "by all-time downloads");
         let any: Vec<String> = c
             .popular_in(None, 5)
             .unwrap()

@@ -560,9 +560,10 @@ async fn refresh_catalogue(force: bool) -> Res<CatalogueDto> {
     })
 }
 
-/// Most downloaded this month for the installation's flavour.
+/// Most downloaded this month for the installation's flavour, or with
+/// `source`, the most downloaded from that host.
 #[tauri::command]
-async fn popular(installation_id: Option<String>) -> Res<Vec<HitDto>> {
+async fn popular(installation_id: Option<String>, source: Option<String>) -> Res<Vec<HitDto>> {
     let mgr = manager()?;
     let (flavour, state) = match installation_id
         .as_deref()
@@ -572,8 +573,12 @@ async fn popular(installation_id: Option<String>) -> Res<Vec<HitDto>> {
         Some(inst) => (inst.flavour, load_state(&inst).ok()),
         None => (nexforge_core::Flavour::Forever, None),
     };
-    Ok(mgr
-        .popular(flavour, 8)
+    let rows = match source.as_deref().map(str::parse::<SourceId>) {
+        Some(Ok(s)) => mgr.top_of(s, 50),
+        Some(Err(e)) => return Err(e),
+        None => mgr.popular(flavour, 8),
+    };
+    Ok(rows
         .into_iter()
         .map(|h| {
             let installed = state.as_ref().is_some_and(|s| {

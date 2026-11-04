@@ -181,6 +181,17 @@ impl Manager {
         crate::self_update::check(self.fetch.as_ref(), current).await
     }
 
+    /// Most downloaded from one host, from the catalogue.
+    pub fn top_of(&self, source: SourceId, limit: usize) -> Vec<crate::sources::CatalogueEntry> {
+        if !self.available_sources().contains(&source) {
+            return vec![];
+        }
+        self.catalogue
+            .as_ref()
+            .and_then(|c| c.top_of_source(source, limit).ok())
+            .unwrap_or_default()
+    }
+
     /// The icon the catalogue knows for an addon.
     pub fn icon_for(&self, source: SourceId, source_id: &str) -> Option<String> {
         self.catalogue.as_ref()?.icon(source, source_id)

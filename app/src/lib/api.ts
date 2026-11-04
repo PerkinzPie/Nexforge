@@ -78,7 +78,7 @@ export const api = {
   search: (installationId: string | null, query: string) => call<SearchResult>("search", { installationId, query }),
   image: (url: string) => call<string>("image", { url }),
   refreshCatalogue: (force: boolean) => call<CatalogueInfo>("refresh_catalogue", { force }),
-  popular: (installationId: string | null) => call<Hit[]>("popular", { installationId }),
+  popular: (installationId: string | null, source: string | null = null) => call<Hit[]>("popular", { installationId, source }),
   releaseNotes: (installationId: string, id: string) => call<{ lines: string[]; hasMore: boolean }>("release_notes", { installationId, id }),
   clientIcon: (installationId: string) => call<string | null>("client_icon", { installationId }),
   settings: () => call<Settings>("settings"),
