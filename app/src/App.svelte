@@ -20,7 +20,7 @@
     store.start();
   });
 
-  // Ctrl+F filter/search · Ctrl+R check for updates · Ctrl+, settings
+  // Ctrl+F filter/search · Ctrl+R refresh (rescan AddOns, check for updates) · Ctrl+, settings
   function keys(e: KeyboardEvent) {
     if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
     if (e.key === "f" || e.key === "F") {
@@ -29,7 +29,7 @@
       (store.view === "installed" && !store.detail ? filterInput : searchInput)?.focus();
     } else if (e.key === "r" || e.key === "R") {
       e.preventDefault();
-      store.check();
+      store.refresh();
     } else if (e.key === ",") {
       e.preventDefault();
       store.view = "settings";

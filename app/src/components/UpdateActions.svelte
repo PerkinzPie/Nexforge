@@ -1,5 +1,6 @@
 <script lang="ts">
-  // "Check now" and "Update all", identical on Installed and Updates.
+  // "Refresh" (look at AddOns again, then check for updates) and "Update
+  // all", identical on Installed and Updates.
   import { mergeProps } from "bits-ui";
   import Icon from "./Icon.svelte";
   import Tip from "./Tip.svelte";
@@ -9,10 +10,10 @@
   const updatable = $derived(store.updates.filter((a) => !a.pinned));
 </script>
 
-<Tip text={store.checkedAt ? `Last checked ${ago(store.checkedAt)}` : "Not checked yet"} side="bottom">
+<Tip text={store.checkedAt ? `Last refreshed ${ago(store.checkedAt)}` : "Not refreshed yet"} side="bottom">
   {#snippet children({ props })}
-    <button {...mergeProps(props, { onclick: () => store.check() })} type="button" class="btn" disabled={store.checking || !store.current}>
-      <Icon name="refresh" size={15} stroke={2.2} />{store.checking ? "Checking…" : "Check now"}
+    <button {...mergeProps(props, { onclick: () => store.refresh() })} type="button" class="btn" disabled={store.checking || !store.current}>
+      <Icon name="refresh" size={15} stroke={2.2} />{store.checking ? "Refreshing…" : "Refresh"}
     </button>
   {/snippet}
 </Tip>

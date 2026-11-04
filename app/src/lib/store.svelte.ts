@@ -172,6 +172,13 @@ class Store {
     if (this.snap?.settings.checkOnLaunch) await this.check();
   }
 
+  /** The Refresh button and Ctrl+R: pick up hand-installed addons, then check. */
+  async refresh() {
+    if (this.checking) return;
+    await this.rescan();
+    await this.check();
+  }
+
   #rescannedAt = 0;
   /** Pick up addons added to (or removed from) the AddOns folder by hand. */
   async rescan() {
