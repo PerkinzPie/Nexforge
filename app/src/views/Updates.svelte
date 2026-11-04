@@ -21,7 +21,7 @@
     <button type="button" class="btn" onclick={() => store.check()} disabled={store.checking || !store.current}>
       <Icon name="refresh" size={15} stroke={2.2} />{store.checking ? "Checking…" : "Check now"}
     </button>
-    <button type="button" class="btn btn-primary" onclick={() => store.updateAll()} disabled={!updatable.length}>
+    <button type="button" class="btn" class:btn-primary={updatable.length > 0} onclick={() => store.updateAll()} disabled={!updatable.length}>
       <Icon name="download" size={15} stroke={2.4} />Update all ({updatable.length})
     </button>
   </div>
