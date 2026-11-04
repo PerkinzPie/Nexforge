@@ -1,6 +1,5 @@
 <script lang="ts">
   import ClientIcon from "../components/ClientIcon.svelte";
-  import Icon from "../components/Icon.svelte";
   import wordmark from "../assets/nexabyte-wordmark.svg";
   import { api, type Settings, type SettingsInput } from "../lib/api";
   import { store } from "../lib/store.svelte";
@@ -57,24 +56,27 @@
   {#if s}
     <div class="secs narrow">
       <section class="sec">
-        <h2><Icon name="home" size={15} stroke={2.2} />Game installations</h2>
+        <h2>Game installations</h2>
+        <div class="group">
         {#each store.snap?.installations ?? [] as i (i.id)}
           <div class="frow">
-            <ClientIcon id={i.id} flavour={i.flavour} size={36} />
+            <ClientIcon id={i.id} flavour={i.flavour} size={28} />
             <div class="lbl"><span class="t">{i.label}</span><span class="mono s">{i.path}</span></div>
             {#if !i.detected}<span class="pill pill-attn">No AddOns folder</span>{/if}
-            <button type="button" class="btn btn-sm" onclick={() => pick(i.id)}>Change</button>
+            <button type="button" class="btn btn-sm" onclick={() => pick(i.id)}>Change…</button>
           </div>
         {:else}
           <div class="frow"><div class="lbl"><span class="t">No installation found</span></div></div>
         {/each}
         <div class="frow end">
-          <button type="button" class="btn btn-sm" onclick={() => pick(null)}>Add installation</button>
+          <button type="button" class="btn btn-sm" onclick={() => pick(null)}>Add installation…</button>
+        </div>
         </div>
       </section>
 
       <section class="sec">
-        <h2><Icon name="refresh" size={15} stroke={2.2} />Updates</h2>
+        <h2>Updates</h2>
+        <div class="group">
         <label class="frow toggle">
           <span class="t">Check for updates on launch</span>
           <input type="checkbox" checked={s.checkOnLaunch} onchange={(e) => save({ checkOnLaunch: e.currentTarget.checked })} />
@@ -88,17 +90,19 @@
           <input type="number" min="0" max="10" value={s.keepPreviousVersions}
             onchange={(e) => save({ keepPreviousVersions: Math.max(0, Math.min(10, Number(e.currentTarget.value) || 0)) })} />
         </label>
+        </div>
       </section>
 
       <section class="sec">
-        <h2><Icon name="globe" size={15} stroke={2.2} />Sources</h2>
+        <h2>Sources</h2>
+        <div class="group">
         <div class="frow toggle">
           <label class="t" for="src-github">GitHub</label>
           {#if s.keyGithub}
             <button type="button" class="btn btn-sm btn-quiet" onclick={() => clearKey("github")}>Remove token</button>
           {:else}
             <button type="button" class="btn btn-sm" data-tip="Optional. Raises GitHub's limit from 60 to 5,000 requests an hour."
-              onclick={() => (store.dialog = { kind: "key", name: "github" })}>Add token</button>
+              onclick={() => (store.dialog = { kind: "key", name: "github" })}>Add token…</button>
           {/if}
           <input id="src-github" type="checkbox" checked={s.github} onchange={(e) => save({ github: e.currentTarget.checked })} />
         </div>
@@ -110,10 +114,10 @@
           <label class="t" for="src-cf">CurseForge</label>
           {#if s.keyCurseforge}
             <button type="button" class="btn btn-sm btn-quiet" onclick={() => clearKey("curseforge")}>Remove key</button>
-            <button type="button" class="btn btn-sm" onclick={() => (store.dialog = { kind: "key", name: "curseforge" })}>Replace key</button>
+            <button type="button" class="btn btn-sm" onclick={() => (store.dialog = { kind: "key", name: "curseforge" })}>Replace key…</button>
           {:else}
             <button type="button" class="btn btn-sm" data-tip="Free from console.curseforge.com. Some authors block downloads outside the CurseForge app."
-              onclick={() => (store.dialog = { kind: "key", name: "curseforge" })}>Add key</button>
+              onclick={() => (store.dialog = { kind: "key", name: "curseforge" })}>Add key…</button>
           {/if}
           <input id="src-cf" type="checkbox" checked={s.curseforge} disabled={!s.keyCurseforge}
             onchange={(e) => save({ curseforge: e.currentTarget.checked })} />
@@ -122,10 +126,12 @@
           <span class="t off">Wago</span>
           <input type="checkbox" disabled checked={false} aria-label="Wago (not supported)" />
         </div>
+        </div>
       </section>
 
       <section class="sec">
-        <h2><Icon name="shield" size={15} stroke={2.2} />Privacy and diagnostics</h2>
+        <h2>Privacy and diagnostics</h2>
+        <div class="group">
         <label class="frow toggle">
           <span class="t" data-tip-start data-tip="One request to GitHub on launch. Nothing is downloaded.">Check for new versions of Nexforge</span>
           <input type="checkbox" checked={s.selfUpdateCheck}
@@ -142,9 +148,10 @@
           <div class="lbl"><span class="t">Data folder</span><span class="mono s">{s.dataDir}</span></div>
           <button type="button" class="btn btn-sm" onclick={() => open("data")}>Open folder</button>
         </div>
+        </div>
       </section>
 
-      <section class="sec about">
+      <section class="about">
         <div class="ab">
           <div class="abt">
             <span class="wm">Nexforge</span>
@@ -159,14 +166,14 @@
 </div>
 
 <style>
-  .secs { display: flex; flex-direction: column; gap: 16px; }
+  .secs { display: flex; flex-direction: column; gap: 20px; }
   .toggle { cursor: pointer; }
-  .toggle .t { margin-right: auto; font-size: 13.5px; font-weight: 700; }
+  .toggle .t { margin-right: auto; font-size: 13px; font-weight: 600; }
   .toggle .t.off { color: var(--text-3); }
   .toggle input[type="checkbox"] { width: 18px; height: 18px; }
   .end { justify-content: flex-end; }
-  .about { background: var(--nx-indigo); border-color: #3a3860; }
-  .ab { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; padding: 20px 24px; }
-  .abt { display: flex; flex-direction: column; gap: 6px; margin-right: auto; font-size: 12.5px; color: var(--text-soft); }
+  .about { border: 1px solid #3a3860; border-radius: 12px; background: var(--nx-indigo); }
+  .ab { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 20px; }
+  .abt { display: flex; flex-direction: column; gap: 4px; margin-right: auto; font-size: 12px; color: var(--text-soft); }
   .abt .wm { font-size: 20px; color: #fff; }
 </style>

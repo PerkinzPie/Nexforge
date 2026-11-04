@@ -73,7 +73,7 @@
     </div>
 
     <div class="actions">
-      <button type="button" class="btn" onclick={addFolder}>Add a folder</button>
+      <button type="button" class="btn" onclick={addFolder}>Add a folder…</button>
       <button type="button" class="btn btn-primary" disabled={rows === null || !rows.length} onclick={() => store.finishFirstRun()}>Done</button>
     </div>
   </div>
@@ -85,9 +85,9 @@
   .list { width: 100%; }
   .row { display: flex; align-items: center; gap: 14px; }
   .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; margin-right: auto; }
-  .t { font-size: 14px; font-weight: 700; }
+  .t { font-size: 13px; font-weight: 700; }
   .s { font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .small { font-size: 12px; }
-  .count { font: 600 14px var(--display); font-variant-numeric: tabular-nums; }
+  .count { font: 600 13px var(--display); font-variant-numeric: tabular-nums; }
   .actions { display: flex; gap: 10px; align-self: flex-end; }
 </style>

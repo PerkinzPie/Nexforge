@@ -21,6 +21,6 @@
   .toast { max-width: 460px; display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--raised); font-size: 13px; font-weight: 600; }
   .toast.err { border-color: #5a2a36; background: var(--accent-tint); color: var(--accent-text); }
   .msg { margin-right: 6px; }
-  .undo { height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--info); font: 800 13px var(--sans); cursor: pointer; }
+  .undo { height: 28px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--info); font: 700 13px var(--sans); cursor: pointer; }
   .undo:hover { background: var(--raised-hover); }
 </style>

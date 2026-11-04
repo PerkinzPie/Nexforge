@@ -35,7 +35,7 @@
 </div>
 
 <style>
-  .tile { display: flex; align-items: center; justify-content: center; font-weight: 800; flex: 0 0 auto; overflow: hidden; }
+  .tile { display: flex; align-items: center; justify-content: center; font-weight: 700; flex: 0 0 auto; overflow: hidden; }
   .tile.unknown { border: 1px dashed #3c3b58; }
   img { width: 100%; height: 100%; object-fit: cover; }
 </style>

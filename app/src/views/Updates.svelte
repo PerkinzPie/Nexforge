@@ -57,11 +57,11 @@
       {@const notes = r?.notes.length ? r.notes : (extra?.lines ?? [])}
       <div class="card" class:active={!!busy}>
         <div class="top">
-          <Tile name={a.name} iconUrl={a.iconUrl} size={44} />
+          <Tile name={a.name} iconUrl={a.iconUrl} size={36} />
           <div class="meta">
             <span class="n">{a.name}</span>
             <span class="line">
-              <span class="mono">{a.version} {#if r}<span class="dim">→</span> <strong>{r.version}</strong>{/if}</span>
+              <span class="num">{a.version} {#if r}<span class="dim">→</span> <strong>{r.version}</strong>{/if}</span>
               <SourceTag source={a.source} label={a.sourceLabel} />
               {#if r && (r.publishedAt || r.size)}<span class="dim small">{[r.publishedAt ? `Released ${shortDate(r.publishedAt)}` : "", size(r.size)].filter(Boolean).join(" · ")}</span>{/if}
 
@@ -89,8 +89,8 @@
       <h2 class="h2">Recently updated</h2>
       <div class="panel">
         {#each store.recent as r (r.id)}
-          <div class="row rrow">
-            <Tile name={r.name} size={36} />
+          <div class="row">
+            <Tile name={r.name} size={32} />
             <div class="rmeta">
               <span class="rn">{r.name}</span>
               <span class="dim small">{r.from} → {r.to} · {when(r.at)}</span>
@@ -108,15 +108,14 @@
 
 <style>
   .list { display: flex; flex-direction: column; gap: 12px; }
-  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
-  .meta { display: flex; flex-direction: column; gap: 4px; margin-right: auto; min-width: 0; }
-  .n { font-size: 16px; font-weight: 800; }
-  .line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .meta { display: flex; flex-direction: column; gap: 2px; margin-right: auto; min-width: 0; }
+  .n { font-size: 15px; font-weight: 700; }
+  .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .line strong { color: var(--text); font-weight: 600; }
-  .small { font-size: 12px; }
-  .more { font-size: 12.5px; font-weight: 700; }
-  .recent { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
-  .rrow { padding: 12px 20px; gap: 14px; }
-  .rmeta { display: flex; flex-direction: column; gap: 2px; margin-right: auto; }
-  .rn { font-size: 13.5px; font-weight: 700; }
+  .small { font-size: 11px; }
+  .more { font-size: 12px; font-weight: 700; }
+  .recent { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .rmeta { display: flex; flex-direction: column; gap: 0; margin-right: auto; }
+  .rn { font-size: 13px; font-weight: 700; }
 </style>

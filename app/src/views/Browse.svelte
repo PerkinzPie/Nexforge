@@ -118,7 +118,7 @@
   <div class="page-head">
     <h1 class="h1 title">Browse</h1>
     <button type="button" class="btn" onclick={() => (store.dialog = { kind: "install" })} disabled={!store.current}>
-      <Icon name="link" size={15} stroke={2.2} />Install from URL
+      <Icon name="link" size={15} stroke={2.2} />Install from URL…
     </button>
   </div>
 
@@ -155,7 +155,7 @@
       <div class="pops">
         {#each popular as h (h.spec)}
           <div class="pop">
-            <Tile name={h.name} iconUrl={h.iconUrl} size={48} />
+            <Tile name={h.name} iconUrl={h.iconUrl} size={40} />
             <div class="pt"><span class="pn">{h.name}</span>{#if h.authors.length}<span class="dim tiny">{h.authors[0]}</span>{/if}</div>
             {#if h.installed}
               <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
@@ -183,23 +183,24 @@
           {@const busy = store.busy[h.spec]}
           {@const pct = store.progress[h.spec]}
           <div class="row hit">
-            <Tile name={h.name} iconUrl={h.iconUrl} size={40} />
+            <Tile name={h.name} iconUrl={h.iconUrl} size={36} />
             <div class="body">
               <span class="line">
                 <span class="n">{h.name}</span>
-                {#if h.authors.length}<span class="dim small">by {h.authors.slice(0, 2).join(", ")}</span>{/if}
+                {#if h.authors.length}<span class="dim small">{h.authors.slice(0, 2).join(", ")}</span>{/if}
                 <SourceTag label={h.sourceLabel} />
                 {#each h.alsoOn as o (o)}<SourceTag label={o} muted />{/each}
               </span>
               {#if h.summary}<span class="desc" title={h.summary}>{h.summary}</span>{/if}
-              {#if noBuild(h)}
-                <span class="nobuild">No {flavour} build</span>
-              {:else}
-                <span class="dim tiny">
-                  {[h.updatedAt ? `Updated ${ago(h.updatedAt)}` : "", h.downloads ? `${count(h.downloads)} downloads` : ""].filter(Boolean).join(" · ")}
-                </span>
-              {/if}
             </div>
+            {#if noBuild(h)}
+              <span class="side nobuild">No {flavour} build</span>
+            {:else}
+              <span class="side dim">
+                {#if h.downloads}<span>{count(h.downloads)} downloads</span>{/if}
+                {#if h.updatedAt}<span>Updated {ago(h.updatedAt)}</span>{/if}
+              </span>
+            {/if}
             <div class="act">
               {#if h.installed}
                 <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
@@ -223,36 +224,36 @@
 </div>
 
 <style>
-  .more { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--info); font: 700 12.5px var(--sans); cursor: pointer; }
+  .more { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--info); font: 700 12px var(--sans); cursor: pointer; }
   .popular { display: flex; flex-direction: column; gap: 12px; }
   .pops { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-  .pop { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+  .pop { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
   .pt { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 100%; }
-  .pn { font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pn { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .title { margin-right: auto; }
-  .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: -6px; }
-  .builds { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12.5px; font-weight: 600; color: var(--text-2); }
-  .builds select { height: 32px; padding: 0 30px 0 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A8A8B0' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color: var(--text); font: 600 12.5px var(--sans); appearance: none; cursor: pointer; }
+  .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: -8px; }
+  .builds { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12px; font-weight: 600; color: var(--text-2); }
+  .builds select { height: 28px; padding: 0 30px 0 12px; border: 1px solid var(--border); border-radius: 7px; background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A8A8B0' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color: var(--text); font: 600 12px var(--sans); appearance: none; cursor: pointer; }
   .builds select:hover { background-color: var(--raised-hover); }
   .results { display: flex; flex-direction: column; gap: 10px; }
-  .count { font-size: 12.5px; font-weight: 600; }
-  .body { display: flex; flex-direction: column; gap: 4px; flex: 1 1 300px; min-width: 0; }
-  /* Every result row is the same height whatever it holds: one line each for
-     name, summary and details, centred in a fixed box. */
+  .count { font-size: 12px; font-weight: 600; }
+  .body { display: flex; flex-direction: column; gap: 2px; flex: 1 1 300px; min-width: 0; }
+  /* Two lines per row (name, summary), as HIG lists: details sit at the
+     trailing edge, so every row is the same height whatever it holds. */
   .hit { flex-wrap: nowrap; }
-  .hit .body { height: 68px; justify-content: center; }
-  .hit .line { height: 22px; }
-  .hit .body > .tiny, .hit .body > .nobuild { line-height: 18px; }
-  .hit .desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .line { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; min-width: 0; overflow: hidden; }
+  .hit .body { height: 38px; justify-content: center; }
+  .hit .line { height: 20px; }
+  .hit .desc { line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 11px; line-height: 16px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .line { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
   .line > :global(*) { flex-shrink: 0; }
   .line .n, .line .small { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .act { flex: 0 0 auto; min-width: 104px; display: flex; justify-content: flex-end; }
+  .act { flex: 0 0 auto; min-width: 88px; display: flex; justify-content: flex-end; }
   .pa { display: flex; align-items: center; justify-content: space-between; gap: 8px; align-self: stretch; }
-  .n { font-size: 14.5px; font-weight: 800; }
+  .n { font-size: 13px; font-weight: 700; }
   .small { font-size: 12px; }
-  .tiny { font-size: 11.5px; }
-  .nobuild { font-size: 11.5px; font-weight: 600; color: var(--attention); }
+  .tiny { font-size: 11px; }
+  .nobuild { font-size: 11px; font-weight: 600; color: var(--attention); }
   .done { animation: pop 0.3s ease-out; }
   @keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: none; opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .done { animation: none; } }

@@ -26,7 +26,7 @@
     <div class="switch-wrap">
       <button type="button" class="switch" aria-haspopup="listbox" aria-expanded={open}
         aria-label="Switch game flavour, currently {inst.label}" onclick={() => (open = !open)}>
-        <ClientIcon id={inst.id} flavour={inst.flavour} size={34} />
+        <ClientIcon id={inst.id} flavour={inst.flavour} size={30} />
         <div class="who">
           <span class="n">{inst.label}</span>
           <span class="m">{plural(store.addons.length, "addon")}{store.checkedAt ? ` · ${plural(updates, "update")}` : ""}</span>
@@ -73,29 +73,29 @@
 <svelte:window onclick={(e) => { if (open && !(e.target as Element).closest?.(".switch-wrap")) open = false; }} />
 
 <style>
-  nav { flex: 0 0 232px; height: 100%; display: flex; flex-direction: column; gap: 4px; padding: 20px 14px; background: var(--nx-indigo); overflow-y: auto; }
-  .brand { display: flex; align-items: center; gap: 10px; padding: 2px 10px 18px 10px; }
+  nav { flex: 0 0 220px; height: 100%; display: flex; flex-direction: column; gap: 2px; padding: 18px 12px; background: var(--nx-indigo); overflow-y: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 2px 10px 16px 10px; }
   .brand .wm { font-size: 17px; color: #fff; }
-  .switch-wrap { position: relative; margin-bottom: 14px; }
-  .switch { width: 100%; display: flex; align-items: center; gap: 10px; height: 60px; padding: 0 8px 0 11px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; background: rgba(0, 0, 0, 0.22); text-align: left; cursor: pointer; color: inherit; }
+  .switch-wrap { position: relative; margin-bottom: 12px; }
+  .switch { width: 100%; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 8px 0 10px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; background: rgba(0, 0, 0, 0.22); text-align: left; cursor: pointer; color: inherit; }
   .switch:hover { background: rgba(0, 0, 0, 0.32); }
-  .who { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
-  .who .n { font-size: 13.5px; font-weight: 700; color: #fff; }
+  .who { display: flex; flex-direction: column; gap: 0; min-width: 0; flex: 1; line-height: 1.3; }
+  .who .n { font-size: 13px; font-weight: 700; color: #fff; }
   .who .n, .who .m { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .who .m { font-size: 11px; color: var(--text-2); }
-  .menu { position: absolute; z-index: 20; top: 64px; left: 0; right: 0; padding: 6px; border-radius: 10px; border: 1px solid var(--border); background: var(--raised); display: flex; flex-direction: column; gap: 2px; }
-  .menu button { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; color: var(--text); font: 600 13px var(--sans); cursor: pointer; text-align: left; }
+  .menu { position: absolute; z-index: 20; top: 56px; left: 0; right: 0; padding: 6px; border-radius: 10px; border: 1px solid var(--border); background: var(--raised); display: flex; flex-direction: column; gap: 2px; }
+  .menu button { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; color: var(--text); font: 600 13px var(--sans); cursor: pointer; text-align: left; }
   .menu button:hover { background: var(--raised-hover); }
   .menu .cur { margin-left: auto; color: var(--good); display: flex; }
   .menu .add { color: var(--text-2); font-weight: 600; border-top: 1px solid var(--border); border-radius: 0 0 7px 7px; margin-top: 4px; padding-top: 4px; }
-  .nav { display: flex; align-items: center; gap: 11px; height: 38px; padding: 0 12px; border-radius: 8px; border: 0; background: transparent; font-size: 13.5px; font-weight: 500; color: var(--text-soft); cursor: pointer; text-align: left; }
+  .nav { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-radius: 7px; border: 0; background: transparent; font-size: 13px; font-weight: 500; color: var(--text-soft); cursor: pointer; text-align: left; }
   .nav:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
   .nav.on { background: rgba(255, 255, 255, 0.1); color: #fff; font-weight: 700; }
-  .badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--accent-fill); color: var(--bg); font-size: 11.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent-fill); color: var(--bg); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
   .count { margin-left: auto; font-size: 12px; color: var(--text-2); }
   .foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px 10px 0 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
   .newv { font-size: 12px; font-weight: 700; color: var(--good); align-self: flex-start; }
-  .log { font-size: 11.5px; line-height: 1.5; align-self: flex-start; }
+  .log { font-size: 11px; line-height: 1.5; align-self: flex-start; }
   .nb { display: flex; align-items: center; gap: 8px; padding-top: 6px; }
-  .nb span { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+  .nb span { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
 </style>

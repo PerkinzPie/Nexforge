@@ -120,7 +120,7 @@
             <tr>
               <td>
                 <div class="who">
-                  <Tile name={a.name} iconUrl={a.iconUrl} unknown={!a.managed} />
+                  <Tile name={a.name} iconUrl={a.iconUrl} size={32} unknown={!a.managed} />
                   <div class="names">
                     <span class="n">{a.name}</span>
                     <span class="dim small">{plural(a.folders.length, "folder")}{a.managed && a.author ? ` · ${a.author}` : ""}</span>
@@ -129,7 +129,7 @@
               </td>
               <td>
                 <div class="ver">
-                  <span class="mono" class:dim={!a.managed}>
+                  <span class="num" class:dim={!a.managed}>
                     {a.version || "–"}
                     {#if next && !a.pinned}<span class="dim">→</span> <strong>{next}</strong>{/if}
                     {#if a.pinned && next}<span class="dim">· {next} held</span>{:else if a.skippedVersion && s?.kind === "skipped"}<span class="dim">· {a.skippedVersion} skipped</span>{/if}
@@ -182,22 +182,21 @@
   .list { overflow: hidden; }
   .tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 8px 0 8px; border-bottom: 1px solid var(--border); }
   .tablist { display: flex; align-items: center; gap: 4px; }
-  .tab { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; border: 0; background: none; color: var(--text-2); font: 600 13px var(--sans); cursor: pointer; }
+  .tab { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border: 0; background: none; color: var(--text-2); font: 600 13px var(--sans); cursor: pointer; }
   .tab:hover { color: var(--text); }
   .tab .n { font: 600 12px var(--display); color: var(--text-3); font-variant-numeric: tabular-nums; }
   .tab.on { color: var(--text); }
   .tab.on::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--text); }
-  .tools { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-bottom: 6px; }
+  .tools { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-bottom: 4px; }
   .checked { font-size: 12px; color: var(--text-3); white-space: nowrap; }
   table { margin: 0; }
   tbody tr:first-child td { border-top: 0; }
-  td { height: 58px; }
-  .small { font-size: 12px; }
-  .who { display: flex; align-items: center; gap: 12px; }
-  .names { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .small { font-size: 11px; }
+  .who { display: flex; align-items: center; gap: 10px; }
+  .names { display: flex; flex-direction: column; gap: 0; min-width: 0; line-height: 1.3; }
   .n { font-weight: 700; }
   .ver { display: flex; flex-direction: column; gap: 6px; }
   .ver strong { color: var(--text); font-weight: 600; }
-  .state { font-size: 12.5px; font-weight: 600; }
-  .identify { font-size: 12.5px; font-weight: 700; }
+  .state { font-size: 12px; font-weight: 600; }
+  .identify { font-size: 12px; font-weight: 700; }
 </style>

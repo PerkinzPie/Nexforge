@@ -8,6 +8,7 @@
   let working = $state(false);
   let error = $state<string | null>(null);
   let input = $state<HTMLInputElement | null>(null);
+  let cancel = $state<HTMLButtonElement | null>(null);
 
   const d = $derived(store.dialog);
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
@@ -17,7 +18,9 @@
     error = null;
     working = false;
     value = d.kind === "install" ? (d.initial ?? suggestion(d.adopt)) : "";
-    queueMicrotask(() => input?.focus());
+    // Nothing to type (Remove, Install anyway): focus Cancel, so Enter never
+    // runs the action unread (HIG: a destructive button is never the default).
+    queueMicrotask(() => (input ?? cancel)?.focus());
   });
 
   function suggestion(a: typeof store.addons[number] | undefined): string {
@@ -108,8 +111,8 @@
       {#if error}<p class="err" role="alert">{error}</p>{/if}
 
       <div class="actions">
-        <button type="button" class="btn" onclick={close} disabled={working}>Cancel</button>
-        <button type="submit" class="btn btn-primary" disabled={working}>
+        <button type="button" class="btn" bind:this={cancel} onclick={close} disabled={working}>Cancel</button>
+        <button type="submit" class="btn" class:btn-primary={d.kind !== "remove"} class:btn-danger={d.kind === "remove"} disabled={working}>
           {#if d.kind === "install"}Install{:else if d.kind === "remove"}Remove{:else if d.kind === "key"}Save key{:else}Install anyway{/if}
         </button>
       </div>
@@ -123,10 +126,10 @@
 <style>
   .scrim { position: fixed; inset: 0; z-index: 50; background: rgba(8, 8, 14, 0.6); display: flex; align-items: center; justify-content: center; padding: 24px; }
   .dlg-wrap { width: 520px; max-width: 100%; }
-  .dlg { width: 100%; max-width: 100%; display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); }
+  .dlg { width: 100%; max-width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
   .head { display: flex; align-items: center; gap: 12px; }
-  h2 { margin: 0 auto 0 0; font-size: 16px; font-weight: 800; }
-  p { margin: 0; line-height: 1.55; }
+  h2 { margin: 0 auto 0 0; font-size: 15px; font-weight: 700; }
+  p { margin: 0; line-height: 1.4; }
   .err { color: var(--accent-text); font-weight: 600; }
   .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
 </style>

@@ -32,11 +32,11 @@
 {/if}
 
 <style>
-  .pb { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 104px; height: 30px; padding: 0 13px; border-radius: 8px; background: var(--accent-tint); overflow: hidden; }
+  .pb { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 88px; height: 28px; padding: 0 12px; border-radius: 7px; background: var(--accent-tint); overflow: hidden; }
   .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent-fill); transition: width 0.25s linear; }
   /* Size unknown, or unpacking: a solid block slides across (no gradients). */
   .fill.indeterminate { width: 35% !important; animation: slide-block 1.1s ease-in-out infinite; }
-  .txt { position: relative; font-size: 12.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+  .txt { position: relative; font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
   @keyframes slide-block { from { left: -35%; } to { left: 100%; } }
   @media (prefers-reduced-motion: reduce) { .fill.indeterminate { animation: none; width: 100% !important; left: 0; opacity: 0.55; } }
 </style>
