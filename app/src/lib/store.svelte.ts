@@ -31,6 +31,8 @@ class Store {
   dialog = $state<Dialog | null>(null);
   filter = $state("");
   tab = $state<InstalledTab>("all");
+  /** A newer Nexforge, when the opt-in check found one. */
+  newVersion = $state<{ version: string; url: string } | null>(null);
   /** Show the welcome screen (no config existed at launch). */
   firstRun = $state(false);
   readonly preview = !inTauri;
@@ -98,6 +100,12 @@ class Store {
       if (this.snap?.settings.autoApply) await this.updateAll();
     }
     this.refreshCatalogue();
+    this.checkSelf();
+  }
+
+  /** Opt-in: is there a newer Nexforge? (Off unless turned on in Settings.) */
+  checkSelf() {
+    api.selfUpdate().then((n) => (this.newVersion = n)).catch(() => {});
   }
 
   /** Refill the Browse catalogue in the background (at most daily), then

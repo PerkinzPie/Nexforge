@@ -522,6 +522,24 @@ async fn release_notes(installation_id: String, id: String) -> Res<NotesDto> {
     Ok(NotesDto { lines, has_more })
 }
 
+/// Opt-in check for a newer Nexforge. `None` when off, current, or offline.
+#[tauri::command]
+async fn self_update() -> Res<Option<NewVersionDto>> {
+    let mgr = manager()?;
+    if !mgr.config.self_update_check {
+        return Ok(None);
+    }
+    Ok(mgr
+        .newer_nexforge(env!("CARGO_PKG_VERSION"))
+        .await
+        .ok()
+        .flatten()
+        .map(|n| NewVersionDto {
+            version: n.version,
+            url: n.url,
+        }))
+}
+
 /// Refill the Browse catalogue (at most daily unless `force`).
 #[tauri::command]
 async fn refresh_catalogue(force: bool) -> Res<CatalogueDto> {
@@ -862,6 +880,7 @@ pub fn run() {
             refresh_catalogue,
             popular,
             release_notes,
+            self_update,
             addon_info,
             settings,
             save_settings,

@@ -56,12 +56,14 @@
     return () => clearTimeout(t);
   });
 
-  const shown = $derived(
+  const inSource = $derived(
     hits
       .filter((h) => (query.trim() ? true : h.source === "github"))
-      .filter((h) => source === "all" || h.source === source)
-      .filter((h) => !onlyFlavour || h.forFlavour || h.flavourUnknown),
+      .filter((h) => source === "all" || h.source === source),
   );
+  const shown = $derived(inSource.filter((h) => !onlyFlavour || h.forFlavour || h.flavourUnknown));
+  /** Results the "Builds for" filter hid (no build listed for this client). */
+  const hidden = $derived(inSource.length - shown.length);
 
   const chips = $derived([
     { id: "github", label: "GitHub", enabled: on.includes("github"), why: "Turned off in Settings" },
@@ -139,6 +141,8 @@
             <div class="pt"><span class="pn">{h.name}</span>{#if h.authors.length}<span class="dim tiny">{h.authors[0]}</span>{/if}</div>
             {#if h.installed}
               <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
+            {:else if !h.forFlavour && !h.flavourUnknown}
+              <ProgressButton label="Install anyway" ghost busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, true)} />
             {:else}
               <ProgressButton label="Install" busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, false)} />
             {/if}
@@ -185,13 +189,18 @@
           </div>
         {/each}
       </div>
-    {:else if !loading && query.trim()}
-      <div class="panel empty">No results.{#if onlyFlavour} <a href="#all" onclick={(e) => { e.preventDefault(); onlyFlavour = false; }}>Show every flavour</a>{/if}</div>
+    {/if}
+    {#if onlyFlavour && hidden > 0 && query.trim()}
+      <button type="button" class="more" onclick={() => (onlyFlavour = false)}>{hidden} more with no {flavour} build</button>
+    {/if}
+    {#if !shown.length && !hidden && !loading && query.trim()}
+      <div class="panel empty">No results.</div>
     {/if}
   </div>
 </div>
 
 <style>
+  .more { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--info); font: 700 12.5px var(--sans); cursor: pointer; }
   .popular { display: flex; flex-direction: column; gap: 12px; }
   .pops { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
   .pop { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }

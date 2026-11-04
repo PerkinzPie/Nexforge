@@ -152,17 +152,33 @@ impl Manager {
         errors
     }
 
-    /// Most downloaded this month for `flavour`, from the catalogue.
+    /// Most downloaded this month for `flavour`, from the catalogue. When no
+    /// host lists that flavour yet (Forever before launch), the month's most
+    /// downloaded overall, so Browse is never empty; each says its flavours.
     pub fn popular(&self, flavour: Flavour, limit: usize) -> Vec<crate::sources::CatalogueEntry> {
         let on = self.available_sources();
-        self.catalogue
-            .as_ref()
-            .and_then(|c| c.popular(flavour, limit * 2).ok())
-            .unwrap_or_default()
-            .into_iter()
-            .filter(|e| on.contains(&e.source))
-            .take(limit)
-            .collect()
+        let Some(cat) = self.catalogue.as_ref() else {
+            return vec![];
+        };
+        let pick = |rows: Vec<crate::sources::CatalogueEntry>| -> Vec<_> {
+            rows.into_iter()
+                .filter(|e| on.contains(&e.source))
+                .take(limit)
+                .collect()
+        };
+        let for_flavour = pick(cat.popular(flavour, limit * 2).unwrap_or_default());
+        if !for_flavour.is_empty() {
+            return for_flavour;
+        }
+        pick(cat.popular_in(None, limit * 2).unwrap_or_default())
+    }
+
+    /// Opt-in: a newer Nexforge than `current`, if one is published.
+    pub async fn newer_nexforge(
+        &self,
+        current: &str,
+    ) -> Result<Option<crate::self_update::NewVersion>> {
+        crate::self_update::check(self.fetch.as_ref(), current).await
     }
 
     /// The icon the catalogue knows for an addon.

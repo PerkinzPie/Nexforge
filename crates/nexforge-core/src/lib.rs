@@ -13,6 +13,7 @@ pub mod manager;
 pub mod net;
 pub mod paths;
 pub mod reconcile;
+pub mod self_update;
 pub mod sources;
 pub mod state;
 pub mod toc;

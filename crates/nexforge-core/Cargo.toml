@@ -4,6 +4,8 @@ description = "Core library for Nexforge, a World of Warcraft addon manager"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
 async-trait.workspace = true

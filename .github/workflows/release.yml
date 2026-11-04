@@ -1,0 +1,38 @@
+name: Release
+
+# Push a tag like v0.2.0 to build the Windows installer and publish a GitHub
+# release with it. The app's opt-in update check reads the latest release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: app
+      - run: cargo test -p nexforge-core
+      - run: pnpm tauri build
+        working-directory: app
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" target/release/bundle/msi/*.msi \
+            --title "Nexforge ${GITHUB_REF_NAME#v}" --generate-notes

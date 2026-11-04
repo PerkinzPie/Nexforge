@@ -6,6 +6,8 @@ members = ["crates/nexforge-core", "crates/nexforge-cli", "app/src-tauri"]
 version = "0.1.0"
 edition = "2021"
 authors = ["Nexabyte Entertainment"]
+license = "MIT"
+repository = "https://github.com/PerkinzPie/Nexforge"
 
 [workspace.dependencies]
 nexforge-core = { path = "crates/nexforge-core" }

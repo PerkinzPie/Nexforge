@@ -126,6 +126,14 @@
 
       <section class="sec">
         <h2><Icon name="shield" size={15} stroke={2.2} />Privacy and diagnostics</h2>
+        <label class="frow toggle">
+          <span class="t" data-tip-start data-tip="One request to GitHub on launch. Nothing is downloaded.">Check for new versions of Nexforge</span>
+          <input type="checkbox" checked={s.selfUpdateCheck}
+            onchange={(e) => {
+              const on = e.currentTarget.checked;
+              save({ selfUpdateCheck: on }).then(() => (on ? store.checkSelf() : (store.newVersion = null)));
+            }} />
+        </label>
         <div class="frow">
           <div class="lbl"><span class="t">Network log</span></div>
           <button type="button" class="btn btn-sm" onclick={() => open("log")}>Open log</button>

@@ -124,6 +124,7 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
     case "skip": return null;
     case "set_pinned": { const x = addons.find((y) => y.id === args.id); if (x) x.pinned = args.pinned; return null; }
     case "image": throw new Error("no images in preview");
+    case "self_update": return settings.selfUpdateCheck ? { version: "0.2.0", url: "https://github.com/PerkinzPie/Nexforge/releases" } : null;
     case "refresh_catalogue": await wait(300); return { total: 8264, refreshedAt: new Date().toISOString(), errors: [] };
     case "popular": return hits.filter((h) => h.forFlavour).map((h) => ({ ...h }));
     default: throw new Error(`"${cmd}" is not available in the browser preview.`);

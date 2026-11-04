@@ -188,8 +188,17 @@ impl Catalogue {
         rows.collect::<rusqlite::Result<Vec<_>>>().map_err(db_err)
     }
 
-    /// Most downloaded this month among addons listing `flavour`.
+    /// Most downloaded this month among addons listing `flavour`; `None`
+    /// for every flavour.
     pub fn popular(&self, flavour: Flavour, limit: usize) -> Result<Vec<CatalogueEntry>> {
+        self.popular_in(Some(flavour), limit)
+    }
+
+    pub fn popular_in(
+        &self,
+        flavour: Option<Flavour>,
+        limit: usize,
+    ) -> Result<Vec<CatalogueEntry>> {
         let conn = self.lock();
         let mut stmt = conn
             .prepare(
@@ -203,7 +212,12 @@ impl Catalogue {
             .map_err(db_err)?;
         let rows = stmt
             .query_map(
-                params![format!("%,{},%", flavour.as_str()), limit as i64],
+                params![
+                    flavour
+                        .map(|f| format!("%,{},%", f.as_str()))
+                        .unwrap_or_else(|| "%".into()),
+                    limit as i64
+                ],
                 row,
             )
             .map_err(db_err)?;
@@ -501,6 +515,13 @@ mod tests {
             .map(|x| x.name)
             .collect();
         assert_eq!(names, ["C", "A"]);
+        let any: Vec<String> = c
+            .popular_in(None, 5)
+            .unwrap()
+            .into_iter()
+            .map(|x| x.name)
+            .collect();
+        assert_eq!(any, ["B", "C", "A"]);
     }
 
     #[test]

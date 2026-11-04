@@ -366,6 +366,13 @@ impl HitDto {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct NewVersionDto {
+    pub version: String,
+    pub url: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AdoptedDto {
     pub installation: InstallationDto,
     pub addons: usize,
