@@ -4,33 +4,34 @@
   --nx-coral: #d74653;
   --nx-plum: #653350;
 
-  /* Neutral greys, so addon artwork carries the colour; coral stays the brand accent. */
-  --rail: #121214;
-  --bg: #18181b;
-  --surface: #202024;
-  --raised: #29292e;
-  --raised-hover: #323238;
-  --border: #303036;
-  --divider: #2a2a2f;
+  /* Radix Slate (dark): grey with a faint blue cast, in even lightness steps,
+     so addon artwork carries the colour; coral stays the brand accent. */
+  --rail: #111113;
+  --bg: #18191b;
+  --surface: #212225;
+  --raised: #272a2d;
+  --raised-hover: #2e3135;
+  --border: #363a3f;
+  --divider: #2b2e32;
 
-  --text: #f2f2f3;
-  --text-2: #a6a6ad;
-  --text-3: #8c8c94;
-  --text-soft: #cacace;
+  --text: #edeef0;
+  --text-2: #b0b4ba;
+  --text-3: #969ba3;
+  --text-soft: #cfd2d6;
 
   --accent-fill: #e35a66;
   --accent-fill-hover: #eb6f7a;
-  --accent-text: #eb6f7a;
+  --accent-text: #ef7c86;
   --accent-tint: #3b2327;
   --accent-tint-hover: #4a2a30;
 
   --good: #4fd1b5;
-  --good-tint: #1e3632;
+  --good-tint: #1c3431;
   --attention: #f5c451;
-  --attn-tint: #3a3220;
+  --attn-tint: #36311f;
   --info: #a6aaf0;
-  --info-tint: #282b45;
-  --act: #eb6f7a;
+  --info-tint: #252a3c;
+  --act: #ef7c86;
 
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --sans: Manrope, system-ui, sans-serif;
