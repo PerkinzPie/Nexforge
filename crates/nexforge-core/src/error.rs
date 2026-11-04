@@ -84,6 +84,11 @@ pub enum Error {
     CurseForgeKeyNeeded,
     #[error("CurseForge refused the API key.")]
     CurseForgeKeyRejected,
+    /// CurseForge answers bursts of searches with 403 (its rate limit).
+    #[error("CurseForge is limiting searches. Try again in a minute.")]
+    CurseForgeSearchBlocked,
+    #[error("CurseForge is busy. Try again in a minute, or paste the addon's Project ID.")]
+    CurseForgeNeedsProjectId,
 }
 
 impl Error {

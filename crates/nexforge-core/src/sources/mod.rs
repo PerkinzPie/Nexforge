@@ -196,6 +196,12 @@ pub trait Source: Send + Sync {
         Ok(vec![])
     }
 
+    /// Whether to search the host live even when the catalogue holds some of
+    /// its addons (its catalogue is a sample, not the whole host).
+    fn live_search(&self) -> bool {
+        false
+    }
+
     /// Release notes for `release`. Most hosts include them with the
     /// release; CurseForge has a separate endpoint.
     async fn changelog(&self, _source_id: &str, release: &Release) -> Result<Option<String>> {

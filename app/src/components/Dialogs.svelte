@@ -103,7 +103,7 @@
       </div>
 
       {#if d.kind === "install"}
-        <p class="dim">A link, an addon name, or <span class="mono">github:owner/repo</span>.{#if d.adopt} Replaces {d.adopt.folders.join(", ")} (backed up first).{/if}</p>
+        <p class="dim">A link, an addon name, or a CurseForge Project ID.{#if d.adopt} Replaces {d.adopt.folders.join(", ")} (backed up first).{/if}</p>
         <label class="sr" for="dlg-in">Address or name</label>
         <input id="dlg-in" class="text-input" bind:this={input} bind:value placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false" />
       {:else if d.kind === "remove"}

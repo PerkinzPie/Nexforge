@@ -15,8 +15,18 @@ use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
+
+/// CurseForge answers a burst of searches with 403 (seen live 2026-11-04: a
+/// search refused at once succeeded 90 seconds later). After one, stop
+/// searching for a minute per key; the local catalogue answers meanwhile.
+const SEARCH_PAUSE_SECS: i64 = 60;
+
+fn search_pauses() -> &'static Mutex<HashMap<String, i64>> {
+    static P: OnceLock<Mutex<HashMap<String, i64>>> = OnceLock::new();
+    P.get_or_init(|| Mutex::new(HashMap::new()))
+}
 
 pub const API: &str = "https://api.curseforge.com/v1";
 /// World of Warcraft's game id.
@@ -95,6 +105,40 @@ struct CfMod {
     latest_files_indexes: Vec<CfFileIndex>,
     #[serde(default)]
     date_modified: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CfFeatured {
+    #[serde(default)]
+    featured: Vec<CfMod>,
+    #[serde(default)]
+    popular: Vec<CfMod>,
+    #[serde(default)]
+    recently_updated: Vec<CfMod>,
+}
+
+/// One project as a catalogue entry, with the flavours its files list.
+fn catalogue_entry(m: CfMod) -> CatalogueEntry {
+    let mut flavours: Vec<Flavour> = m
+        .latest_files_indexes
+        .iter()
+        .filter_map(|i| i.game_version_type_id.and_then(map_type_id))
+        .collect();
+    flavours.sort();
+    flavours.dedup();
+    CatalogueEntry {
+        source: SourceId::Curseforge,
+        source_id: m.id.to_string(),
+        name: m.name,
+        authors: m.authors.into_iter().map(|a| a.name).collect(),
+        summary: m.summary,
+        flavours,
+        downloads: m.download_count.map(|d| d as u64),
+        downloads_monthly: None,
+        updated_at: m.date_modified,
+        icon_url: m.logo.and_then(|l| l.thumbnail_url.or(l.url)),
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -230,16 +274,31 @@ fn check_id(id: &str) -> Result<u64> {
 }
 
 /// Version shown for a file: its display name, else the file name.
+/// The version in a file's display name or file name ("ForeverDungeonJournal1.6.6.zip"
+/// is 1.6.6); the whole name, minus ".zip", when neither holds a number.
 fn version_of(display_name: &str, file_name: &str) -> String {
-    let d = display_name.trim();
-    if !d.is_empty() {
-        return d.to_string();
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE
+        .get_or_init(|| Regex::new(r"\d+(?:\.\d+)+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?").unwrap());
+    let strip = |s: &str| {
+        let s = s.trim();
+        s.strip_suffix(".zip")
+            .or_else(|| s.strip_suffix(".ZIP"))
+            .unwrap_or(s)
+            .trim()
+            .to_string()
+    };
+    let (d, f) = (strip(display_name), strip(file_name));
+    for name in [&d, &f] {
+        if let Some(m) = re.find_iter(name).last() {
+            return m.as_str().to_string();
+        }
     }
-    file_name
-        .trim()
-        .trim_end_matches(".zip")
-        .trim_end_matches(".ZIP")
-        .to_string()
+    if d.is_empty() {
+        f
+    } else {
+        d
+    }
 }
 
 fn file_flavours(f: &CfFile) -> Vec<Flavour> {
@@ -291,6 +350,18 @@ impl CurseForge {
         CurseForge { fetch, key }
     }
 
+    fn search_paused(&self) -> bool {
+        let until = search_pauses().lock().unwrap().get(&self.key).copied();
+        until.is_some_and(|t| Utc::now().timestamp() < t)
+    }
+
+    fn pause_search(&self) {
+        search_pauses()
+            .lock()
+            .unwrap()
+            .insert(self.key.clone(), Utc::now().timestamp() + SEARCH_PAUSE_SECS);
+    }
+
     fn get(&self, path: &str, reason: String, fresh: Duration) -> Get {
         Get::new(format!("{API}{path}"), reason)
             .header("Accept", "application/json")
@@ -298,9 +369,15 @@ impl CurseForge {
             .fresh_for(fresh)
     }
 
-    /// A refused key is a setup problem the player can fix; say so.
+    /// A refused key is a setup problem the player can fix; say so. A key
+    /// that works everywhere but search gets its own error.
     fn explain(e: Error) -> Error {
         match e {
+            Error::Http {
+                status: 403,
+                ref path,
+                ..
+            } if path.ends_with("/mods/search") => Error::CurseForgeSearchBlocked,
             Error::Http {
                 status: 401 | 403, ..
             } => Error::CurseForgeKeyRejected,
@@ -334,43 +411,67 @@ impl Source for CurseForge {
         true
     }
 
+    fn live_search(&self) -> bool {
+        true
+    }
+
+    /// Featured, popular and recently updated WoW addons: the one listing a
+    /// key without search access can still read.
+    async fn catalogue(&self) -> Result<Vec<CatalogueEntry>> {
+        let body = serde_json::json!({ "gameId": GAME_ID, "excludedModIds": [] }).to_string();
+        let text = self
+            .fetch
+            .post_json(
+                Post::json(
+                    format!("{API}/mods/featured"),
+                    "CurseForge featured addons",
+                    body,
+                )
+                .header("Accept", "application/json")
+                .header("x-api-key", self.key.clone()),
+            )
+            .await
+            .map_err(Self::explain)?;
+        let lists = serde_json::from_str::<Data<CfFeatured>>(&text)
+            .map_err(bad)?
+            .data;
+        let mut seen = std::collections::HashSet::new();
+        Ok(lists
+            .featured
+            .into_iter()
+            .chain(lists.popular)
+            .chain(lists.recently_updated)
+            .filter(|m| seen.insert(m.id))
+            .map(catalogue_entry)
+            .collect())
+    }
+
     async fn search(&self, q: &str, flavour: Flavour) -> Result<Vec<CatalogueEntry>> {
         let path = format!(
             "/mods/search?gameId={GAME_ID}&searchFilter={}&gameVersionTypeId={}&sortField=2&sortOrder=desc&pageSize=50",
             url::form_urlencoded::byte_serialize(q.trim().as_bytes()).collect::<String>(),
             game_version_type(flavour)
         );
-        let mods: Vec<CfMod> = self
+        if self.search_paused() {
+            return Ok(vec![]);
+        }
+        let mods: Vec<CfMod> = match self
             .get_json(self.get(
                 &path,
                 format!("CurseForge search \"{q}\""),
                 Duration::from_secs(600),
             ))
-            .await?;
-        Ok(mods
-            .into_iter()
-            .map(|m| {
-                let mut flavours: Vec<Flavour> = m
-                    .latest_files_indexes
-                    .iter()
-                    .filter_map(|i| i.game_version_type_id.and_then(map_type_id))
-                    .collect();
-                flavours.sort();
-                flavours.dedup();
-                CatalogueEntry {
-                    source: SourceId::Curseforge,
-                    source_id: m.id.to_string(),
-                    name: m.name,
-                    authors: m.authors.into_iter().map(|a| a.name).collect(),
-                    summary: m.summary,
-                    flavours,
-                    downloads: m.download_count.map(|d| d as u64),
-                    downloads_monthly: None,
-                    updated_at: m.date_modified,
-                    icon_url: m.logo.and_then(|l| l.thumbnail_url.or(l.url)),
-                }
-            })
-            .collect())
+            .await
+        {
+            Ok(m) => m,
+            // Rate limited: the catalogue answers instead, quietly.
+            Err(Error::CurseForgeSearchBlocked) => {
+                self.pause_search();
+                return Ok(vec![]);
+            }
+            Err(e) => return Err(e),
+        };
+        Ok(mods.into_iter().map(catalogue_entry).collect())
     }
 
     async fn resolve(&self, source_id: &str) -> Result<AddonInfo> {
@@ -437,13 +538,25 @@ impl Source for CurseForge {
             return Ok(Some(id.as_str().to_string()));
         }
         let slug = c[1].to_ascii_lowercase();
+        if self.search_paused() {
+            return Err(Error::CurseForgeNeedsProjectId);
+        }
         let mods: Vec<CfMod> = self
             .get_json(self.get(
                 &format!("/mods/search?gameId={GAME_ID}&slug={slug}"),
                 format!("CurseForge project for {slug}"),
                 Duration::from_secs(24 * 3600),
             ))
-            .await?;
+            .await
+            .map_err(|e| match e {
+                // A link names the addon by slug, which only search can turn
+                // into an id.
+                Error::CurseForgeSearchBlocked => {
+                    self.pause_search();
+                    Error::CurseForgeNeedsProjectId
+                }
+                e => e,
+            })?;
         Ok(mods.first().map(|m| m.id.to_string()))
     }
 
@@ -528,9 +641,20 @@ mod tests {
         assert_eq!(map_game_version("1.60.1"), Some(Flavour::Forever));
         assert_eq!(map_game_version("4.4.2"), None);
         assert_eq!(channel_of(2), Channel::Beta);
+        // Real names from the Dungeon Journal project (2026-11-04).
+        assert_eq!(version_of("", "DungeonJournal-v1.4.2.zip"), "1.4.2");
         assert_eq!(
-            version_of("", "DungeonJournal-v1.4.2.zip"),
-            "DungeonJournal-v1.4.2"
+            version_of(
+                "ForeverDungeonJournal1.6.6.zip",
+                "ForeverDungeonJournal-1.6.6.zip"
+            ),
+            "1.6.6"
+        );
+        assert_eq!(version_of("DungeonJournalTBC 1.5.5.zip", ""), "1.5.5");
+        assert_eq!(version_of("Addon 2.0.1-beta.2", ""), "2.0.1-beta.2");
+        assert_eq!(
+            version_of("DungeonJournalClassicEra.zip", ""),
+            "DungeonJournalClassicEra"
         );
         assert_eq!(
             html_to_text("<p>v1.4.2</p><ul><li>Fixed <b>quest</b> pins</li><li>Added &quot;Forever&quot; raids &amp; more</li></ul>"),

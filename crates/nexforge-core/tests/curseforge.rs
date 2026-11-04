@@ -45,6 +45,48 @@ fn zip_bytes() -> Vec<u8> {
     buf.into_inner()
 }
 
+/// CurseForge rate-limits search with 403: search answers nothing (no error)
+/// and then pauses, the catalogue comes from the featured lists, and a link
+/// asks for the Project ID.
+#[tokio::test]
+async fn search_blocked_falls_back() {
+    let f = FixtureFetch::new();
+    let search = format!(
+        "{API}/mods/search?gameId=1&searchFilter=dungeon&gameVersionTypeId=88568&sortField=2&sortOrder=desc&pageSize=50"
+    );
+    f.route_status(&search, 403);
+    f.route_status(
+        &format!("{API}/mods/search?gameId=1&slug=dungeonjournal"),
+        403,
+    );
+    f.route(
+        &format!("{API}/mods/featured"),
+        std::fs::read_to_string(fx("featured.json")).unwrap(),
+    );
+    // Its own key: the pause is per key, and other tests search freely.
+    let cf = CurseForge::new(Arc::new(f.clone()), "rate-limited-key".into());
+
+    let hits = cf.search("dungeon", Flavour::Forever).await.unwrap();
+    assert!(hits.is_empty(), "a refused search is not an error");
+    let sent = f.hits().len();
+    assert!(cf
+        .search("dungeon", Flavour::Forever)
+        .await
+        .unwrap()
+        .is_empty());
+    assert_eq!(f.hits().len(), sent, "paused: no second request");
+
+    let listed = cf.catalogue().await.unwrap();
+    assert_eq!(listed.len(), 1, "featured and popular are merged by id");
+    assert_eq!(listed[0].source_id, "1707971");
+
+    let err = cf
+        .resolve_url("https://www.curseforge.com/wow/addons/dungeonjournal")
+        .await
+        .unwrap_err();
+    assert!(matches!(err, Error::CurseForgeNeedsProjectId), "{err}");
+}
+
 /// Serve every fixture, with the placeholder MD5 replaced by the zip's.
 fn fixtures() -> FixtureFetch {
     let zip = zip_bytes();
@@ -91,15 +133,12 @@ async fn releases_flavours_and_search() {
         "the TBC file is filtered out"
     );
     let r = pick_release(&rels, Flavour::Forever, Channel::Stable).unwrap();
-    assert_eq!(
-        r.version, "DungeonJournal v1.4.2",
-        "newest stable, not the beta"
-    );
+    assert_eq!(r.version, "1.4.2", "newest stable, not the beta");
     assert_eq!(r.download_url, ZIP);
     assert_eq!(r.size, Some(1048576));
     assert!(r.md5.as_deref().is_some_and(|m| m.len() == 32));
     let beta = pick_release(&rels, Flavour::Forever, Channel::Beta).unwrap();
-    assert_eq!(beta.version, "DungeonJournal v1.5.0-beta");
+    assert_eq!(beta.version, "1.5.0-beta");
     let tbc = cf.releases("1707971", Flavour::Anniversary).await.unwrap();
     assert_eq!(tbc.len(), 1);
 
@@ -195,7 +234,7 @@ async fn install_check_and_opt_out() {
         .unwrap();
     assert_eq!(e.source, Some(SourceId::Curseforge));
     assert_eq!(e.source_id, "1707971");
-    assert_eq!(e.installed_version, "DungeonJournal v1.4.2");
+    assert_eq!(e.installed_version, "1.4.2");
     assert_eq!(e.author.as_deref(), Some("ExehnTV"));
     assert!(inst
         .addons_dir()

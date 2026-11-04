@@ -460,7 +460,7 @@ impl Manager {
             let live = self
                 .sources
                 .iter()
-                .filter(|s| !indexed.contains(&s.id()))
+                .filter(|s| !indexed.contains(&s.id()) || s.live_search())
                 .map(|s| async move { (s.id(), s.search(q, flavour).await) });
             let mut errors = Vec::new();
             for (id, r) in join_all(live).await {
@@ -472,6 +472,9 @@ impl Manager {
                     Err(e) => errors.push((id, e.to_string())),
                 }
             }
+            // The catalogue and a live search can both list the same addon.
+            let mut seen = std::collections::HashSet::new();
+            hits.retain(|h| seen.insert((h.source, h.source_id.clone())));
             hits.sort_by_key(|h| {
                 (
                     !(h.flavours.contains(&flavour) || h.flavours.is_empty()),
@@ -511,6 +514,14 @@ impl Manager {
         if let Some(p) = parse_spec(spec) {
             return Ok(p);
         }
+        // A bare number is a CurseForge Project ID (shown on every project page).
+        let t = spec.trim();
+        if !t.is_empty() && t.chars().all(|c| c.is_ascii_digit()) {
+            return match self.source(SourceId::Curseforge) {
+                Some(_) => Ok((SourceId::Curseforge, t.to_string())),
+                None => Err(Error::CurseForgeKeyNeeded),
+            };
+        }
         for s in &self.sources {
             if let Some(id) = s.resolve_url(spec).await? {
                 return Ok((s.id(), id));
@@ -525,7 +536,7 @@ impl Manager {
             return Ok((SourceId::Github, k.source_id()));
         }
         Err(Error::Other(format!(
-            "Could not tell which addon \"{spec}\" is. Use its name (nexforge search <name>), a GitHub or WoWInterface address, or source:id (github:owner/repo, wowi:12345)."
+            "Couldn't tell which addon \"{spec}\" is. Paste a GitHub, WoWInterface or CurseForge link, or a CurseForge Project ID."
         )))
     }
 

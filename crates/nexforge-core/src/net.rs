@@ -631,6 +631,7 @@ pub type SentHeaders = (String, Vec<(String, String)>);
 #[derive(Default, Clone)]
 pub struct FixtureFetch {
     routes: Arc<Mutex<HashMap<String, Vec<u8>>>>,
+    statuses: Arc<Mutex<HashMap<String, u16>>>,
     hits: Arc<Mutex<Vec<String>>>,
     posts: Arc<Mutex<Vec<(String, String)>>>,
     headers: Arc<Mutex<Vec<SentHeaders>>>,
@@ -645,6 +646,14 @@ impl FixtureFetch {
             .lock()
             .unwrap()
             .insert(url.to_string(), body.into());
+        self
+    }
+    /// Answer `url` with an HTTP error status instead of a body.
+    pub fn route_status(&self, url: &str, status: u16) -> &Self {
+        self.statuses
+            .lock()
+            .unwrap()
+            .insert(url.to_string(), status);
         self
     }
     pub fn route_file(&self, url: &str, path: impl AsRef<Path>) -> &Self {
@@ -672,6 +681,10 @@ impl FixtureFetch {
     fn lookup_in(&self, url: &str, allowed: fn(&str) -> bool) -> Result<Vec<u8>> {
         let u = parse_allowed_in(url, allowed)?;
         self.hits.lock().unwrap().push(url.to_string());
+        if let Some(status) = self.statuses.lock().unwrap().get(url).copied() {
+            let (host, path) = host_path(&u);
+            return Err(Error::Http { host, path, status });
+        }
         self.routes
             .lock()
             .unwrap()

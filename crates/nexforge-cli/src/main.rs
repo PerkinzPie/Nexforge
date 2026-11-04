@@ -225,6 +225,10 @@ async fn run(cli: Cli) -> Result<()> {
                     .map(|c| c.inst.flavour)
                     .unwrap_or(Flavour::Forever),
             };
+            // Same as Browse: refill the local catalogue at most once a day.
+            for (source, e) in mgr.refresh_catalogue(false).await {
+                eprintln!("{}: {e}", source.label());
+            }
             search(&mgr, &query.join(" "), flavour).await
         }
         _ => {
