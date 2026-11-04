@@ -41,6 +41,7 @@ export interface Hit {
   downloads: number | null; updatedAt: string | null; iconUrl: string | null; installed: boolean; alsoOn: string[];
 }
 export interface SearchResult { hits: Hit[]; errors: SourceError[] }
+export interface CatalogueInfo { total: number; refreshedAt: string | null; errors: SourceError[] }
 export type SettingsInput = Pick<Settings, "checkOnLaunch" | "autoApply" | "keepPreviousVersions" | "selfUpdateCheck" | "github" | "wowinterface" | "curseforge">;
 
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -73,6 +74,8 @@ export const api = {
   recent: (installationId: string) => call<Recent[]>("recent", { installationId }),
   search: (installationId: string | null, query: string) => call<SearchResult>("search", { installationId, query }),
   image: (url: string) => call<string>("image", { url }),
+  refreshCatalogue: (force: boolean) => call<CatalogueInfo>("refresh_catalogue", { force }),
+  popular: (installationId: string | null) => call<Hit[]>("popular", { installationId }),
   clientIcon: (installationId: string) => call<string | null>("client_icon", { installationId }),
   settings: () => call<Settings>("settings"),
   saveSettings: (s: SettingsInput) => call<Settings>("save_settings", { s }),

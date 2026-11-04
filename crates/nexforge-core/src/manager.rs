@@ -83,19 +83,91 @@ pub struct Manager {
     pub config: Config,
     fetch: Arc<dyn Fetch>,
     sources: Vec<Arc<dyn Source>>,
+    /// Browse index; `None` if it could not be opened (search goes live).
+    catalogue: Option<Arc<crate::catalogue::Catalogue>>,
 }
+
+/// How long a full catalogue refresh stays fresh.
+const CATALOGUE_TTL: chrono::Duration = chrono::Duration::hours(24);
 
 impl Manager {
     /// Real network, config from disk, keys from the credential store.
     pub fn open(paths: AppPaths) -> Result<Manager> {
         let config = Config::load_or_default(&paths.config_file())?;
         let net = Net::new(Some(paths.network_log()), Some(paths.http_cache()))?;
-        Ok(Self::with_fetch(
+        let catalogue = crate::catalogue::Catalogue::open(&paths.catalogue()).ok();
+        let mut mgr = Self::with_fetch(
             paths,
             config,
             Arc::new(net),
             SourceKeys::from_credential_store(),
-        ))
+        );
+        mgr.catalogue = catalogue.map(Arc::new);
+        Ok(mgr)
+    }
+
+    /// Use this catalogue (tests, or a shared one).
+    pub fn with_catalogue(mut self, c: Arc<crate::catalogue::Catalogue>) -> Self {
+        self.catalogue = Some(c);
+        self
+    }
+
+    pub fn catalogue_stats(&self) -> crate::catalogue::Stats {
+        self.catalogue
+            .as_ref()
+            .map(|c| c.stats())
+            .unwrap_or_default()
+    }
+
+    /// Refill the catalogue from every source with a bulk listing (GitHub
+    /// index, WoWInterface filelist). Skips sources refreshed within a day
+    /// unless `force`. Returns per-source failures; the rest still refresh.
+    pub async fn refresh_catalogue(&self, force: bool) -> Vec<(SourceId, String)> {
+        let Some(cat) = self.catalogue.clone() else {
+            return vec![];
+        };
+        let now = chrono::Utc::now();
+        let jobs = self
+            .sources
+            .iter()
+            .filter(|s| {
+                force
+                    || cat
+                        .refreshed_at(s.id())
+                        .is_none_or(|t| now - t > CATALOGUE_TTL)
+            })
+            .map(|s| async move { (s.id(), s.catalogue().await) });
+        let mut errors = Vec::new();
+        for (id, r) in join_all(jobs).await {
+            match r {
+                Ok(entries) if !entries.is_empty() => {
+                    if let Err(e) = cat.replace_source(id, &entries) {
+                        errors.push((id, e.to_string()));
+                    }
+                }
+                Ok(_) => {}
+                Err(e) => errors.push((id, e.to_string())),
+            }
+        }
+        errors
+    }
+
+    /// Most downloaded this month for `flavour`, from the catalogue.
+    pub fn popular(&self, flavour: Flavour, limit: usize) -> Vec<crate::sources::CatalogueEntry> {
+        let on = self.available_sources();
+        self.catalogue
+            .as_ref()
+            .and_then(|c| c.popular(flavour, limit * 2).ok())
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|e| on.contains(&e.source))
+            .take(limit)
+            .collect()
+    }
+
+    /// The icon the catalogue knows for an addon.
+    pub fn icon_for(&self, source: SourceId, source_id: &str) -> Option<String> {
+        self.catalogue.as_ref()?.icon(source, source_id)
     }
 
     pub fn with_fetch(
@@ -121,6 +193,7 @@ impl Manager {
             config,
             fetch,
             sources,
+            catalogue: None,
         }
     }
 
@@ -328,6 +401,46 @@ impl Manager {
         q: &str,
         flavour: Flavour,
     ) -> (Vec<crate::sources::CatalogueEntry>, Vec<(SourceId, String)>) {
+        // With a filled catalogue, hosts that have a bulk listing are answered
+        // locally; only the rest (CurseForge) are asked live, and what they
+        // return is added to the catalogue.
+        let local = match (&self.catalogue, q.trim().is_empty()) {
+            (Some(c), false) if c.stats().total > 0 => Some(c.clone()),
+            _ => None,
+        };
+        if let Some(cat) = local {
+            let on = self.available_sources();
+            let mut hits: Vec<_> = cat
+                .search(q, 80)
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|h| on.contains(&h.source))
+                .collect();
+            let indexed: Vec<SourceId> = cat.stats().per_source.iter().map(|(s, _)| *s).collect();
+            let live = self
+                .sources
+                .iter()
+                .filter(|s| !indexed.contains(&s.id()))
+                .map(|s| async move { (s.id(), s.search(q, flavour).await) });
+            let mut errors = Vec::new();
+            for (id, r) in join_all(live).await {
+                match r {
+                    Ok(h) => {
+                        let _ = cat.upsert(&h);
+                        hits.extend(h);
+                    }
+                    Err(e) => errors.push((id, e.to_string())),
+                }
+            }
+            hits.sort_by_key(|h| {
+                (
+                    !(h.flavours.contains(&flavour) || h.flavours.is_empty()),
+                    !h.name.to_lowercase().starts_with(&q.trim().to_lowercase()),
+                    std::cmp::Reverse(h.downloads),
+                )
+            });
+            return (hits, errors);
+        }
         let jobs = self
             .sources
             .iter()

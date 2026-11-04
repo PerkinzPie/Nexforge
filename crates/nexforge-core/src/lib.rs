@@ -2,6 +2,7 @@
 //! sources, the install engine and the network layer. No UI dependencies.
 
 pub mod archive;
+pub mod catalogue;
 pub mod error;
 pub mod flavour;
 pub mod install;

@@ -84,6 +84,22 @@ fn compat(v: &Value) -> (Vec<Flavour>, bool) {
     (out, !list.is_empty())
 }
 
+/// A filelist entry as a catalogue entry.
+fn entry(e: &Value) -> Option<CatalogueEntry> {
+    Some(CatalogueEntry {
+        source: SourceId::Wowinterface,
+        source_id: s(e, "UID")?,
+        name: s(e, "UIName")?,
+        authors: s(e, "UIAuthorName").into_iter().collect(),
+        summary: None,
+        flavours: compat(e).0,
+        downloads: n(e, "UIDownloadTotal"),
+        downloads_monthly: n(e, "UIDownloadMonthly"),
+        updated_at: date_ms(e, "UIDate"),
+        icon_url: images(e, "UIIMG_Thumbs").into_iter().next(),
+    })
+}
+
 fn bad(message: impl ToString) -> Error {
     Error::BadResponse {
         host: "api.mmoui.com".into(),
@@ -165,26 +181,18 @@ impl Source for WowInterface {
                     .map(|n| n.to_lowercase().contains(&q))
                     .unwrap_or(false)
             })
-            .filter_map(|e| {
-                // Entries for other flavours stay listed; the UI offers
-                // "Install anyway" for them.
-                let (flavours, _) = compat(e);
-                Some(CatalogueEntry {
-                    source: SourceId::Wowinterface,
-                    source_id: s(e, "UID")?,
-                    name: s(e, "UIName")?,
-                    authors: s(e, "UIAuthorName").into_iter().collect(),
-                    summary: None,
-                    flavours,
-                    downloads: n(e, "UIDownloadTotal"),
-                    updated_at: date_ms(e, "UIDate"),
-                    icon_url: images(e, "UIIMG_Thumbs").into_iter().next(),
-                })
-            })
+            // Entries for other flavours stay listed; the UI offers
+            // "Install anyway" for them.
+            .filter_map(entry)
             .collect();
         hits.sort_by_key(|a| std::cmp::Reverse(a.downloads));
         hits.truncate(50);
         Ok(hits)
+    }
+
+    /// The whole filelist (about 8,000 addons, one cached request).
+    async fn catalogue(&self) -> Result<Vec<CatalogueEntry>> {
+        Ok(self.filelist().await?.iter().filter_map(entry).collect())
     }
 
     async fn resolve(&self, source_id: &str) -> Result<AddonInfo> {

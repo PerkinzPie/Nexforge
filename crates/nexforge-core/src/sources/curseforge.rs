@@ -325,6 +325,7 @@ impl Source for CurseForge {
                     summary: m.summary,
                     flavours,
                     downloads: m.download_count.map(|d| d as u64),
+                    downloads_monthly: None,
                     updated_at: m.date_modified,
                     icon_url: m.logo.and_then(|l| l.thumbnail_url.or(l.url)),
                 }

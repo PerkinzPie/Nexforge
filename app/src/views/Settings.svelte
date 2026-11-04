@@ -80,7 +80,7 @@
           <input type="checkbox" checked={s.checkOnLaunch} onchange={(e) => save({ checkOnLaunch: e.currentTarget.checked })} />
         </label>
         <label class="frow toggle">
-          <span class="t" data-tip="Pinned addons are never updated automatically.">Apply updates automatically</span>
+          <span class="t" data-tip-start data-tip="Pinned addons are never updated automatically.">Apply updates automatically</span>
           <input type="checkbox" checked={s.autoApply} onchange={(e) => save({ autoApply: e.currentTarget.checked })} />
         </label>
         <label class="frow toggle">

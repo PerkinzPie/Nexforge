@@ -141,6 +141,58 @@ async fn github_release_json_flavours() {
 }
 
 #[tokio::test]
+async fn catalogue_answers_search_without_the_network() {
+    use nexforge_core::catalogue::Catalogue;
+    use nexforge_core::{AppPaths, Config, Manager, SourceId, SourceKeys};
+    let f = FixtureFetch::new();
+    f.route_file(
+        "https://api.mmoui.com/v3/game/WOW/filelist.json",
+        fx("wowinterface/filelist.json"),
+    );
+    let dir = tempfile::tempdir().unwrap();
+    let mgr = Manager::with_fetch(
+        AppPaths::at(dir.path()),
+        Config::default(),
+        Arc::new(f.clone()),
+        SourceKeys::default(),
+    )
+    .with_catalogue(Arc::new(Catalogue::in_memory().unwrap()));
+
+    assert!(mgr.refresh_catalogue(false).await.is_empty());
+    let stats = mgr.catalogue_stats();
+    assert!(stats
+        .per_source
+        .iter()
+        .any(|(s, n)| *s == SourceId::Github && *n >= 30));
+    assert!(stats
+        .per_source
+        .iter()
+        .any(|(s, n)| *s == SourceId::Wowinterface && *n >= 3));
+    // Fresh: a second refresh does nothing.
+    let hits_before = f.hits().len();
+    mgr.refresh_catalogue(false).await;
+    assert_eq!(f.hits().len(), hits_before);
+
+    let (hits, errors) = mgr.search("bigwigs", Flavour::ClassicEra).await;
+    assert!(errors.is_empty());
+    assert_eq!(
+        f.hits().len(),
+        hits_before,
+        "search used the catalogue only"
+    );
+    assert!(hits
+        .iter()
+        .any(|h| h.source == SourceId::Github && h.source_id == "BigWigsMods/BigWigs"));
+    assert!(hits
+        .iter()
+        .any(|h| h.source == SourceId::Wowinterface && h.source_id == "22095"));
+    assert_eq!(
+        mgr.icon_for(SourceId::Wowinterface, "22095").as_deref(),
+        Some("https://cdn-wow.mmoui.com/preview/tiny/pvw75842.jpg")
+    );
+}
+
+#[tokio::test]
 async fn icons_come_from_image_hosts_and_are_cached() {
     use nexforge_core::sources::github::avatar_url;
     use nexforge_core::{AppPaths, Config, Manager, SourceKeys};

@@ -152,6 +152,9 @@ pub struct CatalogueEntry {
     pub summary: Option<String>,
     pub flavours: Vec<Flavour>,
     pub downloads: Option<u64>,
+    /// Downloads in the last month, where the host says (WoWInterface).
+    #[serde(default)]
+    pub downloads_monthly: Option<u64>,
     pub updated_at: Option<DateTime<Utc>>,
     pub icon_url: Option<String>,
 }
@@ -176,6 +179,12 @@ pub trait Source: Send + Sync {
             .into_iter()
             .filter(|r| r.supports(flavour) || r.flavour_unknown())
             .collect())
+    }
+
+    /// Every addon the host can list in one go, for the local catalogue.
+    /// Hosts without a bulk listing return nothing and are searched live.
+    async fn catalogue(&self) -> Result<Vec<CatalogueEntry>> {
+        Ok(vec![])
     }
 
     /// "Install from URL": map a web address on this host to a source id.

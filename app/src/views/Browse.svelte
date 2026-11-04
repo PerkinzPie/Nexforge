@@ -16,6 +16,20 @@
   let errors = $state<{ sourceLabel: string; message: string }[]>([]);
   let loading = $state(false);
   let seq = 0;
+  let popular = $state<Hit[]>([]);
+  /** Bumped when the catalogue finishes refreshing, to re-run search. */
+  let refreshed = $state(0);
+
+  // Refill the local catalogue in the background (at most once a day).
+  $effect(() => {
+    api.refreshCatalogue(false).then(() => refreshed++).catch(() => {});
+  });
+
+  $effect(() => {
+    const inst = store.current;
+    void refreshed;
+    api.popular(inst).then((p) => (popular = p)).catch(() => (popular = []));
+  });
 
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
   const on = $derived(store.snap?.sourcesOn ?? []);
@@ -24,6 +38,7 @@
   $effect(() => {
     const q = query.trim();
     const inst = store.current;
+    void refreshed;
     const mine = ++seq;
     loading = true;
     const t = setTimeout(async () => {
@@ -68,7 +83,10 @@
 
   async function install(h: Hit, anyway: boolean) {
     const ok = await store.install(h.spec, null, anyway);
-    if (ok) hits = hits.map((x) => (x === h ? { ...x, installed: true } : x));
+    if (ok) {
+      hits = hits.map((x) => (x.spec === h.spec ? { ...x, installed: true } : x));
+      popular = popular.map((x) => (x.spec === h.spec ? { ...x, installed: true } : x));
+    }
     else if (!anyway && store.toast?.text.includes("No release of")) {
       store.toast = null;
       store.dialog = { kind: "anyway", spec: h.spec, name: h.name };
@@ -78,10 +96,7 @@
 
 <div class="page">
   <div class="page-head">
-    <div class="page-title">
-      <h1 class="h1">Browse</h1>
-      <span class="dim">Installs into {store.installation?.label ?? "WoW Forever"}</span>
-    </div>
+    <h1 class="h1 title">Browse</h1>
     <button type="button" class="btn" onclick={() => (store.dialog = { kind: "install" })} disabled={!store.current}>
       <Icon name="link" size={15} stroke={2.2} />Install from URL
     </button>
@@ -114,12 +129,29 @@
     <div class="notice err narrow"><Icon name="warn" size={16} /><span><strong>{e.sourceLabel}:</strong> {e.message}</span></div>
   {/each}
 
+  {#if !query.trim() && popular.length}
+    <section class="popular narrow" aria-labelledby="pop-h">
+      <h2 class="h2" id="pop-h">Popular this month</h2>
+      <div class="pops">
+        {#each popular as h (h.spec)}
+          <div class="pop">
+            <Tile name={h.name} iconUrl={h.iconUrl} size={48} />
+            <div class="pt"><span class="pn">{h.name}</span>{#if h.authors.length}<span class="dim tiny">{h.authors[0]}</span>{/if}</div>
+            {#if h.installed}
+              <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
+            {:else}
+              <ProgressButton label="Install" busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, false)} />
+            {/if}
+          </div>
+        {/each}
+      </div>
+    </section>
+  {/if}
+
   <div class="results narrow">
-    <span class="dim count">
-      {#if loading && !hits.length}Searching…
-      {:else if query.trim()}{shown.length} result{shown.length === 1 ? "" : "s"} for “{query.trim()}”{loading ? " · updating…" : ""}
-      {:else}From the GitHub index{/if}
-    </span>
+    {#if query.trim() || (loading && !hits.length)}
+      <span class="dim count">{loading && !hits.length ? "Searching…" : `${shown.length} result${shown.length === 1 ? "" : "s"}`}</span>
+    {/if}
     {#if shown.length}
       <div class="panel">
         {#each shown as h (h.spec)}
@@ -160,6 +192,12 @@
 </div>
 
 <style>
+  .popular { display: flex; flex-direction: column; gap: 12px; }
+  .pops { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .pop { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+  .pt { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 100%; }
+  .pn { font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .title { margin-right: auto; }
   .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: -6px; }
   .builds { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12.5px; font-weight: 600; color: var(--text-2); }
   .builds select { height: 32px; padding: 0 30px 0 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A8A8B0' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color: var(--text); font: 600 12.5px var(--sans); appearance: none; cursor: pointer; }

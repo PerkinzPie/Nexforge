@@ -362,6 +362,14 @@ impl HitDto {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CatalogueDto {
+    pub total: u64,
+    pub refreshed_at: Option<DateTime<Utc>>,
+    pub errors: Vec<SourceErrorDto>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchDto {
     pub hits: Vec<HitDto>,
     pub errors: Vec<SourceErrorDto>,

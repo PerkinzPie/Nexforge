@@ -126,7 +126,18 @@ async fn snapshot(installation_id: Option<String>, writes: State<'_, Writes>) ->
                     _ => last_run = Some(LastRun { at, count: 1 }),
                 }
             }
-            AddonDto::from(a)
+            let mut dto = AddonDto::from(a);
+            if dto.icon_url.is_none() {
+                dto.icon_url = a
+                    .source
+                    .and_then(|s| mgr.icon_for(s, &a.source_id))
+                    .or_else(|| {
+                        [SourceId::Wowinterface, SourceId::Curseforge]
+                            .into_iter()
+                            .find_map(|s| mgr.icon_for(s, a.ids.get(s)?))
+                    });
+            }
+            dto
         })
         .collect();
     Ok(Snapshot {
@@ -446,6 +457,53 @@ async fn search(installation_id: Option<String>, query: String) -> Res<SearchDto
     })
 }
 
+/// Refill the Browse catalogue (at most daily unless `force`).
+#[tauri::command]
+async fn refresh_catalogue(force: bool) -> Res<CatalogueDto> {
+    let mgr = manager()?;
+    let errors = mgr.refresh_catalogue(force).await;
+    let s = mgr.catalogue_stats();
+    Ok(CatalogueDto {
+        total: s.total,
+        refreshed_at: s.refreshed_at,
+        errors: errors
+            .into_iter()
+            .map(|(src, e)| SourceErrorDto {
+                source: src.as_str().into(),
+                source_label: src.label().into(),
+                message: e,
+            })
+            .collect(),
+    })
+}
+
+/// Most downloaded this month for the installation's flavour.
+#[tauri::command]
+async fn popular(installation_id: Option<String>) -> Res<Vec<HitDto>> {
+    let mgr = manager()?;
+    let (flavour, state) = match installation_id
+        .as_deref()
+        .map(|id| installation(&mgr, id))
+        .transpose()?
+    {
+        Some(inst) => (inst.flavour, load_state(&inst).ok()),
+        None => (nexforge_core::Flavour::Forever, None),
+    };
+    Ok(mgr
+        .popular(flavour, 8)
+        .into_iter()
+        .map(|h| {
+            let installed = state.as_ref().is_some_and(|s| {
+                s.addons.iter().any(|a| {
+                    (a.source == Some(h.source) && a.source_id == h.source_id)
+                        || a.ids.get(h.source) == Some(h.source_id.as_str())
+                })
+            });
+            HitDto::new(h, flavour, installed)
+        })
+        .collect())
+}
+
 /// An icon as a `data:` URL, via the core's image-only allowlist and cache.
 #[tauri::command]
 async fn image(url: String) -> Res<String> {
@@ -735,6 +793,8 @@ pub fn run() {
             search,
             image,
             client_icon,
+            refresh_catalogue,
+            popular,
             addon_info,
             settings,
             save_settings,

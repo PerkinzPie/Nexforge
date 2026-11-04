@@ -282,10 +282,16 @@ impl Source for GitHub {
                 summary: None,
                 flavours: k.flavours.clone(),
                 downloads: None,
+                downloads_monthly: None,
                 updated_at: None,
                 icon_url: avatar_url(&k.repo),
             })
             .collect())
+    }
+
+    /// The bundled index is the whole GitHub catalogue.
+    async fn catalogue(&self) -> Result<Vec<CatalogueEntry>> {
+        self.search("", Flavour::Forever).await
     }
 
     async fn resolve(&self, source_id: &str) -> Result<AddonInfo> {

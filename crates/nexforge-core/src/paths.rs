@@ -49,6 +49,10 @@ impl AppPaths {
     pub fn http_cache(&self) -> PathBuf {
         self.root.join("cache").join("http")
     }
+    /// Browse index (SQLite). Safe to delete.
+    pub fn catalogue(&self) -> PathBuf {
+        self.root.join("catalogue.db")
+    }
     /// Addon icons and screenshots. Safe to delete.
     pub fn image_cache(&self) -> PathBuf {
         self.root.join("cache").join("images")

@@ -61,7 +61,7 @@ button { font-family: inherit; }
 .h2 { margin: 0; font-size: 11.5px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Page layout */
-.page { flex: 1 1 auto; min-width: 0; height: 100%; overflow-y: auto; padding: 28px 32px; display: flex; flex-direction: column; gap: 22px; }
+.page { flex: 1 1 auto; min-width: 0; height: 100%; overflow-y: auto; overflow-x: hidden; padding: 28px 32px; display: flex; flex-direction: column; gap: 22px; }
 .page-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .page-title { display: flex; flex-direction: column; gap: 4px; margin-right: auto; }
 .narrow { width: 100%; }
@@ -155,10 +155,13 @@ tr:last-child td { border-bottom: 0; }
 .notice.err { border-color: #5a2a36; background: var(--accent-tint); color: var(--accent-text); }
 .empty { padding: 36px 20px; text-align: center; color: var(--text-2); }
 
-/* Tooltips: data-tip="…" on any element; shown on hover and keyboard focus. */
+/* Tooltips: data-tip="…" on any element; shown on hover and keyboard focus.
+   They open leftward from the element's right edge (controls sit on the right);
+   add data-tip-start for elements on the left, which open rightward. */
 [data-tip] { position: relative; }
 [data-tip]:hover::after, [data-tip]:focus-visible::after {
-  content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 40;
+  content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 40;
   width: max-content; max-width: 260px; padding: 7px 10px; border-radius: 8px; background: var(--text); color: var(--bg);
   font: 600 12px/1.4 var(--sans); text-transform: none; letter-spacing: 0; white-space: normal; text-align: left; pointer-events: none;
 }
+[data-tip-start]:hover::after, [data-tip-start]:focus-visible::after { right: auto; left: 0; }
