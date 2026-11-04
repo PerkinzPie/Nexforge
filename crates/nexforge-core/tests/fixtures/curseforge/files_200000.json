@@ -1,0 +1,51 @@
+{
+ "data": [
+  {
+   "id": 7100001,
+   "gameId": 1,
+   "modId": 1707971,
+   "isAvailable": true,
+   "displayName": "DungeonJournal v2.0.0",
+   "fileName": "Closed-v2.0.0.zip",
+   "releaseType": 1,
+   "fileStatus": 4,
+   "hashes": [
+    {
+     "value": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+     "algo": 1
+    },
+    {
+     "value": "PLACEHOLDER_MD5",
+     "algo": 2
+    }
+   ],
+   "fileDate": "2026-11-03T18:20:00Z",
+   "fileLength": 1048576,
+   "downloadCount": 1000,
+   "downloadUrl": null,
+   "gameVersions": [
+    "1.60.1"
+   ],
+   "sortableGameVersions": [
+    {
+     "gameVersionName": "1.60.1",
+     "gameVersionPadded": "",
+     "gameVersion": "1.60.1",
+     "gameVersionReleaseDate": "2026-11-04T00:00:00Z",
+     "gameVersionTypeId": 88568
+    }
+   ],
+   "dependencies": [],
+   "alternateFileId": 0,
+   "isServerPack": false,
+   "fileFingerprint": 0,
+   "modules": []
+  }
+ ],
+ "pagination": {
+  "index": 0,
+  "pageSize": 50,
+  "resultCount": 1,
+  "totalCount": 1
+ }
+}

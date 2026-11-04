@@ -1,0 +1,128 @@
+{
+    "releases": [
+        {
+            "filename": "Questie-v12.5.0+v1.0.10.zip",
+            "nolib": false,
+            "metadata": [
+                {
+                    "flavor": "classic",
+                    "interface": 11508
+                },
+                {
+                    "flavor": "classic",
+                    "interface": 11509
+                },
+                {
+                    "flavor": "bcc",
+                    "interface": 20506
+                },
+                {
+                    "flavor": "wrath",
+                    "interface": 38002
+                },
+                {
+                    "flavor": "mists",
+                    "interface": 50503
+                },
+                {
+                    "flavor": "mists",
+                    "interface": 50504
+                },
+                {
+                    "flavor": "forever",
+                    "interface": 16001
+                }
+            ]
+        }
+    ],
+    "questie": {
+        "repository": "https://github.com/Questie/Questie",
+        "version": "12.5.0",
+        "producerCommit": "56cb33da269f7f4c0c2df73caa339e5d8fde4942",
+        "changelog": [
+            {
+                "category": "feature",
+                "text": "Implement native settings UI, replacing old Ace menu",
+                "commit": "56f32655b17a109e8020a04250eb61cee28a3455",
+                "author": "Yttrium tYcLief",
+                "coAuthors": []
+            }
+        ]
+    },
+    "questiedb": {
+        "repository": "https://github.com/Questie/QuestieDB",
+        "producerCommit": "a37877c1490027ee48e5722bf602adf34f95a6dc",
+        "version": "1.0.10",
+        "contractVersion": 4,
+        "minSupportedContract": 1,
+        "builtAt": "2023-11-14T22:13:20Z",
+        "nolib": false,
+        "artifacts": [
+            {
+                "flavor": "Vanilla",
+                "file": "QuestieDB-Vanilla.zip",
+                "sha256": "509def73fc47e95edab6c1a60e011352043b4d50b09bb65685d2a56ef6075ab6",
+                "bytes": 6499781,
+                "rawBytes": 13021003
+            },
+            {
+                "flavor": "TBC",
+                "file": "QuestieDB-TBC.zip",
+                "sha256": "29ae0cf80a83c727178a6eecd59eb345a1cb94edc299c29d286f04bcc0da7b4a",
+                "bytes": 9887842,
+                "rawBytes": 21272386
+            },
+            {
+                "flavor": "Wrath",
+                "file": "QuestieDB-Wrath.zip",
+                "sha256": "09d928742faa9f7ea86203884887e63d6463b7e02097dfc1957623cfdbc7ccc3",
+                "bytes": 13939889,
+                "rawBytes": 29902921
+            },
+            {
+                "flavor": "Cata",
+                "file": "QuestieDB-Cata.zip",
+                "sha256": "bba86b0ed5c96b26bb0c53902e92c70134a20fb1977115f1e206023742ddfbac",
+                "bytes": 21756713,
+                "rawBytes": 47366400
+            },
+            {
+                "flavor": "Mists",
+                "file": "QuestieDB-Mists.zip",
+                "sha256": "1ba9c90e7584378be6e3c7d2c9a98765587cb6989872800a1bf7f3584f7842f1",
+                "bytes": 25942410,
+                "rawBytes": 57117351
+            },
+            {
+                "flavor": "Forever",
+                "file": "QuestieDB-Forever.zip",
+                "sha256": "7bd476d25e1f20f9716b9fc6f6415ba366c4600b6297a93f0e116f239136df83",
+                "bytes": 13229677,
+                "rawBytes": 30006490
+            },
+            {
+                "flavor": "All",
+                "file": "QuestieDB-all.zip",
+                "sha256": "0e075c8c00fc3a9d1d2ddac52202381a67763f1bb7c839ee0d1274c89199abba",
+                "bytes": 90219072,
+                "rawBytes": 198686551
+            }
+        ],
+        "changelog": [
+            {
+                "category": "db",
+                "text": "[Forever] Add NPC ranks",
+                "commit": "3a2d1b5d43501eb1ebce8e94240db5344ec3cb79",
+                "author": "BreakBB",
+                "coAuthors": []
+            },
+            {
+                "category": "db",
+                "text": "[Forever] Add fraction digits for reputation spillover",
+                "commit": "bd4c190858c2a11d0936bcd10ce430ed6690782b",
+                "author": "BreakBB",
+                "coAuthors": []
+            }
+        ]
+    }
+}

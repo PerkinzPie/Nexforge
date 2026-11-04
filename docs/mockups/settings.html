@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Manrope,system-ui,sans-serif;color:#F2F2F4;background:#12111C;-webkit-font-smoothing:antialiased}
+a{color:#A6AAF0}a:hover{color:#C3C6F5}
+.wm{font-family:Jost,Manrope,sans-serif;font-weight:600;letter-spacing:0.04em;text-transform:uppercase}
+.nav{display:flex;align-items:center;gap:11px;height:38px;padding:0 12px;border-radius:8px;font-size:13.5px;font-weight:500;color:#C9C8D6;text-decoration:none}
+.nav:hover{background:rgba(255,255,255,0.06);color:#F2F2F4}
+.nav.on{background:rgba(255,255,255,0.10);color:#FFFFFF;font-weight:700}
+.nav.on:hover{background:rgba(255,255,255,0.10);color:#FFFFFF}
+.badge{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#E35A66;color:#12111C;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.count{margin-left:auto;font-size:12px;color:#A8A8B0}
+.dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border-radius:9px;border:1px solid #2E2D45;background:#22213A;color:#F2F2F4;font:600 13px Manrope,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#2A2946}
+.btn-sm{height:32px;padding:0 12px;font-size:12.5px;border-radius:8px}
+.sec{display:flex;flex-direction:column;border:1px solid #2E2D45;border-radius:14px;background:#1A1927}
+.sec h2{margin:0;display:flex;align-items:center;gap:10px;padding:14px 20px;font-size:11.5px;font-weight:700;color:#8A8A94;text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid #26253B}
+.frow{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:14px 20px;border-bottom:1px solid #26253B}
+.frow:last-child{border-bottom:0}
+.lbl{display:flex;flex-direction:column;gap:3px;flex:1 1 320px;min-width:0}
+.lbl .t{font-size:13.5px;font-weight:700}
+.lbl .s{font-size:12px;color:#A8A8B0;line-height:1.5}
+.sw{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:600;color:#C9C8D6;cursor:pointer}
+input[type=checkbox]{width:18px;height:18px;margin:0;accent-color:#E35A66}
+input[type=number]{width:64px;height:32px;box-sizing:border-box;padding:0 10px;border:1px solid #2E2D45;border-radius:8px;font:600 13px Manrope,system-ui,sans-serif;color:#F2F2F4;background:#22213A}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#C9C8D6}
+.dim{color:#A8A8B0}
+.pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:12px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.pill-ok{background:#1F3A36;color:#4FD1B5}
+.pill-off{background:#22213A;color:#A8A8B0}
+.ft{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:Jost,sans-serif;font-weight:700;font-size:16px;color:#FFFFFF;flex:0 0 auto}
+</style>
+</head>
+<body style="background:#12111C;display:flex;justify-content:center">
+<div style="width:1280px">
+<div style="display: flex; flex-wrap: wrap; min-height: 820px; background: #12111C">
+
+  <!-- Sidebar -->
+  <nav aria-label="Main" style="flex: 0 0 232px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; padding: 20px 14px; background: #2C2A4E">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 2px 10px 18px 10px">
+      <svg width="26" height="26" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 2 43.05 13v11H4.95V13z" fill="#DC4D5A"></path><path d="M4.95 24h38.1v11L24 46 4.95 35z" fill="#C73C49"></path><g transform="translate(24 24.6) scale(0.86) translate(-23.4 -23.4)"><circle cx="24" cy="12.6" r="3.6" fill="#F5C451" fill-opacity="0.14"></circle><path d="M24 8.4c.5 2.6 1.6 3.7 4.2 4.2-2.6.5-3.7 1.6-4.2 4.2-.5-2.6-1.6-3.7-4.2-4.2 2.6-.5 3.7-1.6 4.2-4.2z" fill="#F5C451"></path><circle cx="30.4" cy="9.6" r="0.9" fill="#F5C451"></circle><circle cx="18" cy="15.2" r="0.7" fill="#F5C451"></circle><path transform="translate(0 1.3)" d="M14.5 19H34.3Q35.7 19 35.7 20.4V23.1Q35.7 24.5 34.3 24.5H30.2L28.4 30.2 33.2 33.6V35.4Q33.2 36.6 32 36.6H16Q14.8 36.6 14.8 35.4V33.6L19.6 30.2 17.8 24.5H14.5C11.5 24.4 8.8 23 7.2 21.3 8.8 19.6 11.5 19 14.5 19Z" fill="#A82F3B"></path><path d="M14.5 19H34.3Q35.7 19 35.7 20.4V23.1Q35.7 24.5 34.3 24.5H30.2L28.4 30.2 33.2 33.6V35.4Q33.2 36.6 32 36.6H16Q14.8 36.6 14.8 35.4V33.6L19.6 30.2 17.8 24.5H14.5C11.5 24.4 8.8 23 7.2 21.3 8.8 19.6 11.5 19 14.5 19Z" fill="#F7F1EC"></path><path d="M15.4 19H34.3Q35.7 19 35.7 20.4V20.8H15.4Q14.5 20.8 14.5 19.9 14.5 19 15.4 19Z" fill="#FFFFFF"></path></g></svg>
+      <span class="wm" style="font-size: 17px; color: #FFFFFF">Nexforge</span>
+    </div>
+
+    <button type="button" aria-label="Switch game flavour, currently WoW Forever" style="display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 12px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; background: rgba(0,0,0,0.22); text-align: left; cursor: pointer; font-family: inherit">
+      <div style="width: 34px; height: 34px; border-radius: 9px; background: #D74653; display: flex; align-items: center; justify-content: center; font-family: Jost, sans-serif; font-weight: 700; font-size: 16px; color: #FFFFFF; flex: 0 0 auto">F</div>
+      <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1">
+        <span style="font-size: 13.5px; font-weight: 700; color: #FFFFFF">WoW Forever</span>
+        <span style="font-size: 11.5px; color: #A8A8B0">14 addons · 3 updates</span>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A8A8B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5-5 5 5M7 14l5 5 5-5"></path></svg>
+    </button>
+
+    <a class="nav" href="installed.html">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M3 9h18M9 21V9"></path></svg>
+      Installed
+      <span class="count">14</span>
+    </a>
+    <a class="nav" href="updates.html">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path></svg>
+      Updates
+      <span class="badge">3</span>
+    </a>
+    <a class="nav" href="browse.html">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      Browse
+    </a>
+    <a class="nav on" href="settings.html" aria-current="page">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path><circle cx="9" cy="6" r="2" fill="#2C2A4E"></circle><circle cx="15" cy="12" r="2" fill="#2C2A4E"></circle><circle cx="8" cy="18" r="2" fill="#2C2A4E"></circle></svg>
+      Settings
+    </a>
+
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px 10px 0 10px; border-top: 1px solid rgba(255,255,255,0.10)">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #A8A8B0">
+        <span class="dot" style="background: #4FD1B5"></span>Checked 2 min ago
+      </div>
+      <span style="font-size: 11.5px; color: #A8A8B0; line-height: 1.5">No account, no telemetry. <a href="#log">Network log</a></span>
+      <div style="display: flex; align-items: center; gap: 8px; padding-top: 6px">
+        <svg width="18" height="20" viewBox="108 325 100 116" aria-hidden="true"><path fill="#D74653" d="m141.45 326.81-15.58-0.002-7.686 13.312c-4.2278 7.3222-7.7295 13.39-7.782 13.484l-0.096 0.171 7.7745 13.465 7.7738 13.465 15.589 0.01 15.588 0.01 7.7565-13.437c4.2659-7.3905 7.7558-13.475 7.755-13.521-0.00075-0.0459-3.4911-6.1299-7.7565-13.52l-7.755-13.436zm53.733 30.408-15.592-0.0105-7.755 13.434c-4.2659 7.3884-7.755 13.473-7.7542 13.521 0.00082 0.0479 3.4911 6.1332 7.7565 13.523l7.7542 13.436 15.579 0.001 15.579 0.002 2.2927-3.9719c1.261-2.1847 4.7642-8.253 7.785-13.485l5.49-9.51-7.77-13.462-7.7775-13.464zm-53.731 29.931-15.581-0.00075-0.72892 1.2614c-0.40115 0.69389-3.9022 6.7575-7.7805 13.475l-7.0519 12.214 0.0959 0.17139c0.0525 0.0938 3.5545 6.1616 7.782 13.484l7.6868 13.312 15.58-0.002 15.58-0.002 7.755-13.436c4.2651-7.3901 7.755-13.474 7.7565-13.52 0.00041-0.0459-3.4894-6.1304-7.755-13.52l-7.761-13.44z"></path></svg>
+        <span style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #A8A8B0">Nexabyte Entertainment</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <h1 style="margin: 0; font-family: Jost, Manrope, sans-serif; font-size: 26px; font-weight: 600; letter-spacing: 0.01em">Settings</h1>
+      <span class="dim" style="font-size: 13px">Everything here lives in a plain config file you can read and edit.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px; max-width: 880px">
+
+      <section class="sec">
+        <h2><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M6 20V9l6-5 6 5v11M10 20v-6h4v6"></path></svg>Game installations</h2>
+        <div class="frow">
+          <div class="ft" style="background: #D74653">F</div>
+          <div class="lbl"><span class="t">WoW Forever</span><span class="mono s">C:\Games\World of Warcraft\_forever_</span></div>
+          <span class="pill pill-ok">Detected</span>
+          <button type="button" class="btn btn-sm">Change</button>
+        </div>
+        <div class="frow">
+          <div class="ft" style="background: #653350">E</div>
+          <div class="lbl"><span class="t">Classic Era / Anniversary</span><span class="mono s">C:\Games\World of Warcraft\_classic_era_</span></div>
+          <span class="pill pill-ok">Detected</span>
+          <button type="button" class="btn btn-sm">Change</button>
+        </div>
+        <div class="frow">
+          <div class="lbl"><span class="s">Each installation keeps its own addon list and its own addons.toml.</span></div>
+          <button type="button" class="btn btn-sm">Add installation</button>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path></svg>Updates</h2>
+        <div class="frow">
+          <div class="lbl"><span class="t">Check for updates on launch</span><span class="s">Shows what is available. Nothing is installed until you choose to.</span></div>
+          <label class="sw" for="chk-launch"><input id="chk-launch" type="checkbox" checked>On</label>
+        </div>
+        <div class="frow">
+          <div class="lbl"><span class="t">Apply updates automatically</span><span class="s">Off by default. Pinned addons are never auto-updated.</span></div>
+          <label class="sw" for="chk-auto"><input id="chk-auto" type="checkbox">Off</label>
+        </div>
+        <div class="frow">
+          <div class="lbl"><span class="t">Keep previous versions</span><span class="s">How many older versions to keep for one-click rollback.</span></div>
+          <label class="sw" for="keep"><input id="keep" type="number" value="3" min="0" max="10">versions</label>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg>Sources</h2>
+        <div class="frow">
+          <span class="dot" style="background: #A6AAF0; width: 10px; height: 10px"></span>
+          <div class="lbl"><span class="t">GitHub Releases</span><span class="s">No key needed.</span></div>
+          <span class="pill pill-ok">Enabled</span>
+        </div>
+        <div class="frow">
+          <span class="dot" style="background: #F5C451; width: 10px; height: 10px"></span>
+          <div class="lbl"><span class="t">WoWInterface</span><span class="s">No key needed.</span></div>
+          <span class="pill pill-ok">Enabled</span>
+        </div>
+        <div class="frow">
+          <span class="dot" style="background: #4FD1B5; width: 10px; height: 10px"></span>
+          <div class="lbl"><span class="t">Wago.io</span><span class="s">API key stored in Windows Credential Manager, never in a file.</span></div>
+          <span class="pill pill-ok">Key saved</span>
+          <button type="button" class="btn btn-sm">Replace key</button>
+        </div>
+        <div class="frow">
+          <span class="dot" style="background: #EB6F7A; width: 10px; height: 10px"></span>
+          <div class="lbl"><span class="t">CurseForge</span><span class="s">Needs an API key. Some authors opt out of third-party downloads; those addons show as unavailable.</span></div>
+          <span class="pill pill-off">No key</span>
+          <button type="button" class="btn btn-sm">Add key</button>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3z"></path><path d="m9 12 2 2 4-4"></path></svg>Privacy and diagnostics</h2>
+        <div class="frow">
+          <div class="lbl"><span class="t">Check for new versions of Nexforge</span><span class="s">One request to GitHub on launch. Off by default.</span></div>
+          <label class="sw" for="chk-self"><input id="chk-self" type="checkbox">Off</label>
+        </div>
+        <div class="frow">
+          <div class="lbl"><span class="t">Network log</span><span class="s">Every outbound request, with host and reason, written to a local text file.</span></div>
+          <button type="button" class="btn btn-sm">Open log</button>
+        </div>
+        <div class="frow">
+          <div class="lbl"><span class="t">Data folder</span><span class="mono s">C:\Users\scott\AppData\Local\Nexforge</span></div>
+          <button type="button" class="btn btn-sm">Open folder</button>
+        </div>
+      </section>
+
+      <section class="sec" style="background: #2C2A4E; border-color: #3A3860">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px; padding: 20px 24px">
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-right: auto">
+            <span class="wm" style="font-size: 20px; color: #FFFFFF">Nexforge</span>
+            <span style="font-size: 12.5px; color: #C9C8D6">Version 0.1.0 · open source · MIT licence</span>
+            <span style="font-size: 12.5px; color: #C9C8D6">A <a href="#nexabyte">Nexabyte Entertainment</a> product. Not affiliated with Blizzard Entertainment.</span>
+          </div>
+          <svg width="180" height="25" viewBox="107 455.53 810 112.93" role="img" aria-label="Nexabyte"><g transform="translate(0 128)"><g transform="translate(-2.0208 4.5302) scale(.98836)"><path d="m331.42 354.08v60.005h-14.102l-25.442-34.743v34.743h-14.22v-60h13.141l26.403 35.763v-35.76z" fill="#ffffff"></path><path d="m365.41 414.08h42.483v-12.66h-42.48zm0-23.402h42.483v-12.66h-42.48zm0-36.603v12.661h42.483v-12.66z" fill="#ffffff"></path><polygon transform="matrix(1.25 0 0 1.25 347.28 259.08)" points="123.19 75.998 89.295 124 75.71 124 93.184 99.375 76.814 75.998 90.351 75.998 100 90.303 109.5 75.998" fill="#ffffff"></polygon><polygon transform="matrix(1.25 0 0 1.25 347.28 259.08)" points="110.61 124 124.29 124 115.9 112.2 102.54 112.2" fill="#d74653"></polygon><polygon transform="matrix(1.25 0 0 1.25 442.73 259.08)" points="106.1 106.86 112.1 124 124.96 124 106.43 75.998 93.615 75.998 75.038 124 87.951 124 100.05 89.583" fill="#ffffff"></polygon><polygon transform="matrix(1.25 0 0 1.25 442.73 259.08)" points="100.03 124 92.408 112.2 107.59 112.2" fill="#d74653"></polygon><path d="m682.93 397.85c0 9.0015-6.0608 16.201-17.461 16.201h-32.58v-60.07h31.622c11.401 0 17.282 7.3206 17.282 15.302 0 7.5604-4.74 12.601-10.381 13.801 6.3611 1.0199 11.521 7.2003 11.521 14.761zm-35.823-21.242h14.581c3.3594 0 5.5798-1.98 5.5798-5.0403s-2.2205-5.1007-5.5798-5.1007h-14.581zm21.301 19.442c0-3.36-2.4597-5.5804-6.3-5.5804h-15.001v11.101h15.001c2.3999 0 6.3-0.72021 6.3-5.5206z" fill="#ffffff"></path><path d="m771.36 354.08-22.202 34.323v25.682h-14.22v-25.68l-22.38-34.32h16.262l13.201 21.362 13.082-21.362z" fill="#ffffff"></path><polygon transform="matrix(1.25 0 0 1.25 704.35 258.99)" points="105.76 75.998 105.76 124 94.336 124 94.336 86.127 80.846 86.127 80.846 75.998" fill="#ffffff"></polygon><polygon transform="matrix(1.25 0 0 1.25 704.35 258.99)" points="119.15 86.127 108.98 75.998 119.15 75.998" fill="#d74653"></polygon><path d="m887.36 414.08h42.483v-12.661h-42.483zm0-23.402h42.483v-12.661h-42.483zm0-36.603v12.661h42.483v-12.66z" fill="#ffffff"></path><path fill="#d74653" d="m141.45 326.81-15.58-0.002-7.686 13.312c-4.2278 7.3222-7.7295 13.39-7.782 13.484l-0.096 0.171 7.7745 13.465 7.7738 13.465 15.589 0.01 15.588 0.01 7.7565-13.437c4.2659-7.3905 7.7558-13.475 7.755-13.521-0.00075-0.0459-3.4911-6.1299-7.7565-13.52l-7.755-13.436zm53.733 30.408-15.592-0.0105-7.755 13.434c-4.2659 7.3884-7.755 13.473-7.7542 13.521 0.00082 0.0479 3.4911 6.1332 7.7565 13.523l7.7542 13.436 15.579 0.001 15.579 0.002 2.2927-3.9719c1.261-2.1847 4.7642-8.253 7.785-13.485l5.49-9.51-7.77-13.462-7.7775-13.464zm-53.731 29.931-15.581-0.00075-0.72892 1.2614c-0.40115 0.69389-3.9022 6.7575-7.7805 13.475l-7.0519 12.214 0.0959 0.17139c0.0525 0.0938 3.5545 6.1616 7.782 13.484l7.6868 13.312 15.58-0.002 15.58-0.002 7.755-13.436c4.2651-7.3901 7.755-13.474 7.7565-13.52 0.00041-0.0459-3.4894-6.1304-7.755-13.52l-7.761-13.44z"></path></g></g></svg>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,174 @@
+{
+ "data": [
+  {
+   "id": 6990001,
+   "gameId": 1,
+   "modId": 1707971,
+   "isAvailable": true,
+   "displayName": "DungeonJournal v1.4.1",
+   "fileName": "DungeonJournal-v1.4.1.zip",
+   "releaseType": 1,
+   "fileStatus": 4,
+   "hashes": [
+    {
+     "value": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+     "algo": 1
+    },
+    {
+     "value": "PLACEHOLDER_MD5",
+     "algo": 2
+    }
+   ],
+   "fileDate": "2026-10-30T10:00:00Z",
+   "fileLength": 1048576,
+   "downloadCount": 1000,
+   "downloadUrl": "https://edge.forgecdn.net/files/6990/1/DungeonJournal-v1.4.1.zip",
+   "gameVersions": [
+    "1.60.1"
+   ],
+   "sortableGameVersions": [
+    {
+     "gameVersionName": "1.60.1",
+     "gameVersionPadded": "",
+     "gameVersion": "1.60.1",
+     "gameVersionReleaseDate": "2026-11-04T00:00:00Z",
+     "gameVersionTypeId": 88568
+    }
+   ],
+   "dependencies": [],
+   "alternateFileId": 0,
+   "isServerPack": false,
+   "fileFingerprint": 0,
+   "modules": []
+  },
+  {
+   "id": 7012300,
+   "gameId": 1,
+   "modId": 1707971,
+   "isAvailable": true,
+   "displayName": "DungeonJournal v1.4.2-tbc",
+   "fileName": "DungeonJournal-v1.4.2-tbc.zip",
+   "releaseType": 1,
+   "fileStatus": 4,
+   "hashes": [
+    {
+     "value": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+     "algo": 1
+    },
+    {
+     "value": "PLACEHOLDER_MD5",
+     "algo": 2
+    }
+   ],
+   "fileDate": "2026-11-03T18:10:00Z",
+   "fileLength": 1048576,
+   "downloadCount": 1000,
+   "downloadUrl": "https://edge.forgecdn.net/files/7012/300/DungeonJournal-v1.4.2-tbc.zip",
+   "gameVersions": [
+    "2.5.5"
+   ],
+   "sortableGameVersions": [
+    {
+     "gameVersionName": "2.5.5",
+     "gameVersionPadded": "",
+     "gameVersion": "2.5.5",
+     "gameVersionReleaseDate": "2026-11-04T00:00:00Z",
+     "gameVersionTypeId": 73246
+    }
+   ],
+   "dependencies": [],
+   "alternateFileId": 0,
+   "isServerPack": false,
+   "fileFingerprint": 0,
+   "modules": []
+  },
+  {
+   "id": 7012345,
+   "gameId": 1,
+   "modId": 1707971,
+   "isAvailable": true,
+   "displayName": "DungeonJournal v1.4.2",
+   "fileName": "DungeonJournal-v1.4.2.zip",
+   "releaseType": 1,
+   "fileStatus": 4,
+   "hashes": [
+    {
+     "value": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+     "algo": 1
+    },
+    {
+     "value": "PLACEHOLDER_MD5",
+     "algo": 2
+    }
+   ],
+   "fileDate": "2026-11-03T18:20:00Z",
+   "fileLength": 1048576,
+   "downloadCount": 1000,
+   "downloadUrl": "https://edge.forgecdn.net/files/7012/345/DungeonJournal-v1.4.2.zip",
+   "gameVersions": [
+    "1.60.1"
+   ],
+   "sortableGameVersions": [
+    {
+     "gameVersionName": "1.60.1",
+     "gameVersionPadded": "",
+     "gameVersion": "1.60.1",
+     "gameVersionReleaseDate": "2026-11-04T00:00:00Z",
+     "gameVersionTypeId": 88568
+    }
+   ],
+   "dependencies": [],
+   "alternateFileId": 0,
+   "isServerPack": false,
+   "fileFingerprint": 0,
+   "modules": []
+  },
+  {
+   "id": 7012399,
+   "gameId": 1,
+   "modId": 1707971,
+   "isAvailable": true,
+   "displayName": "DungeonJournal v1.5.0-beta",
+   "fileName": "DungeonJournal-v1.5.0-beta.zip",
+   "releaseType": 2,
+   "fileStatus": 4,
+   "hashes": [
+    {
+     "value": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+     "algo": 1
+    },
+    {
+     "value": "PLACEHOLDER_MD5",
+     "algo": 2
+    }
+   ],
+   "fileDate": "2026-11-04T09:00:00Z",
+   "fileLength": 1048576,
+   "downloadCount": 1000,
+   "downloadUrl": "https://edge.forgecdn.net/files/7012/399/DungeonJournal-v1.5.0-beta.zip",
+   "gameVersions": [
+    "1.60.1"
+   ],
+   "sortableGameVersions": [
+    {
+     "gameVersionName": "1.60.1",
+     "gameVersionPadded": "",
+     "gameVersion": "1.60.1",
+     "gameVersionReleaseDate": "2026-11-04T00:00:00Z",
+     "gameVersionTypeId": 88568
+    }
+   ],
+   "dependencies": [],
+   "alternateFileId": 0,
+   "isServerPack": false,
+   "fileFingerprint": 0,
+   "modules": []
+  }
+ ],
+ "pagination": {
+  "index": 0,
+  "pageSize": 50,
+  "resultCount": 4,
+  "totalCount": 4
+ }
+}

@@ -1,0 +1,28 @@
+[package]
+name = "nexforge-core"
+description = "Core library for Nexforge, a World of Warcraft addon manager"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+chrono.workspace = true
+directories.workspace = true
+futures-util.workspace = true
+keyring.workspace = true
+md-5.workspace = true
+regex.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+toml.workspace = true
+url.workspace = true
+uuid.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

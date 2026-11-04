@@ -1,0 +1,16 @@
+[package]
+name = "nexforge-cli"
+description = "Command-line interface for Nexforge"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "nexforge"
+path = "src/main.rs"
+
+[dependencies]
+nexforge-core.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+tokio.workspace = true

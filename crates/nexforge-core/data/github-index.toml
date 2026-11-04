@@ -1,0 +1,276 @@
+# GitHub index: addons whose releases are published on GitHub, keyed by
+# the IDs their TOCs carry, so reconcile and search can use GitHub even
+# when a TOC only names CurseForge or Wago.
+#
+# Each entry was verified on 2026-11-04: the repo's own TOC carries the same
+# X-Curse-Project-ID / X-Wago-ID / X-WoWI-ID as the installed addon, and the
+# repo publishes zip releases. Add entries only after the same check.
+
+[[addon]]
+name = "AddOnSkins"
+repo = "Azilroka/AddOnSkins"
+folder = "AddOnSkins"
+curseforge = "54541"
+wago = "RXKqy5Ky"
+
+[[addon]]
+name = "AtlasLootClassic"
+repo = "Hoizame/AtlasLootClassic"
+folder = "AtlasLootClassic"
+curseforge = "326516"
+wago = "RXKqzoGy"
+wowinterface = "25185"
+
+[[addon]]
+name = "BetterBlizzFrames"
+repo = "Bodify/BetterBlizzFrames"
+folder = "BetterBlizzFrames"
+curseforge = "940950"
+wago = "qGZR02Gd"
+
+[[addon]]
+name = "Better Vendor Price"
+repo = "mooreatv/BetterVendorPrice"
+folder = "BetterVendorPrice"
+curseforge = "332558"
+wago = "rkGrpX6y"
+wowinterface = "25078"
+
+[[addon]]
+name = "BigWigs"
+repo = "BigWigsMods/BigWigs"
+folder = "BigWigs"
+curseforge = "2382"
+wago = "5NRegwG3"
+wowinterface = "5086"
+
+[[addon]]
+name = "BigWigs [Burning Crusade]"
+repo = "BigWigsMods/BigWigs_BurningCrusade"
+folder = "BigWigs_BurningCrusade"
+curseforge = "50688"
+wago = "v63oQL6b"
+wowinterface = "22096"
+
+[[addon]]
+name = "BigWigs [Cataclysm]"
+repo = "BigWigsMods/BigWigs_Cataclysm"
+folder = "BigWigs_Cataclysm"
+curseforge = "45694"
+wago = "kGr0z76y"
+wowinterface = "21755"
+
+[[addon]]
+name = "BigWigs [Classic]"
+repo = "BigWigsMods/BigWigs_Classic"
+folder = "BigWigs_Classic"
+curseforge = "50625"
+wago = "rNkPgm6a"
+wowinterface = "22095"
+
+[[addon]]
+name = "BigWigs [Legion]"
+repo = "BigWigsMods/BigWigs_Legion"
+folder = "BigWigs_Legion"
+curseforge = "300657"
+wago = "96dorENO"
+wowinterface = "24768"
+
+[[addon]]
+name = "BigWigs [Mists of Pandaria]"
+repo = "BigWigsMods/BigWigs_MistsOfPandaria"
+folder = "BigWigs_MistsOfPandaria"
+curseforge = "86782"
+wago = "rN4VvxKD"
+wowinterface = "23493"
+
+[[addon]]
+name = "BigWigs [The War Within]"
+repo = "BigWigsMods/BigWigs_TheWarWithin"
+folder = "BigWigs_TheWarWithin"
+curseforge = "1466611"
+wago = "bGoy9B60"
+
+[[addon]]
+name = "BigWigs [Warlords of Draenor]"
+repo = "BigWigsMods/BigWigs_WarlordsOfDraenor"
+folder = "BigWigs_WarlordsOfDraenor"
+curseforge = "101160"
+wago = "Q6aExB6W"
+wowinterface = "24167"
+
+[[addon]]
+name = "BigWigs [Wrath of the Lich King]"
+repo = "BigWigsMods/BigWigs_WrathOfTheLichKing"
+folder = "BigWigs_WrathOfTheLichKing"
+curseforge = "50417"
+wago = "7nGvW2Nx"
+wowinterface = "22086"
+
+[[addon]]
+name = "Deadly Boss Mods"
+repo = "DeadlyBossMods/DeadlyBossMods"
+folder = "DBM-Core"
+curseforge = "3358"
+wago = "qv633o6b"
+
+[[addon]]
+name = "ElvUI WindTools"
+repo = "wind-addons/ElvUI_WindTools"
+folder = "ElvUI_WindTools"
+curseforge = "300361"
+wago = "lQNlD9Ne"
+wowinterface = "25687"
+
+[[addon]]
+name = "HandyNotes"
+repo = "Nevcairiel/HandyNotes"
+folder = "HandyNotes"
+curseforge = "14154"
+wago = "mNwQMlKo"
+wowinterface = "15716"
+
+[[addon]]
+name = "KillTrack"
+repo = "SharpWoW/KillTrack"
+folder = "KillTrack"
+curseforge = "33976"
+wago = "5bGoqo60"
+wowinterface = "20509"
+
+[[addon]]
+name = "Legion Remix Helper"
+repo = "Larsj02/LegionRemixHelper"
+folder = "LegionRemixHelper"
+curseforge = "1352479"
+wago = "aNDmz26o"
+
+[[addon]]
+name = "LiteMount"
+repo = "xod-wow/LiteMount"
+folder = "LiteMount"
+curseforge = "30359"
+wago = "b6mbPXKP"
+wowinterface = "26329"
+
+[[addon]]
+name = "LittleWigs"
+repo = "BigWigsMods/LittleWigs"
+folder = "LittleWigs"
+curseforge = "4383"
+wago = "5bGolnN0"
+wowinterface = "9577"
+
+[[addon]]
+name = "NameplateSCT"
+repo = "Justw8/NameplateSCT"
+folder = "NameplateSCT"
+curseforge = "269544"
+wago = "rN4VDxKD"
+
+[[addon]]
+name = "PallyPower"
+repo = "AznamirWoW/PallyPower"
+folder = "PallyPower"
+curseforge = "2703"
+
+[[addon]]
+name = "Plater Nameplates"
+repo = "Tercioo/Plater-Nameplates"
+folder = "Plater"
+curseforge = "100547"
+wago = "kRNLep6o"
+
+[[addon]]
+name = "Questie"
+repo = "Questie/Questie"
+folder = "Questie"
+curseforge = "334372"
+wago = "qv634BKb"
+
+[[addon]]
+name = "RatingBuster"
+repo = "raethkcj/RatingBuster"
+folder = "RatingBuster"
+wago = "RaN0eM6j"
+wowinterface = "26235"
+
+[[addon]]
+name = "RestedXP Guides"
+repo = "RestedXP/RXPGuides"
+folder = "RXPGuides"
+curseforge = "486246"
+wago = "ZKbebq61"
+
+[[addon]]
+name = "SilverDragon"
+repo = "kemayo/wow-silverdragon"
+folder = "SilverDragon"
+curseforge = "14647"
+wago = "LvNALQGo"
+wowinterface = "6606"
+
+[[addon]]
+name = "Vendor Price"
+repo = "ketho-wow/VendorPrice"
+folder = "VendorPrice"
+curseforge = "322091"
+wago = "RqGY4EKg"
+wowinterface = "24922"
+
+[[addon]]
+name = "WarpDeplete"
+repo = "happenslol/WarpDeplete"
+folder = "WarpDeplete"
+curseforge = "460155"
+wago = "5bGoOqG0"
+
+[[addon]]
+name = "WeakAuras"
+repo = "WeakAuras/WeakAuras2"
+folder = "WeakAuras"
+curseforge = "65387"
+wago = "VBNBxKx5"
+wowinterface = "24910"
+
+# Spoken (rusty-key/spoken-wow) ships the addon, its voice packs and a desktop
+# app from one repo, told apart by tag prefix. Checked 2026-11-04 from the
+# repo's releases and TOCs (none carry host IDs): the addon zip holds every
+# module and its TOC is `## Interface: 16001`; the packs' TOCs list
+# 11509, 20506, 16001 and declare `X-Part-Of: Spoken`, so they are separate
+# entries. Packs are large (Quests 1.4 GB, Readables 453 MB, Places 435 MB,
+# Bosses 149 MB). Only the English packs are listed.
+
+[[addon]]
+name = "Spoken"
+repo = "rusty-key/spoken-wow"
+tag = "spoken"
+folder = "Spoken"
+flavours = ["forever"]
+
+[[addon]]
+name = "Spoken Quests Audio"
+repo = "rusty-key/spoken-wow"
+tag = "quests-audio"
+# Folder name not confirmed (the 1.4 GB zip was not downloaded to check).
+
+[[addon]]
+name = "Spoken Readables Audio"
+repo = "rusty-key/spoken-wow"
+tag = "readables-audio"
+folder = "SpokenReadablesAudio"
+flavours = ["classic-era", "anniversary", "forever"]
+
+[[addon]]
+name = "Spoken Places Audio"
+repo = "rusty-key/spoken-wow"
+tag = "places-audio"
+folder = "SpokenPlacesAudio"
+flavours = ["classic-era", "anniversary", "forever"]
+
+[[addon]]
+name = "Spoken Bosses Audio"
+repo = "rusty-key/spoken-wow"
+tag = "bosses-audio"
+folder = "SpokenBossesAudio"
+flavours = ["classic-era", "anniversary", "forever"]

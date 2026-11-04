@@ -1,0 +1,52 @@
+# Nexforge
+
+A fast, trustworthy World of Warcraft addon manager by Nexabyte Entertainment. Browse, install, update, pin, roll back and remove addons from GitHub Releases, WoWInterface, Wago.io and CurseForge, for WoW Forever and Classic Era/Anniversary installs.
+
+Read these before writing code, in order:
+
+1. `docs/SPEC.md` — what we are building and why; architecture, data model, every screen, the phased plan.
+2. `docs/API-NOTES.md` — verified facts about the four hosts and the Forever client. Do not re-derive these from memory; they were checked against live sources on 2026-11-04.
+3. `docs/BRAND.md` — colours, type and the design rules. `docs/mockups/*.html` are the signed-off screens; open them in a browser.
+
+## Stack
+
+- **Core:** Rust crate `nexforge-core` (no UI deps). Tokio, reqwest (rustls), serde, toml, rusqlite (bundled), zip, sha2, keyring. Edition 2021, MSRV = current stable.
+- **App:** Tauri 2 shell `nexforge-app` over the core. Svelte 5 + TypeScript + Vite frontend, no component framework; plain CSS with the tokens in `docs/BRAND.md`.
+- **CLI:** `nexforge-cli` over the core, for testing and scripting. Build this before the GUI.
+- **Target:** Windows first (the author's machine). Keep the core cross-platform.
+
+## Non-negotiables (the reason this project exists)
+
+- No account, no telemetry, no analytics, no ads, no auto-start, no tray process.
+- Outbound connections only to: `api.github.com`, `github.com` (release assets), `objects.githubusercontent.com` / `release-assets.githubusercontent.com` (asset download redirects), `api.mmoui.com`, `cdn.wowinterface.com` / `www.wowinterface.com` (downloads), `addons.wago.io`, `api.curseforge.com` plus CurseForge's CDN for downloads. Icons and screenshots only (image responses, via the separate image fetch): `cdn-wow.mmoui.com`, `avatars.githubusercontent.com`, `cdn.wago.io`, `media.forgecdn.net`. Anything else is a bug. Log every request (host, path, reason) to a local text file.
+- Updates are listed, never applied, until the user clicks, unless they turn on auto-apply. Pinned addons are never auto-updated.
+- Never touch `WTF/`, `SavedVariables`, or any folder we did not install or adopt.
+- Keep the previous version of every addon we update so rollback is one click.
+- State is plain files the user can read: `addons.toml` per installation, `config.toml` for settings. SQLite is a cache only and must be safe to delete.
+- API keys go in the OS credential store (Windows Credential Manager via `keyring`), never in a file.
+- UI paints from local state before any network call. No startup spinner.
+
+## Conventions
+
+- Rust: `cargo fmt`, `cargo clippy -D warnings`, unit tests next to code, integration tests in `tests/` using recorded HTTP fixtures (no live network in CI).
+- One `Source` trait, four implementations. A new host should be one new file.
+- Flavour is an enum; every source maps its own labels to it in one place.
+- Errors: `thiserror` in the core, surfaced to the UI as plain sentences a player can act on.
+- Commit messages: imperative, one line, body only when needed.
+
+## Repo layout
+
+```
+nexforge/
+  Cargo.toml            # workspace
+  crates/
+    nexforge-core/
+    nexforge-cli/
+  app/                  # Tauri 2 shell + Svelte UI
+  assets/               # crest SVG, icons
+  docs/                 # SPEC, API-NOTES, BRAND, mockups
+```
+
+## Status
+
+Design is signed off (see mockups). Phase 1 (core + CLI) is implemented: `crates/nexforge-core`, `crates/nexforge-cli` (`nexforge detect|toc|reconcile|search|list|check|update|install|remove|pin|unpin|skip|rollback|kept|key`). The CurseForge source is implemented and on only when a key is saved; its tests use synthetic fixtures until one is. Wago needs a paid key and is not implemented. GitHub plus the bundled index `crates/nexforge-core/data/github-index.toml` and WoWInterface are the no-key sources; only add index entries after the check described in `docs/API-NOTES.md`. Still to do: the rest of Phase 2 (SQLite catalogue + FTS for Browse) and the Tauri app (Phase 3). Toolchain: rustup stable (MSVC), installed 2026-11-04.
