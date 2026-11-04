@@ -141,6 +141,38 @@ async fn github_release_json_flavours() {
 }
 
 #[tokio::test]
+async fn icons_come_from_image_hosts_and_are_cached() {
+    use nexforge_core::sources::github::avatar_url;
+    use nexforge_core::{AppPaths, Config, Manager, SourceKeys};
+    let url = avatar_url("Questie/Questie").unwrap();
+    assert_eq!(url, "https://avatars.githubusercontent.com/Questie?s=96");
+    assert_eq!(
+        avatar_url("rusty-key/spoken-wow#spoken").as_deref(),
+        Some("https://avatars.githubusercontent.com/rusty-key?s=96")
+    );
+
+    let f = FixtureFetch::new();
+    f.route(&url, vec![0x89, b'P', b'N', b'G']);
+    let dir = tempfile::tempdir().unwrap();
+    let mgr = Manager::with_fetch(
+        AppPaths::at(dir.path()),
+        Config::default(),
+        Arc::new(f.clone()),
+        SourceKeys::default(),
+    );
+    let img = mgr.image(&url).await.unwrap();
+    assert_eq!(img.bytes.len(), 4);
+    // Second call is served from the disk cache.
+    mgr.image(&url).await.unwrap();
+    assert_eq!(f.hits().len(), 1);
+
+    // GitHub search rows carry the owner avatar.
+    let gh = GitHub::new(Arc::new(FixtureFetch::new()), None);
+    let hits = gh.search("questie", Flavour::Forever).await.unwrap();
+    assert_eq!(hits[0].icon_url.as_deref(), Some(url.as_str()));
+}
+
+#[tokio::test]
 async fn github_shared_repo_is_split_by_tag() {
     // rusty-key/spoken-wow releases its desktop app (manager/…), the addon
     // (spoken/…) and voice packs (quests-audio/…, bosses-audio/…) from one repo.

@@ -38,7 +38,7 @@
       {@const pct = store.progress[a.id]}
       <div class="card" class:active={!!busy}>
         <div class="top">
-          <Tile name={a.name} size={44} />
+          <Tile name={a.name} iconUrl={a.iconUrl} size={44} />
           <div class="meta">
             <span class="n">{a.name}</span>
             <span class="line">

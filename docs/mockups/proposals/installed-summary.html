@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Installed: summary options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#12111C;--surface:#1A1927;--raised:#22213A;--raised-h:#2A2946;--border:#2E2D45;--divider:#26253B;--text:#F2F2F4;--text-2:#A8A8B0;--text-3:#8A8A94;--soft:#C9C8D6;--coral:#E35A66;--coral-h:#EB6F7A;--coral-text:#EB6F7A;--good:#4FD1B5;--gold:#F5C451;--gold-tint:#3A3320;--info:#A6AAF0}
+*{box-sizing:border-box}
+body{margin:0;padding:40px 0 80px;font:400 13px/1.55 Manrope,system-ui,sans-serif;color:var(--text);background:#0C0B14;-webkit-font-smoothing:antialiased}
+.intro{width:1048px;margin:0 auto 36px;color:var(--soft)}
+.intro h1{margin:0 0 6px;font:600 26px/1.2 Jost,sans-serif;color:var(--text)}
+.intro p{margin:0;max-width:72ch}
+.option{width:1048px;margin:0 auto 56px}
+.option > header{display:flex;align-items:baseline;gap:14px;margin-bottom:12px}
+.option > header h2{margin:0;font:600 19px/1.2 Jost,sans-serif}
+.option > header p{margin:0;color:var(--text-2);max-width:70ch}
+.frame{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:28px 32px;display:flex;flex-direction:column;gap:20px}
+.why{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:14px;color:var(--soft)}
+.why strong{display:block;color:var(--text);margin-bottom:2px}
+.why ul{margin:0;padding-left:18px}
+
+/* shared app bits */
+.title{margin:0;font:600 26px/1.2 Jost,sans-serif;letter-spacing:.01em}
+.dim{color:var(--text-2)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--border);background:var(--raised);color:var(--text);font:600 13px Manrope,sans-serif;white-space:nowrap;cursor:pointer}
+.btn:hover{background:var(--raised-h)}
+.btn.primary{background:var(--coral);border-color:var(--coral);color:var(--bg);font-weight:800}
+.btn.row{height:30px;padding:0 13px;font-size:12.5px;border-radius:8px;background:var(--coral);border-color:var(--coral);color:var(--bg);font-weight:800}
+.btn.quiet{background:transparent;border-color:transparent;color:var(--text-2)}
+.btn.quiet:hover{background:var(--raised);color:var(--text)}
+.search{position:relative;display:flex;align-items:center}
+.search svg{position:absolute;left:11px}
+.search input{height:36px;width:220px;padding:0 12px 0 34px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font:500 13px Manrope,sans-serif}
+.search input::placeholder{color:var(--text-3)}
+.panel{border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+td{padding:0 16px;height:56px;border-top:1px solid var(--divider);vertical-align:middle}
+.tile{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:0 0 auto}
+.who{display:flex;align-items:center;gap:12px}
+.who b{font-weight:700}
+.who small{display:block;font-size:12px;color:var(--text-2)}
+.mono{font:12.5px ui-monospace,Consolas,monospace;color:var(--soft)}
+.mono b{color:var(--text);font-weight:600}
+.src{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--text-2)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.ok{color:var(--good);font-size:12.5px;font-weight:600}
+.pin{color:var(--info);font-size:12.5px;font-weight:600}
+.warn{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:12px;background:var(--gold-tint);color:var(--gold);font-size:11.5px;font-weight:700}
+.link{color:var(--info);font-weight:700;font-size:12.5px;text-decoration:none}
+.more{color:var(--text-3);text-align:right;width:40px;font-size:18px;letter-spacing:1px}
+
+/* A: counts as filters */
+.tabs{display:flex;align-items:center;gap:4px;padding:6px 8px 0 8px;border-bottom:1px solid var(--border)}
+.tab{position:relative;display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 12px;border:0;background:none;color:var(--text-2);font:600 13px Manrope,sans-serif;cursor:pointer}
+.tab .n{font:600 12px Jost,sans-serif;color:var(--text-3);font-variant-numeric:tabular-nums}
+.tab.on{color:var(--text)}
+.tab.on::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px;background:var(--text)}
+.tab.act .n{color:var(--coral-text)}
+.tab.attn .n{color:var(--gold)}
+.tabs .end{margin-left:auto;display:flex;align-items:center;gap:10px;padding-bottom:6px}
+.checked{font-size:12px;color:var(--text-3)}
+
+/* B: status sentence */
+.status{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+.status .say{margin:0;font:500 22px/1.35 Jost,sans-serif;color:var(--text);max-width:32ch}
+/* The counts are links that filter the list: underline marks the affordance, not emphasis. */
+.status .say a{color:inherit;text-decoration:underline;text-decoration-color:var(--text-3);text-decoration-thickness:1px;text-underline-offset:4px}
+.status .say a:hover{text-decoration-color:var(--text)}
+.status .side{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.status .meta{font-size:12px;color:var(--text-3);text-align:right}
+.calm{font:500 22px/1.35 Jost,sans-serif;color:var(--text-2);margin:0}
+.calm b{color:var(--text);font-weight:500}
+
+/* C: grouped list */
+.group td{height:auto;padding:16px 16px 10px;border-top:0;background:var(--bg)}
+.group:first-child td{padding-top:12px}
+.gh{display:flex;align-items:center;gap:10px}
+.gh h3{margin:0;font:600 15px Jost,sans-serif;letter-spacing:.01em}
+.gh .c{font:600 13px Jost,sans-serif;color:var(--text-3)}
+.gh .act{margin-left:auto;display:flex;gap:8px}
+.gh.todo h3{color:var(--coral-text)}
+.gh.look h3{color:var(--gold)}
+.fold{display:inline-flex;align-items:center;gap:6px;color:var(--text-2);font:600 12.5px Manrope,sans-serif;background:none;border:0;cursor:pointer;padding:0}
+.chev{width:12px;height:12px}
+.cbody tr:first-child td{border-top:1px solid var(--divider)}
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Installed: three ways to drop the stat cards</h1>
+  <p>Same screen, same data (14 addons, 3 updates, 2 that need a look, 1 pinned). Only the summary above the list changes. Each option keeps the table, the sidebar and the brand tokens as they are.</p>
+</div>
+
+<!-- ============================================================ A -->
+<section class="option" id="a">
+  <header><h2>A. Counts become filters</h2><p>The numbers move into a tab row on top of the table. Click a count to see just those addons.</p></header>
+  <div class="frame">
+    <div style="display:flex;align-items:center;gap:12px">
+      <h1 class="title" style="margin-right:auto">Installed</h1>
+      <button class="btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>Check now</button>
+      <button class="btn primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>Update all 3</button>
+    </div>
+    <div class="panel">
+      <div class="tabs" role="tablist">
+        <button class="tab on" role="tab">All <span class="n">14</span></button>
+        <button class="tab act" role="tab">Updates <span class="n">3</span></button>
+        <button class="tab attn" role="tab">Needs a look <span class="n">2</span></button>
+        <button class="tab" role="tab">Pinned <span class="n">1</span></button>
+        <div class="end">
+          <span class="checked">Checked 2 min ago</span>
+          <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A94" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="Filter"></div>
+        </div>
+      </div>
+      <table>
+        <tr><td><div class="who"><div class="tile" style="background:#3A2230;color:#EB6F7A">Q</div><div><b>Questie</b><small>4 folders, by AeroScripts</small></div></div></td><td><span class="mono">10.4.1 to <b>10.4.2</b></span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><button class="btn row">Update</button></td><td class="more">···</td></tr>
+        <tr><td><div class="who"><div class="tile" style="background:#2A2C55;color:#A6AAF0">D</div><div><b>Deadly Boss Mods</b><small>9 folders, by MysticalOS</small></div></div></td><td><span class="mono">11.2.9 to <b>11.2.10</b></span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><button class="btn row">Update</button></td><td class="more">···</td></tr>
+        <tr><td><div class="who"><div class="tile" style="background:#2A2C55;color:#A6AAF0">C</div><div><b>ClassicCastbars</b><small>2 folders, by Wardz</small></div></div></td><td><span class="mono">1.8.2</span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><span class="warn">No Forever build</span></td><td class="more">···</td></tr>
+        <tr><td><div class="who"><div class="tile" style="background:#1F3A36;color:#4FD1B5">W</div><div><b>WeakAuras</b><small>5 folders, by WeakAuras team</small></div></div></td><td><span class="mono">5.22.1</span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><span class="ok">Up to date</span></td><td class="more">···</td></tr>
+        <tr><td><div class="who"><div class="tile" style="background:#3A3320;color:#F5C451">A</div><div><b>AtlasLoot Classic</b><small>8 folders, by Lag</small></div></div></td><td><span class="mono">3.2.0</span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><span class="pin">Pinned</span></td><td class="more">···</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="why">
+    <div><strong>Good for</strong><ul><li>The most familiar pattern (GitHub, Linear, Jira): counts sit where you act on them.</li><li>Takes about 50px instead of 110px of the screen's best space.</li><li>Scales: a fifth filter later is one more tab.</li></ul></div>
+    <div><strong>Watch out</strong><ul><li>Rows hidden by a filter are out of sight; "All" must stay the default.</li><li>The coral count is small; the coral "Update all" button carries the urgency.</li></ul></div>
+  </div>
+</section>
+
+<!-- ============================================================ B -->
+<section class="option" id="b">
+  <header><h2>B. One sentence says it</h2><p>The summary is a plain sentence in Jost. When there is nothing to do it says so and gets out of the way.</p></header>
+  <div class="frame">
+    <h1 class="title">Installed</h1>
+    <div class="status">
+      <p class="say"><a href="#">3 updates</a> are ready and <a href="#">2 addons</a> need a look. Everything else is current.</p>
+      <div class="side">
+        <span class="meta">Checked 2 min ago. Last update run yesterday at 21:14.</span>
+        <div style="display:flex;gap:10px">
+          <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A94" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="Filter"></div>
+          <button class="btn">Check now</button>
+          <button class="btn primary">Update all 3</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <table>
+        <tr><td style="border-top:0"><div class="who"><div class="tile" style="background:#3A2230;color:#EB6F7A">Q</div><div><b>Questie</b><small>4 folders, by AeroScripts</small></div></div></td><td style="border-top:0"><span class="mono">10.4.1 to <b>10.4.2</b></span></td><td style="border-top:0"><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td style="border-top:0"><button class="btn row">Update</button></td><td class="more" style="border-top:0">···</td></tr>
+        <tr><td><div class="who"><div class="tile" style="background:#2A2C55;color:#A6AAF0">D</div><div><b>Deadly Boss Mods</b><small>9 folders, by MysticalOS</small></div></div></td><td><span class="mono">11.2.9 to <b>11.2.10</b></span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><button class="btn row">Update</button></td><td class="more">···</td></tr>
+        <tr><td><div class="who"><div class="tile" style="background:#2A2C55;color:#A6AAF0">C</div><div><b>ClassicCastbars</b><small>2 folders, by Wardz</small></div></div></td><td><span class="mono">1.8.2</span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><span class="warn">No Forever build</span></td><td class="more">···</td></tr>
+        <tr><td><div class="who"><div class="tile" style="background:#1F3A36;color:#4FD1B5">W</div><div><b>WeakAuras</b><small>5 folders, by WeakAuras team</small></div></div></td><td><span class="mono">5.22.1</span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><span class="ok">Up to date</span></td><td class="more">···</td></tr>
+      </table>
+    </div>
+    <p class="calm" style="border-top:1px dashed var(--border);padding-top:18px">When nothing needs doing: <b>All 14 addons are current.</b> <span class="dim" style="font:500 13px Manrope,sans-serif">Checked 2 min ago.</span></p>
+  </div>
+  <div class="why">
+    <div><strong>Good for</strong><ul><li>Most distinctive: the type does the work, no boxes at all.</li><li>Reads like the app talking to you: what to do, then the calm state.</li><li>"3 updates" and "2 addons" are links that filter the list; coral stays on the one button that acts.</li></ul></div>
+    <div><strong>Watch out</strong><ul><li>The sentence has to be written well for every mix of states (we would cover them in tests).</li><li>Less scannable than a fixed row of numbers if you like to glance.</li></ul></div>
+  </div>
+</section>
+
+<!-- ============================================================ C -->
+<section class="option" id="c">
+  <header><h2>C. The list sorts itself into groups</h2><p>No summary at all. The table is split into what needs doing, then the rest. Each group heading carries its own count and action.</p></header>
+  <div class="frame">
+    <div style="display:flex;align-items:center;gap:12px">
+      <h1 class="title" style="margin-right:auto">Installed</h1>
+      <span class="checked">Checked 2 min ago</span>
+      <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A94" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="Filter"></div>
+      <button class="btn">Check now</button>
+    </div>
+    <div class="panel">
+      <table>
+        <tbody>
+          <tr class="group"><td colspan="5"><div class="gh todo"><h3>Ready to update</h3><span class="c">3</span><div class="act"><button class="btn row">Update all 3</button></div></div></td></tr>
+        </tbody>
+        <tbody class="cbody">
+          <tr><td><div class="who"><div class="tile" style="background:#3A2230;color:#EB6F7A">Q</div><div><b>Questie</b><small>4 folders, by AeroScripts</small></div></div></td><td><span class="mono">10.4.1 to <b>10.4.2</b></span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><button class="btn row">Update</button></td><td class="more">···</td></tr>
+          <tr><td><div class="who"><div class="tile" style="background:#2A2C55;color:#A6AAF0">D</div><div><b>Deadly Boss Mods</b><small>9 folders, by MysticalOS</small></div></div></td><td><span class="mono">11.2.9 to <b>11.2.10</b></span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><button class="btn row">Update</button></td><td class="more">···</td></tr>
+        </tbody>
+        <tbody>
+          <tr class="group"><td colspan="5"><div class="gh look"><h3>Needs a look</h3><span class="c">2</span></div></td></tr>
+        </tbody>
+        <tbody class="cbody">
+          <tr><td><div class="who"><div class="tile" style="background:#2A2C55;color:#A6AAF0">C</div><div><b>ClassicCastbars</b><small>2 folders, by Wardz</small></div></div></td><td><span class="mono">1.8.2</span></td><td><span class="src"><span class="dot" style="background:#A6AAF0"></span>GitHub</span></td><td><span class="warn">No Forever build</span></td><td class="more">···</td></tr>
+          <tr><td><div class="who"><div class="tile" style="background:#22213A;color:#8A8A94;border:1px dashed #3C3B58">?</div><div><b>GuildBankTweaks</b><small>Found in AddOns, source not known yet</small></div></div></td><td><span class="mono dim">1.2</span></td><td><span class="src"><span class="dot" style="background:#8A8A94"></span>Unknown</span></td><td><a class="link" href="#">Identify source</a></td><td class="more">···</td></tr>
+        </tbody>
+        <tbody>
+          <tr class="group"><td colspan="5"><div class="gh"><h3>Up to date</h3><span class="c">8</span><div class="act"><button class="fold"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>Show</button></div></div></td></tr>
+        </tbody>
+        <tbody>
+          <tr class="group"><td colspan="5"><div class="gh"><h3>Pinned</h3><span class="c">1</span><div class="act"><button class="fold"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>Show</button></div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="why">
+    <div><strong>Good for</strong><ul><li>The screen answers "what do I need to do?" before you read anything.</li><li>No hidden rows: every addon is one fold away, nothing is behind a filter.</li><li>"Update all" lives next to the updates it applies to.</li></ul></div>
+    <div><strong>Watch out</strong><ul><li>Rows move between groups after an update (we would animate the move once, so it is clear where they went).</li><li>With nothing to do, the screen is just a folded "Up to date 46": calm, but quite empty.</li></ul></div>
+  </div>
+</section>
+
+</body>
+</html>

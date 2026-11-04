@@ -391,8 +391,23 @@ async fn search(installation_id: Option<String>, query: String) -> Res<SearchDto
             .collect();
         if let Some(&i) = by_name.get(&key) {
             let label = h.source.label().to_string();
-            if rows[i].source != h.source.as_str() && !rows[i].also_on.contains(&label) {
-                rows[i].also_on.push(label);
+            let row = &mut rows[i];
+            if row.source != h.source.as_str() && !row.also_on.contains(&label) {
+                row.also_on.push(label);
+            }
+            // Prefer the addon's own image (WoWInterface, CurseForge) over a
+            // GitHub owner avatar, and fill gaps from the other hosts.
+            if h.icon_url.is_some() && (row.icon_url.is_none() || row.source == "github") {
+                row.icon_url = h.icon_url.clone();
+            }
+            if row.summary.is_none() {
+                row.summary = h.summary.clone();
+            }
+            if row.downloads.is_none() {
+                row.downloads = h.downloads;
+            }
+            if row.updated_at.is_none() {
+                row.updated_at = h.updated_at;
             }
             continue;
         }
@@ -418,7 +433,17 @@ async fn search(installation_id: Option<String>, query: String) -> Res<SearchDto
 #[tauri::command]
 async fn image(url: String) -> Res<String> {
     use base64::Engine as _;
-    let img = manager()?.image(&url).await.map_err(err)?;
+    // Images need no keys or config: skip the credential store reads.
+    let paths = AppPaths::discover().map_err(err)?;
+    let net = nexforge_core::net::Net::new(Some(paths.network_log()), Some(paths.http_cache()))
+        .map_err(err)?;
+    let mgr = Manager::with_fetch(
+        paths,
+        nexforge_core::state::Config::default(),
+        std::sync::Arc::new(net),
+        nexforge_core::SourceKeys::default(),
+    );
+    let img = mgr.image(&url).await.map_err(err)?;
     Ok(format!(
         "data:{};base64,{}",
         img.content_type,

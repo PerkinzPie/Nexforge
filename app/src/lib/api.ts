@@ -10,7 +10,7 @@ export interface Addon {
   id: string; name: string; author: string | null; folders: string[];
   source: string | null; sourceLabel: string; sourceId: string; version: string;
   pinned: boolean; skippedVersion: string; flavourMismatch: boolean; managed: boolean;
-  website: string | null; knownIds: [string, string][];
+  website: string | null; iconUrl: string | null; knownIds: [string, string][];
 }
 export interface Settings {
   checkOnLaunch: boolean; autoApply: boolean; keepPreviousVersions: number; selfUpdateCheck: boolean;

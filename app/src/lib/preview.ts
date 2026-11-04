@@ -16,7 +16,7 @@ const a = (id: string, name: string, author: string, folders: number, source: st
   id, name, author, folders: Array.from({ length: folders }, (_, i) => (i ? `${name}_${i}` : name)),
   source, sourceLabel: { github: "GitHub", wowinterface: "WoWInterface", curseforge: "CurseForge", wago: "Wago" }[source ?? ""] ?? "Unknown",
   sourceId: source ? id : "", version, pinned: false, skippedVersion: "", flavourMismatch: false,
-  managed: source !== null, website: null, knownIds: [], ...extra,
+  managed: source !== null, website: null, iconUrl: null, knownIds: [], ...extra,
 });
 
 const addons: Addon[] = [

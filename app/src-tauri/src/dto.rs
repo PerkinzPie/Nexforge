@@ -65,6 +65,8 @@ pub struct AddonDto {
     pub flavour_mismatch: bool,
     pub managed: bool,
     pub website: Option<String>,
+    /// Icon to show (GitHub owner avatar); None means a monogram tile.
+    pub icon_url: Option<String>,
     /// IDs from the TOCs, for "Identify source" suggestions.
     pub known_ids: Vec<(String, String)>,
 }
@@ -89,6 +91,10 @@ impl From<&AddonEntry> for AddonDto {
             flavour_mismatch: a.flavour_mismatch,
             managed: a.is_managed(),
             website: website(a.source, &a.source_id),
+            icon_url: match a.source {
+                Some(SourceId::Github) => nexforge_core::sources::github::avatar_url(&a.source_id),
+                _ => None,
+            },
             known_ids,
         }
     }

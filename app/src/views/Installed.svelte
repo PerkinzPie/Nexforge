@@ -113,7 +113,7 @@
             <tr>
               <td>
                 <div class="who">
-                  <Tile name={a.name} unknown={!a.managed} />
+                  <Tile name={a.name} iconUrl={a.iconUrl} unknown={!a.managed} />
                   <div class="names">
                     <span class="n">{a.name}</span>
                     <span class="dim small">{plural(a.folders.length, "folder")} · {a.managed ? (a.author ? `by ${a.author}` : a.sourceLabel) : "found in AddOns, not managed yet"}</span>

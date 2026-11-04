@@ -195,6 +195,13 @@ fn from_asset_names(r: &GhRelease) -> Vec<Release> {
         .collect()
 }
 
+/// The repo owner's avatar, served by avatars.githubusercontent.com without
+/// an API call (an image host on the allowlist).
+pub fn avatar_url(repo: &str) -> Option<String> {
+    let owner = repo.split('#').next()?.split('/').next()?;
+    (!owner.is_empty()).then(|| format!("https://avatars.githubusercontent.com/{owner}?s=96"))
+}
+
 pub struct GitHub {
     fetch: Arc<dyn Fetch>,
     token: Option<String>,
@@ -276,7 +283,7 @@ impl Source for GitHub {
                 flavours: k.flavours.clone(),
                 downloads: None,
                 updated_at: None,
-                icon_url: None,
+                icon_url: avatar_url(&k.repo),
             })
             .collect())
     }
