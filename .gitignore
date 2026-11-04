@@ -4,3 +4,5 @@
 /app/src-tauri/target
 *.log
 /app/src-tauri/gen
+/node_modules
+node_modules/
