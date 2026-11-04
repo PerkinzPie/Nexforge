@@ -97,12 +97,20 @@ class Store {
       await this.check();
       if (this.snap?.settings.autoApply) await this.updateAll();
     }
+    this.refreshCatalogue();
+  }
+
+  /** Refill the Browse catalogue in the background (at most daily), then
+   *  repaint so Installed picks up host icons it now knows. */
+  refreshCatalogue() {
+    api.refreshCatalogue(false).then(() => this.load()).catch(() => {});
   }
 
   async finishFirstRun() {
     this.firstRun = false;
     await this.load(null);
     if (this.snap?.settings.checkOnLaunch && this.current) await this.check();
+    this.refreshCatalogue();
   }
 
   /** Re-read local state (fast; no network). */
