@@ -124,7 +124,7 @@
 <svelte:window onkeydown={(e) => { if (d && e.key === "Escape") close(); }} />
 
 <style>
-  .scrim { position: fixed; inset: 0; z-index: 50; background: rgba(8, 8, 14, 0.6); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .scrim { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: 24px; }
   .dlg-wrap { width: 520px; max-width: 100%; }
   .dlg { width: 100%; max-width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
   .head { display: flex; align-items: center; gap: 12px; }

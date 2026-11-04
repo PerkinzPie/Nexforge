@@ -172,7 +172,7 @@
   .toggle .t.off { color: var(--text-3); }
   .toggle input[type="checkbox"] { width: 18px; height: 18px; }
   .end { justify-content: flex-end; }
-  .about { border: 1px solid #3a3860; border-radius: 12px; background: var(--nx-indigo); }
+  .about { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
   .ab { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 20px; }
   .abt { display: flex; flex-direction: column; gap: 4px; margin-right: auto; font-size: 12px; color: var(--text-soft); }
   .abt .wm { font-size: 20px; color: #fff; }

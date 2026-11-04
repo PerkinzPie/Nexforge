@@ -77,7 +77,7 @@ export function flavourTile(flavour: string): { bg: string; letter: string } {
   switch (flavour) {
     case "forever": return { bg: "var(--nx-coral)", letter: "F" };
     case "classic-era": return { bg: "var(--nx-plum)", letter: "E" };
-    case "anniversary": return { bg: "#3f4a7a", letter: "A" };
-    default: return { bg: "#3a3860", letter: "R" };
+    case "anniversary": return { bg: "#4a5078", letter: "A" };
+    default: return { bg: "var(--raised-hover)", letter: "R" };
   }
 }

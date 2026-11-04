@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AddonCard from "../components/AddonCard.svelte";
   import Icon from "../components/Icon.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
   import RowMenu from "../components/RowMenu.svelte";
@@ -8,9 +9,8 @@
   import { ago, count } from "../lib/format";
   import { store } from "../lib/store.svelte";
 
-  let { searchInput = $bindable() }: { searchInput?: HTMLInputElement } = $props();
-
-  let query = $state("");
+  // The top bar owns the search box.
+  const query = $derived(store.query);
   let source = $state<string>("all");
   let onlyFlavour = $state(true);
   let hits = $state<Hit[]>([]);
@@ -112,12 +112,6 @@
     </button>
   </div>
 
-  <div class="search big narrow">
-    <label for="q" class="sr">Search addons</label>
-    <Icon name="search" size={18} colour="var(--text-3)" />
-    <input id="q" type="search" bind:value={query} bind:this={searchInput} placeholder="Search by name or author" autocomplete="off" spellcheck="false" />
-  </div>
-
   <div class="filters narrow">
     <button type="button" class="chip" class:on={source === "all"} onclick={() => (source = "all")}>All sources</button>
     {#each chips as c (c.id)}
@@ -135,27 +129,9 @@
   {#if !query.trim() && source === "all" && popular.length}
     <section class="popular narrow" aria-labelledby="pop-h">
       <h2 class="h2" id="pop-h">Popular this month</h2>
-      <div class="pops">
+      <div class="grid">
         {#each popular as h (h.spec)}
-          <div class="pop">
-            <button type="button" class="open" onclick={() => openHit(h)} aria-label="Details for {h.name}">
-              <Tile name={h.name} iconUrl={h.iconUrl} size={48} />
-              <span class="pt">
-                <span class="pn">{h.name}</span>
-                <span class="pm">
-                  {#if h.authors.length}<span><Icon name="user" size={12} stroke={2.2} />{h.authors[0]}</span>{/if}
-                  {#if h.downloads}<span><Icon name="download" size={12} stroke={2.2} />{count(h.downloads)}</span>{/if}
-                </span>
-              </span>
-            </button>
-            {#if h.installed}
-              <span class="ok done" aria-label="Installed"><Icon name="check" size={14} stroke={2.6} /></span>
-            {:else if noBuild(h) && !store.busy[h.spec]}
-              <RowMenu label="More actions for {h.name}" items={[{ label: "Install anyway", run: () => install(h, true) }]} />
-            {:else}
-              <ProgressButton label="Install" busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, false)} />
-            {/if}
-          </div>
+          <AddonCard hit={h} onopen={() => openHit(h)} oninstall={(anyway) => install(h, anyway)} />
         {/each}
       </div>
     </section>
@@ -165,7 +141,16 @@
     {#if query.trim() || (loading && !hits.length)}
       <span class="dim count">{loading && !hits.length ? "Searching…" : `${shown.length} result${shown.length === 1 ? "" : "s"}`}</span>
     {/if}
-    {#if shown.length}
+    {#if shown.length && !query.trim()}
+      <section class="popular" aria-labelledby="list-h">
+        <h2 class="h2" id="list-h">{source === "all" ? "On GitHub" : `Most downloaded on ${chips.find((c) => c.id === source)?.label ?? ""}`}</h2>
+        <div class="grid">
+          {#each shown as h (h.spec)}
+            <AddonCard hit={h} onopen={() => openHit(h)} oninstall={(anyway) => install(h, anyway)} />
+          {/each}
+        </div>
+      </section>
+    {:else if shown.length}
       <div class="panel">
         {#each shown as h (h.spec)}
           {@const busy = store.busy[h.spec]}
@@ -218,16 +203,9 @@
 <style>
   .more { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--info); font: 700 12px var(--sans); cursor: pointer; }
   .popular { display: flex; flex-direction: column; gap: 12px; }
-  .pops { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
-  .pop { display: flex; align-items: center; gap: 10px; padding: 12px 14px 12px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
-  .pop:hover { background: var(--raised); }
-  .pt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .pn { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pm { display: flex; gap: 10px; font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; }
-  .pm > span { display: inline-flex; align-items: center; gap: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
   /* Tile and text open the details page; actions stay separate buttons. */
   .open { display: flex; align-items: center; gap: 12px; flex: 1 1 auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-  .open:hover .n, .open:hover .pn { text-decoration: underline; text-underline-offset: 3px; }
   .title { margin-right: auto; }
   .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: -8px; }
   .results { display: flex; flex-direction: column; gap: 10px; }

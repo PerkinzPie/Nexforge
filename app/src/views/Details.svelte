@@ -216,6 +216,6 @@
   .fact { display: flex; flex-direction: column; gap: 0; padding: 6px 14px; }
   dt { font-size: 11px; color: var(--text-2); }
   dd { margin: 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
-  .lightbox { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 40px; background: rgba(8, 8, 14, 0.85); cursor: zoom-out; }
+  .lightbox { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 40px; background: rgba(0, 0, 0, 0.85); cursor: zoom-out; }
   .lightbox :global(img) { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
 </style>

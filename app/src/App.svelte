@@ -3,6 +3,7 @@
   import Dialogs from "./components/Dialogs.svelte";
   import Sidebar from "./components/Sidebar.svelte";
   import Toast from "./components/Toast.svelte";
+  import TopBar from "./components/TopBar.svelte";
   import { store } from "./lib/store.svelte";
   import Browse from "./views/Browse.svelte";
   import Details from "./views/Details.svelte";
@@ -23,8 +24,8 @@
     if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
     if (e.key === "f" || e.key === "F") {
       e.preventDefault();
-      if (store.view !== "installed" && store.view !== "browse") store.view = "installed";
-      queueMicrotask(() => (store.view === "browse" ? searchInput : filterInput)?.focus());
+      // Installed filters its list; everywhere else searches addons.
+      (store.view === "installed" && !store.detail ? filterInput : searchInput)?.focus();
     } else if (e.key === "r" || e.key === "R") {
       e.preventDefault();
       store.check();
@@ -43,6 +44,7 @@
     {#if store.preview}
       <div class="preview">Browser preview · sample data. Run <span class="mono">pnpm tauri dev</span> for the real app.</div>
     {/if}
+    {#if store.snap && !store.firstRun}<TopBar bind:searchInput />{/if}
     {#if store.loadError}
       <div class="page"><div class="notice err"><span>{store.loadError}</span></div></div>
     {:else if !store.snap}
@@ -56,7 +58,7 @@
     {:else if store.view === "updates"}
       <Updates />
     {:else if store.view === "browse"}
-      <Browse bind:searchInput />
+      <Browse />
     {:else}
       <Settings />
     {/if}
@@ -70,7 +72,7 @@
 </div>
 
 <style>
-  .shell { display: flex; height: 100%; min-width: 960px; }
+  .shell { display: flex; height: 100%; min-width: 900px; }
   main { flex: 1 1 auto; min-width: 0; height: 100%; display: flex; flex-direction: column; }
   .dock { position: fixed; right: 24px; bottom: 24px; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none; }
   .dock > :global(*) { pointer-events: auto; }

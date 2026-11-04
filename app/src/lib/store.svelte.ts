@@ -48,6 +48,8 @@ class Store {
   recent = $state<Recent[]>([]);
   dialog = $state<Dialog | null>(null);
   filter = $state("");
+  /** The top bar's search, shown by Browse. */
+  query = $state("");
   tab = $state<InstalledTab>("all");
   /** A newer Nexforge, when the opt-in check found one. */
   newVersion = $state<{ version: string; url: string } | null>(null);

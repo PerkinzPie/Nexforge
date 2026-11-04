@@ -13,7 +13,7 @@
     {#if name === "installed"}<rect x="3" y="3" width="18" height="18" rx="4" /><path d="M3 9h18M9 21V9" />
     {:else if name === "updates" || name === "refresh"}<path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" />
     {:else if name === "browse" || name === "search"}<circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-    {:else if name === "settings"}<path d="M4 6h16M4 12h16M4 18h16" /><circle cx="9" cy="6" r="2" fill="var(--nx-indigo)" /><circle cx="15" cy="12" r="2" fill="var(--nx-indigo)" /><circle cx="8" cy="18" r="2" fill="var(--nx-indigo)" />
+    {:else if name === "settings"}<path d="M4 6h16M4 12h16M4 18h16" /><circle cx="9" cy="6" r="2" fill="var(--rail)" /><circle cx="15" cy="12" r="2" fill="var(--rail)" /><circle cx="8" cy="18" r="2" fill="var(--rail)" />
     {:else if name === "chevrons"}<path d="m7 10 5-5 5 5M7 14l5 5 5-5" />
     {:else if name === "download"}<path d="M12 4v12M6 10l6 6 6-6M4 20h16" />
     {:else if name === "check"}<path d="m5 12 5 5L20 7" />

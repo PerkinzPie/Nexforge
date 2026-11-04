@@ -36,6 +36,6 @@
 
 <style>
   .tile { display: flex; align-items: center; justify-content: center; font-weight: 700; flex: 0 0 auto; overflow: hidden; }
-  .tile.unknown { border: 1px dashed #3c3b58; }
+  .tile.unknown { border: 1px dashed var(--border); }
   img { width: 100%; height: 100%; object-fit: cover; }
 </style>

@@ -576,7 +576,7 @@ async fn popular(installation_id: Option<String>, source: Option<String>) -> Res
     let rows = match source.as_deref().map(str::parse::<SourceId>) {
         Some(Ok(s)) => mgr.top_of(s, 50),
         Some(Err(e)) => return Err(e),
-        None => mgr.popular(flavour, 8),
+        None => mgr.popular(flavour, 6),
     };
     Ok(rows
         .into_iter()
