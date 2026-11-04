@@ -4,17 +4,41 @@
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
   import { api, type Addon } from "../lib/api";
-  import { plural, when } from "../lib/format";
-  import { store } from "../lib/store.svelte";
+  import { ago, plural } from "../lib/format";
+  import { store, type InstalledTab } from "../lib/store.svelte";
 
   let { filterInput = $bindable() }: { filterInput?: HTMLInputElement } = $props();
 
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
+
+  // Counts are the filters (SPEC 4.2): All · Updates · Needs a look · Pinned.
+  const tabs = $derived<{ id: InstalledTab; label: string; n: number | null; tone?: string }[]>([
+    { id: "all", label: "All", n: store.addons.length },
+    { id: "updates", label: "Updates", n: store.checkedAt ? store.updates.length : null, tone: "var(--accent-text)" },
+    { id: "attention", label: "Needs a look", n: store.attentionCount, tone: "var(--attention)" },
+    { id: "pinned", label: "Pinned", n: store.pinnedCount },
+  ]);
+  let now = $state(Date.now());
+  $effect(() => {
+    const t = setInterval(() => (now = Date.now()), 30_000);
+    return () => clearInterval(t);
+  });
+
+  // Left/Right move between tabs, as in any tab list.
+  function tabKeys(e: KeyboardEvent) {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const i = tabs.findIndex((t) => t.id === store.tab);
+    const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    store.tab = next.id;
+    queueMicrotask(() => document.getElementById(`tab-${next.id}`)?.focus());
+  }
+
   const shown = $derived.by(() => {
     const q = store.filter.trim().toLowerCase();
-    const list = q
-      ? store.addons.filter((a) => a.name.toLowerCase().includes(q) || a.folders.some((f) => f.toLowerCase().includes(q)) || (a.author ?? "").toLowerCase().includes(q))
-      : store.addons;
+    const list = store.addons
+      .filter((a) => store.inTab(a, store.tab))
+      .filter((a) => !q || a.name.toLowerCase().includes(q) || a.folders.some((f) => f.toLowerCase().includes(q)) || (a.author ?? "").toLowerCase().includes(q));
     // Things to do first, then the rest by name.
     const rank = (a: Addon) => {
       if (a.id in store.busy) return 0;
@@ -41,23 +65,12 @@
 
 <div class="page">
   <div class="page-head">
-    <div class="page-title">
-      <h1 class="h1">Installed</h1>
-      <span class="dim">
-        {store.installation?.label ?? "No installation"}
-        {#if store.snap?.stateExists} · addons.toml is in sync{/if}
-      </span>
-    </div>
-    <div class="search">
-      <label for="filter" class="sr">Filter installed addons</label>
-      <Icon name="search" size={15} colour="var(--text-3)" />
-      <input id="filter" type="search" placeholder="Filter" bind:value={store.filter} bind:this={filterInput} />
-    </div>
+    <h1 class="h1 title">Installed</h1>
     <button type="button" class="btn" onclick={() => store.check()} disabled={store.checking || !store.current}>
       <Icon name="refresh" size={15} stroke={2.2} />{store.checking ? "Checking…" : "Check now"}
     </button>
     <button type="button" class="btn" class:btn-primary={updatable.length > 0} onclick={() => store.updateAll()} disabled={!updatable.length}>
-      <Icon name="download" size={15} stroke={2.4} />Update all ({updatable.length})
+      <Icon name="download" size={15} stroke={2.4} />{updatable.length ? `Update all ${updatable.length}` : "Update all"}
     </button>
   </div>
 
@@ -74,36 +87,29 @@
     <div class="notice err"><Icon name="warn" size={16} /><span><strong>{e.sourceLabel}:</strong> {e.message}</span></div>
   {/each}
 
-  <div class="stats">
-    <div class="stat"><span class="v">{store.addons.length}</span><span class="l">Installed</span></div>
-    <div class="stat" style:border-color={store.updates.length ? "var(--accent-fill)" : null}>
-      <span class="v" style:color={store.updates.length ? "var(--accent-text)" : null}>{store.checkedAt ? store.updates.length : "–"}</span><span class="l">Updates available</span>
+  <div class="panel list">
+    <div class="tabs">
+      <div class="tablist" role="tablist" aria-label="Show addons" tabindex="-1" onkeydown={tabKeys}>
+        {#each tabs as t (t.id)}
+          <button type="button" role="tab" id="tab-{t.id}" class="tab" class:on={store.tab === t.id}
+            aria-selected={store.tab === t.id} aria-controls="addon-list" tabindex={store.tab === t.id ? 0 : -1}
+            onclick={() => (store.tab = t.id)}>
+            {t.label}
+            {#if t.n !== null}<span class="n" style:color={t.n > 0 && t.tone ? t.tone : null}>{t.n}</span>{/if}
+          </button>
+        {/each}
+      </div>
+      <div class="tools">
+        {#if store.checking}<span class="checked">Checking…</span>{:else if store.checkedAt}<span class="checked">Checked {ago(store.checkedAt, now)}</span>{/if}
+        <div class="search">
+          <label for="filter" class="sr">Filter installed addons</label>
+          <Icon name="search" size={15} colour="var(--text-3)" />
+          <input id="filter" type="search" placeholder="Filter" bind:value={store.filter} bind:this={filterInput} />
+        </div>
+      </div>
     </div>
-    <div class="stat"><span class="v" style:color="var(--info)">{store.pinnedCount}</span><span class="l">Pinned</span></div>
-    <div class="stat"><span class="v" style:color="var(--attention)">{store.attentionCount}</span><span class="l">Need attention</span></div>
-    <div class="stat wide">
-      <span class="l">Last update run</span>
-      {#if store.snap?.lastRun}
-        <span class="lr">{when(store.snap.lastRun.at)} · {plural(store.snap.lastRun.count, "addon")}</span>
-        <span class="dim small">Previous versions kept for rollback</span>
-      {:else}
-        <span class="lr">None yet</span><span class="dim small">Updates keep the previous version for rollback</span>
-      {/if}
-    </div>
-  </div>
-
-  <div class="panel tablewrap">
     {#if shown.length}
-      <table>
-        <thead>
-          <tr>
-            <th scope="col" style="width: 40%">Addon</th>
-            <th scope="col">Version</th>
-            <th scope="col">Source</th>
-            <th scope="col">Status</th>
-            <th scope="col" style="width: 46px"><span class="sr">Actions</span></th>
-          </tr>
-        </thead>
+      <table id="addon-list" aria-labelledby="tab-{store.tab}">
         <tbody>
           {#each shown as a (a.id)}
             {@const s = store.status(a.id)}
@@ -160,7 +166,13 @@
         </tbody>
       </table>
     {:else if store.filter}
-      <div class="empty">No installed addon matches “{store.filter}”.</div>
+      <div class="empty">No {store.tab === "all" ? "installed addon" : "addon in this list"} matches “{store.filter}”.</div>
+    {:else if store.tab === "updates"}
+      <div class="empty">{store.checkedAt ? "Everything is up to date." : "Check for updates to see what is new."}</div>
+    {:else if store.tab === "attention"}
+      <div class="empty">Nothing needs a look. Every addon has a source and a {flavour} build.</div>
+    {:else if store.tab === "pinned"}
+      <div class="empty">No pinned addons. Pin one from its menu to hold it at its current version.</div>
     {:else}
       <div class="empty">No addons here yet. Find some in <a href="#browse" onclick={(e) => { e.preventDefault(); store.view = "browse"; }}>Browse</a>.</div>
     {/if}
@@ -168,11 +180,21 @@
 </div>
 
 <style>
-  .stats { display: flex; flex-wrap: wrap; gap: 12px; }
-  .stat.wide { flex: 1 1 220px; }
-  .lr { font-size: 13px; font-weight: 600; }
+  .title { margin-right: auto; }
+  .list { overflow: hidden; }
+  .tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 8px 0 8px; border-bottom: 1px solid var(--border); }
+  .tablist { display: flex; align-items: center; gap: 4px; }
+  .tab { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; border: 0; background: none; color: var(--text-2); font: 600 13px var(--sans); cursor: pointer; }
+  .tab:hover { color: var(--text); }
+  .tab .n { font: 600 12px var(--display); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .tab.on { color: var(--text); }
+  .tab.on::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--text); }
+  .tools { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-bottom: 6px; }
+  .checked { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+  table { margin: 0; }
+  tbody tr:first-child td { border-top: 0; }
+  td { height: 58px; }
   .small { font-size: 12px; }
-  .tablewrap { overflow-x: auto; padding: 14px 4px 4px 4px; }
   .who { display: flex; align-items: center; gap: 12px; }
   .names { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .n { font-weight: 700; }

@@ -3,6 +3,7 @@
 import { api, inTauri, onProgress, type Addon, type AddonStatus, type Recent, type Snapshot, type SourceError } from "./api";
 
 export type View = "installed" | "updates" | "browse" | "settings";
+export type InstalledTab = "all" | "updates" | "attention" | "pinned";
 
 export type Dialog =
   | { kind: "install"; adopt?: Addon; initial?: string }
@@ -26,6 +27,7 @@ class Store {
   recent = $state<Recent[]>([]);
   dialog = $state<Dialog | null>(null);
   filter = $state("");
+  tab = $state<InstalledTab>("all");
   readonly preview = !inTauri;
 
   #toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -48,11 +50,23 @@ class Store {
   get pinnedCount() {
     return this.addons.filter((a) => a.pinned).length;
   }
+  /** Not managed yet, no build for this flavour, or its check failed. */
+  needsLook(a: Addon): boolean {
+    const k = this.statuses[a.id]?.kind;
+    if (!a.managed || k === "no_build" || k === "failed" || k === "unavailable") return true;
+    return !k && a.flavourMismatch;
+  }
   get attentionCount() {
-    return this.addons.filter((a) => {
-      const k = this.statuses[a.id]?.kind;
-      return !a.managed || k === "no_build" || k === "failed" || k === "unavailable";
-    }).length;
+    return this.addons.filter((a) => this.needsLook(a)).length;
+  }
+  /** Does `a` belong in the Installed tab `t`? */
+  inTab(a: Addon, t: InstalledTab): boolean {
+    switch (t) {
+      case "all": return true;
+      case "updates": return this.statuses[a.id]?.kind === "available" || this.busy[a.id] === "Updating";
+      case "attention": return this.needsLook(a);
+      case "pinned": return a.pinned;
+    }
   }
 
   say(kind: "ok" | "err", text: string) {
@@ -80,6 +94,7 @@ class Store {
     try {
       const s = await api.snapshot(installationId);
       if (s.current !== this.snap?.current) {
+        this.tab = "all";
         this.statuses = {};
         this.checkedAt = null;
         this.sourceErrors = [];
