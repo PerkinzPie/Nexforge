@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import ProgressButton from "../components/ProgressButton.svelte";
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
   import { api } from "../lib/api";
@@ -48,16 +49,9 @@
 
             </span>
           </div>
-          {#if busy}
-            <span class="doing">{busy}{pct != null ? `… ${pct}%` : "…"}</span>
-          {:else if r}
-            <button type="button" class="btn btn-quiet" onclick={() => store.skip(a, r.version)}>Skip {r.version}</button>
-            <button type="button" class="btn btn-row" onclick={() => store.update(a.id)}>Update</button>
-          {/if}
+          {#if r && !busy}<button type="button" class="btn btn-quiet" onclick={() => store.skip(a, r.version)}>Skip {r.version}</button>{/if}
+          {#if r || busy}<ProgressButton label="Update" busy={busy ?? null} {pct} onclick={() => store.update(a.id)} />{/if}
         </div>
-        {#if busy && a.id in store.progress}
-          <span class="bar wide" class:indeterminate={pct == null}><span style:width="{pct ?? 30}%"></span></span>
-        {/if}
         {#if r?.notes.length}
           <ul class="notes">{#each r.notes as n}<li>{n}</li>{/each}</ul>
         {/if}
@@ -102,7 +96,6 @@
   .line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
   .line strong { color: var(--text); font-weight: 600; }
   .small { font-size: 12px; }
-  .doing { font-size: 12.5px; font-weight: 700; color: var(--accent-text); }
   .more { font-size: 12.5px; font-weight: 700; }
   .recent { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
   .rrow { padding: 12px 20px; gap: 14px; }

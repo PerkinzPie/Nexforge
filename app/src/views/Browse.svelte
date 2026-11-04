@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import ProgressButton from "../components/ProgressButton.svelte";
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
   import { api, type Hit } from "../lib/api";
@@ -143,13 +144,11 @@
               {/if}
             </div>
             {#if h.installed}
-              <span class="ok"><Icon name="check" size={14} stroke={2.6} />Installed</span>
-            {:else if busy}
-              <span class="doing">{busy}{pct != null ? `… ${pct}%` : "…"}</span>
+              <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
             {:else if !h.forFlavour && !h.flavourUnknown}
-              <button type="button" class="btn btn-ghost" onclick={() => install(h, true)}>Install anyway</button>
+              <ProgressButton label="Install anyway" ghost busy={busy ?? null} {pct} onclick={() => install(h, true)} />
             {:else}
-              <button type="button" class="btn btn-row" onclick={() => install(h, false)}>Install</button>
+              <ProgressButton label="Install" busy={busy ?? null} {pct} onclick={() => install(h, false)} />
             {/if}
           </div>
         {/each}
@@ -173,5 +172,7 @@
   .small { font-size: 12px; }
   .tiny { font-size: 11.5px; }
   .nobuild { font-size: 11.5px; font-weight: 600; color: var(--attention); }
-  .doing { font-size: 12.5px; font-weight: 700; color: var(--accent-text); }
+  .done { animation: pop 0.3s ease-out; }
+  @keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .done { animation: none; } }
 </style>

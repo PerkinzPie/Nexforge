@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import ProgressButton from "../components/ProgressButton.svelte";
   import RowMenu, { type Item } from "../components/RowMenu.svelte";
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
@@ -133,15 +134,14 @@
                     {#if next && !a.pinned}<span class="dim">→</span> <strong>{next}</strong>{/if}
                     {#if a.pinned && next}<span class="dim">· {next} held</span>{:else if a.skippedVersion && s?.kind === "skipped"}<span class="dim">· {a.skippedVersion} skipped</span>{/if}
                   </span>
-                  {#if busy && a.id in store.progress}
-                    <span class="bar" class:indeterminate={pct == null}><span style:width="{pct ?? 30}%"></span></span>
-                  {/if}
                 </div>
               </td>
               <td><SourceTag source={a.source} label={a.sourceLabel} /></td>
               <td>
-                {#if busy}
-                  <span class="dim state">{busy}{pct != null ? `… ${pct}%` : "…"}</span>
+                {#if busy === "Updating" || busy === "Installing"}
+                  <ProgressButton label="Update" {busy} {pct} onclick={() => {}} />
+                {:else if busy}
+                  <span class="dim state">{busy}…</span>
                 {:else if !a.managed}
                   <a href="#identify" class="identify" onclick={(e) => { e.preventDefault(); store.dialog = { kind: "install", adopt: a }; }}>Identify source</a>
                 {:else if a.pinned}

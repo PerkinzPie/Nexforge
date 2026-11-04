@@ -66,6 +66,7 @@ export const api = {
   install: (installationId: string, spec: string, adopt: string | null, anyway: boolean) =>
     call<Addon>("install", { installationId, spec, adopt, anyway }),
   remove: (installationId: string, id: string) => call<void>("remove", { installationId, id }),
+  restore: (installationId: string, id: string) => call<Addon>("restore", { installationId, id }),
   setPinned: (installationId: string, id: string, pinned: boolean) => call<void>("set_pinned", { installationId, id, pinned }),
   skip: (installationId: string, id: string, version: string) => call<void>("skip", { installationId, id, version }),
   rollback: (installationId: string, id: string) => call<{ from: string; to: string }>("rollback", { installationId, id }),

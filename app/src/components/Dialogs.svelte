@@ -33,40 +33,44 @@
 
   async function submit(e: SubmitEvent) {
     e.preventDefault();
-    if (!d || working) return;
+    // Keep our own copy: closing the dialog clears `store.dialog` (and `d`).
+    const cur = store.dialog;
+    if (!cur || working) return;
     working = true;
     error = null;
     try {
-      if (d.kind === "install") {
+      if (cur.kind === "install") {
         const spec = value.trim();
         if (!spec) throw new Error("Paste a link or type an addon name.");
         store.dialog = null;
-        const ok = await store.install(spec, d.adopt ?? null, false);
+        const ok = await store.install(spec, cur.adopt ?? null, false, cur.adopt?.name ?? spec);
         if (!ok && store.toast?.text.includes("No release of")) {
           store.dialog = { kind: "anyway", spec, name: spec };
           store.toast = null;
         }
         return;
       }
-      if (d.kind === "anyway") {
+      if (cur.kind === "anyway") {
         store.dialog = null;
-        await store.install(d.spec, null, true);
+        await store.install(cur.spec, null, true, cur.name);
         return;
       }
-      if (d.kind === "remove") {
+      if (cur.kind === "remove") {
         store.dialog = null;
-        await store.remove(d.addon);
+        await store.remove(cur.addon);
         return;
       }
-      if (d.kind === "key") {
-        const s = await api.setKey(d.name, value);
+      if (cur.kind === "key") {
+        const s = await api.setKey(cur.name, value);
         if (store.snap) store.snap.settings = s;
         store.dialog = null;
-        store.say("ok", d.name === "curseforge" ? "CurseForge key saved." : "GitHub token saved.");
+        store.say("ok", cur.name === "curseforge" ? "CurseForge key saved." : "GitHub token saved.");
         await store.load();
       }
     } catch (err) {
-      error = (err as Error).message;
+      // Errors after the dialog closed still reach the player.
+      if (store.dialog) error = (err as Error).message;
+      else store.say("err", (err as Error).message);
     } finally {
       working = false;
     }

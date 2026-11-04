@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Activity from "./components/Activity.svelte";
   import Dialogs from "./components/Dialogs.svelte";
   import Sidebar from "./components/Sidebar.svelte";
   import Toast from "./components/Toast.svelte";
@@ -57,10 +58,15 @@
 </div>
 
 <Dialogs />
-<Toast />
+<div class="dock" aria-live="polite">
+  <Activity />
+  <Toast />
+</div>
 
 <style>
   .shell { display: flex; height: 100%; min-width: 960px; }
   main { flex: 1 1 auto; min-width: 0; height: 100%; display: flex; flex-direction: column; }
+  .dock { position: fixed; right: 24px; bottom: 24px; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none; }
+  .dock > :global(*) { pointer-events: auto; }
   .preview { flex: 0 0 auto; padding: 6px 32px; font-size: 12px; font-weight: 600; color: var(--attention); background: var(--attn-tint); }
 </style>

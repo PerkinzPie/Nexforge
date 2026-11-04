@@ -77,6 +77,7 @@ const snap = (current: string | null): Snapshot => ({
 });
 
 let listeners: ((p: Progress) => void)[] = [];
+let removed: Addon | undefined;
 export function onPreviewProgress(cb: (p: Progress) => void) {
   listeners.push(cb);
   return () => { listeners = listeners.filter((l) => l !== cb); };
@@ -99,6 +100,17 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
       if (r?.release) { addon.version = r.release.version; r.kind = "up_to_date"; r.release = null; }
       return addon;
     }
+    case "install": {
+      for (let p = 0; p <= 100; p += 5) { listeners.forEach((l) => l({ id: args.adopt ?? args.spec, done: p, total: 100, percent: p })); await wait(90); }
+      await wait(700);
+      const name = String(args.spec).split(/[:/]/).pop() ?? "Addon";
+      const added = { ...addons[0], id: name.toLowerCase(), name, version: "1.0.0", folders: [name] };
+      addons.push(added);
+      return added;
+    }
+    case "remove": { const i = addons.findIndex((x) => x.id === args.id); if (i >= 0) removed = addons.splice(i, 1)[0]; return null; }
+    case "restore": { await wait(600); if (removed) addons.push(removed); return removed; }
+    case "skip": return null;
     case "set_pinned": { const x = addons.find((y) => y.id === args.id); if (x) x.pinned = args.pinned; return null; }
     case "image": throw new Error("no images in preview");
     default: throw new Error(`"${cmd}" is not available in the browser preview.`);

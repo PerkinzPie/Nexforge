@@ -279,6 +279,23 @@ async fn remove(installation_id: String, id: String, writes: State<'_, Writes>) 
     Ok(())
 }
 
+/// Undo a removal: reinstall from the kept archive with the old entry.
+#[tauri::command]
+async fn restore(installation_id: String, id: String, writes: State<'_, Writes>) -> Res<AddonDto> {
+    let mgr = manager()?;
+    let inst = installation(&mgr, &installation_id)?;
+    let _w = writes.0.lock().await;
+    let mut state = load_state(&inst)?;
+    let path = inst.state_file();
+    let mut t = Target {
+        installation: &inst,
+        state: &mut state,
+        state_path: &path,
+    };
+    let e = mgr.engine().restore(&mut t, &id).map_err(err)?;
+    Ok(AddonDto::from(&e))
+}
+
 #[tauri::command]
 async fn set_pinned(
     installation_id: String,
@@ -710,6 +727,7 @@ pub fn run() {
             update,
             install,
             remove,
+            restore,
             set_pinned,
             skip,
             rollback,

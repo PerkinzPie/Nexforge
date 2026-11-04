@@ -4,6 +4,7 @@ import { api, inTauri, onProgress, type Addon, type AddonStatus, type Recent, ty
 
 export type View = "installed" | "updates" | "browse" | "settings";
 export type InstalledTab = "all" | "updates" | "attention" | "pinned";
+export interface Toast { kind: "ok" | "err"; text: string; undo?: () => void }
 
 export type Dialog =
   | { kind: "install"; adopt?: Addon; initial?: string }
@@ -23,7 +24,9 @@ class Store {
   progress = $state<Record<string, number | null>>({});
   /** id → what is happening ("Updating", "Rolling back" …). */
   busy = $state<Record<string, string>>({});
-  toast = $state<{ kind: "ok" | "err"; text: string } | null>(null);
+  toast = $state<Toast | null>(null);
+  /** Installs started from Install from URL, shown in the activity tray. */
+  jobs = $state<Record<string, { title: string }>>({});
   recent = $state<Recent[]>([]);
   dialog = $state<Dialog | null>(null);
   filter = $state("");
@@ -69,10 +72,11 @@ class Store {
     }
   }
 
-  say(kind: "ok" | "err", text: string) {
-    this.toast = { kind, text };
+  /** Show a toast; `undo` adds an Undo button and keeps it up longer. */
+  say(kind: "ok" | "err", text: string, undo?: () => void) {
+    this.toast = { kind, text, undo };
     clearTimeout(this.#toastTimer);
-    this.#toastTimer = setTimeout(() => (this.toast = null), kind === "err" ? 9000 : 4000);
+    this.#toastTimer = setTimeout(() => (this.toast = null), kind === "err" ? 9000 : undo ? 8000 : 4000);
   }
 
   async start() {
@@ -132,13 +136,19 @@ class Store {
     }
   }
 
-  async run<T>(id: string, label: string, job: () => Promise<T>, done?: (r: T) => string | null): Promise<T | undefined> {
+  async run<T>(
+    id: string,
+    label: string,
+    job: () => Promise<T>,
+    done?: (r: T) => string | null,
+    undo?: (r: T) => (() => void) | undefined,
+  ): Promise<T | undefined> {
     if (this.busy[id]) return;
     this.busy[id] = label;
     try {
       const r = await job();
       const msg = done?.(r);
-      if (msg) this.say("ok", msg);
+      if (msg) this.say("ok", msg, undo?.(r));
       return r;
     } catch (e) {
       this.say("err", (e as Error).message);
@@ -155,6 +165,7 @@ class Store {
     this.progress[id] = 0;
     const r = await this.run(id, "Updating", () => api.update(inst, id), (r) =>
       r ? `Updated ${r.name} to ${r.version}.` : `${a.name} is up to date.`,
+      (r) => (r ? () => this.rollback(id, a.name) : undefined),
     );
     if (r !== undefined) {
       const s = this.statuses[id];
@@ -170,7 +181,8 @@ class Store {
   async setPinned(a: Addon, pinned: boolean) {
     const inst = this.current;
     if (!inst) return;
-    await this.run(a.id, pinned ? "Pinning" : "Unpinning", () => api.setPinned(inst, a.id, pinned));
+    await this.run(a.id, pinned ? "Pinning" : "Unpinning", () => api.setPinned(inst, a.id, pinned),
+      () => `${pinned ? "Pinned" : "Unpinned"} ${a.name}.`, () => () => this.setPinned(a, !pinned));
     await this.load();
     const s = this.statuses[a.id];
     if (s && pinned && s.kind === "available") this.statuses[a.id] = { ...s, kind: "pinned" };
@@ -180,7 +192,9 @@ class Store {
   async skip(a: Addon, version: string) {
     const inst = this.current;
     if (!inst) return;
-    await this.run(a.id, "Skipping", () => api.skip(inst, a.id, version), () => `Skipping ${a.name} ${version}.`);
+    await this.run(a.id, "Skipping", () => api.skip(inst, a.id, version),
+      () => (version ? `Skipping ${a.name} ${version}.` : null),
+      () => (version ? () => this.skip(a, "") : undefined));
     const s = this.statuses[a.id];
     if (s?.release) this.statuses[a.id] = { ...s, kind: "skipped" };
     await this.load();
@@ -204,6 +218,7 @@ class Store {
     if (!inst) return;
     const ok = await this.run(a.id, "Removing", () => api.remove(inst, a.id).then(() => true), () =>
       `Removed ${a.name}.`,
+      () => () => this.restore(a.id, a.name),
     );
     if (ok) {
       delete this.statuses[a.id];
@@ -211,21 +226,44 @@ class Store {
     }
   }
 
-  /** Install by spec (source:id, URL or name). Returns true on success. */
-  async install(spec: string, adopt: Addon | null, anyway: boolean): Promise<boolean> {
+  /** Put a removed addon back (undo of remove). */
+  async restore(id: string, name: string) {
+    const inst = this.current;
+    if (!inst) return;
+    this.jobs[id] = { title: name };
+    const r = await this.run(id, "Restoring", () => api.restore(inst, id), (e) => `Restored ${e.name}.`);
+    delete this.jobs[id];
+    if (r) await this.load();
+  }
+
+  /** Install by spec (source:id, URL or name). `title` puts it in the
+   *  activity tray (used when there is no row to show progress on). */
+  async install(spec: string, adopt: Addon | null, anyway: boolean, title?: string): Promise<boolean> {
     const inst = this.current;
     if (!inst) return false;
     const key = adopt?.id ?? spec;
+    const existed = adopt ? this.addons.some((x) => x.id === adopt.id && x.managed) : false;
     this.progress[key] = 0;
+    if (title) this.jobs[key] = { title };
     const r = await this.run(key, "Installing", () => api.install(inst, spec, adopt?.id ?? null, anyway), (e) =>
       `Installed ${e.name} ${e.version}.`,
+      // Undo a fresh install by removing it; a re-install by rolling back.
+      (e) => () => (existed ? this.rollback(e.id, e.name) : this.removeQuietly(e.id, e.name)),
     );
+    delete this.jobs[key];
     if (r) {
       this.statuses[r.id] = { id: r.id, kind: "up_to_date", release: null, message: null };
       await this.load();
       return true;
     }
     return false;
+  }
+
+  /** Remove without the confirm dialog (undo of an install). */
+  async removeQuietly(id: string, name: string) {
+    const a = this.addons.find((x) => x.id === id);
+    if (a) await this.remove(a);
+    else this.say("err", `${name} is no longer installed.`);
   }
 }
 

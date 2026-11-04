@@ -481,9 +481,51 @@ impl Engine {
             .addons
             .retain(|a| !a.id.eq_ignore_ascii_case(&entry.id));
         t.state.save(t.state_path)?;
+        // Remember the entry so the removal can be undone (see `restore`).
+        let bdir = self.backup_dir(t, &entry.id);
+        std::fs::create_dir_all(&bdir).ctx("create", &bdir)?;
+        let body = toml::to_string_pretty(&entry).map_err(|e| Error::Other(e.to_string()))?;
+        let p = bdir.join(REMOVED_FILE);
+        std::fs::write(&p, body).ctx("write", &p)?;
         Ok(entry)
     }
+
+    /// Undo [`Engine::remove`]: put the addon back from its kept archive,
+    /// with its entry as it was (source, pin, skipped version).
+    pub fn restore(&self, t: &mut Target<'_>, id: &str) -> Result<AddonEntry> {
+        let bdir = self.backup_dir(t, id);
+        let p = bdir.join(REMOVED_FILE);
+        let text = std::fs::read_to_string(&p).map_err(|_| Error::NoBackup(id.to_string()))?;
+        let entry: AddonEntry = toml::from_str(&text).map_err(|e| Error::BadStateFile {
+            path: p.clone(),
+            message: e.message().to_string(),
+        })?;
+        if t.state.get(&entry.id).is_some() {
+            return Err(Error::Other(format!(
+                "{} is already installed.",
+                entry.name
+            )));
+        }
+        let kept = self
+            .kept_versions(t, &entry.id)
+            .into_iter()
+            .find(|k| k.version == entry.installed_version)
+            .ok_or_else(|| Error::NoBackup(entry.name.clone()))?;
+        let (pinned, skipped) = (entry.pinned, entry.skipped_version.clone());
+        let mut back = self.apply_archive(t, entry, &bdir.join(&kept.file), &kept.version)?;
+        back.pinned = pinned;
+        back.skipped_version = skipped;
+        if let Some(slot) = t.state.get_mut(&back.id) {
+            slot.pinned = back.pinned;
+            slot.skipped_version = back.skipped_version.clone();
+        }
+        t.state.save(t.state_path)?;
+        let _ = std::fs::remove_file(&p);
+        Ok(back)
+    }
 }
+
+const REMOVED_FILE: &str = "removed.toml";
 
 fn same_file(a: &Path, b: &Path) -> bool {
     match (a.canonicalize(), b.canonicalize()) {
@@ -650,9 +692,23 @@ mod tests {
             .collect();
         assert_eq!(kept, vec!["5.0", "4.0", "3.0"]);
 
+        t.state.require_mut("foo").unwrap().pinned = true;
         env.engine.remove(&mut t, "foo").unwrap();
         assert!(!addons.join("Foo").exists());
         assert!(t.state.get("foo").is_none());
+
+        // Undo the removal: folders and entry come back as they were.
+        let back = env.engine.restore(&mut t, "foo").unwrap();
+        assert_eq!(back.installed_version, "5.0");
+        assert!(back.pinned, "pin survives remove + restore");
+        assert_eq!(
+            std::fs::read_to_string(addons.join("Foo/core.lua")).unwrap(),
+            "5.0"
+        );
+        assert!(matches!(
+            env.engine.restore(&mut t, "foo"),
+            Err(Error::NoBackup(_)) | Err(Error::Other(_))
+        ));
     }
 
     #[test]

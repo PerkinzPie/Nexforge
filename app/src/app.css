@@ -154,3 +154,11 @@ tr:last-child td { border-bottom: 0; }
 .notice.attn { border-color: #5a4c26; background: var(--attn-tint); color: var(--attention); }
 .notice.err { border-color: #5a2a36; background: var(--accent-tint); color: var(--accent-text); }
 .empty { padding: 36px 20px; text-align: center; color: var(--text-2); }
+
+/* Tooltips: data-tip="…" on any element; shown on hover and keyboard focus. */
+[data-tip] { position: relative; }
+[data-tip]:hover::after, [data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 40;
+  width: max-content; max-width: 260px; padding: 7px 10px; border-radius: 8px; background: var(--text); color: var(--bg);
+  font: 600 12px/1.4 var(--sans); text-transform: none; letter-spacing: 0; white-space: normal; text-align: left; pointer-events: none;
+}
