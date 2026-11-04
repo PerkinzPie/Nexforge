@@ -2,7 +2,9 @@
   // The icon rail: crest, the three main views, Settings at the foot, and the
   // version. Labels show as tooltips; counts as badges.
   import Crest from "./Crest.svelte";
+  import { mergeProps } from "bits-ui";
   import Icon from "./Icon.svelte";
+  import Tip from "./Tip.svelte";
   import { api } from "../lib/api";
   import { store, type View } from "../lib/store.svelte";
 
@@ -20,25 +22,36 @@
   <button type="button" class="crest" aria-label="Nexforge: Installed" onclick={() => (store.view = "installed")}><Crest size={30} /></button>
 
   {#each nav as n (n.view)}
-    <button type="button" class="item" class:on={on(n.view)} aria-current={on(n.view) ? "page" : undefined}
-      aria-label={n.view === "updates" && updates ? `Updates, ${updates} available` : n.label} data-tip-right={n.label}
-      onclick={() => (store.view = n.view)}>
-      <Icon name={n.icon} size={20} />
-      {#if n.view === "updates" && updates}<span class="badge">{updates}</span>{/if}
-    </button>
+    <Tip text={n.label} side="right">
+      {#snippet children({ props })}
+        <button {...mergeProps(props, { onclick: () => (store.view = n.view) })} type="button" class="item" class:on={on(n.view)}
+          aria-current={on(n.view) ? "page" : undefined} aria-label={n.view === "updates" && updates ? `Updates, ${updates} available` : n.label}>
+          <Icon name={n.icon} size={20} />
+          {#if n.view === "updates" && updates}<span class="badge">{updates}</span>{/if}
+        </button>
+      {/snippet}
+    </Tip>
   {/each}
 
   <div class="foot">
     {#if store.newVersion}
-      <button type="button" class="item new" aria-label="Nexforge {store.newVersion.version} is available" data-tip-right="Nexforge {store.newVersion.version} is available"
-        onclick={() => api.openUrl(store.newVersion!.url).catch((err) => store.say("err", err.message))}>
-        <Icon name="download" size={20} />
-      </button>
+      <Tip text="Nexforge {store.newVersion.version} is available" side="right">
+        {#snippet children({ props })}
+          <button {...mergeProps(props, { onclick: () => api.openUrl(store.newVersion!.url).catch((err) => store.say("err", err.message)) })}
+            type="button" class="item new" aria-label="Nexforge {store.newVersion!.version} is available">
+            <Icon name="download" size={20} />
+          </button>
+        {/snippet}
+      </Tip>
     {/if}
-    <button type="button" class="item" class:on={on("settings")} aria-current={on("settings") ? "page" : undefined}
-      aria-label="Settings" data-tip-right="Settings" onclick={() => (store.view = "settings")}>
-      <Icon name="settings" size={20} />
-    </button>
+    <Tip text="Settings" side="right">
+      {#snippet children({ props })}
+        <button {...mergeProps(props, { onclick: () => (store.view = "settings") })} type="button" class="item" class:on={on("settings")}
+          aria-current={on("settings") ? "page" : undefined} aria-label="Settings">
+          <Icon name="settings" size={20} />
+        </button>
+      {/snippet}
+    </Tip>
     <span class="ver" title="Nexforge {store.snap?.settings.version ?? ''}">{store.snap?.settings.version ?? ""}</span>
   </div>
 </nav>

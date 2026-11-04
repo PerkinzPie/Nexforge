@@ -1,6 +1,8 @@
 <script lang="ts">
   import ClientIcon from "../components/ClientIcon.svelte";
+  import { mergeProps } from "bits-ui";
   import PageHead from "../components/PageHead.svelte";
+  import Tip from "../components/Tip.svelte";
   import wordmark from "../assets/nexabyte-wordmark.svg";
   import { api, type Settings, type SettingsInput } from "../lib/api";
   import { store } from "../lib/store.svelte";
@@ -81,7 +83,7 @@
           <input type="checkbox" checked={s.checkOnLaunch} onchange={(e) => save({ checkOnLaunch: e.currentTarget.checked })} />
         </label>
         <label class="frow toggle">
-          <span class="t" data-tip-start data-tip="Pinned addons are never updated automatically.">Apply updates automatically</span>
+          <Tip text="Pinned addons are never updated automatically.">{#snippet children({ props })}<span {...props} class="t">Apply updates automatically</span>{/snippet}</Tip>
           <input type="checkbox" checked={s.autoApply} onchange={(e) => save({ autoApply: e.currentTarget.checked })} />
         </label>
         <label class="frow toggle">
@@ -100,8 +102,9 @@
           {#if s.keyGithub}
             <button type="button" class="btn btn-sm btn-quiet" onclick={() => clearKey("github")}>Remove token</button>
           {:else}
-            <button type="button" class="btn btn-sm" data-tip="Optional. Raises GitHub's limit from 60 to 5,000 requests an hour."
-              onclick={() => (store.dialog = { kind: "key", name: "github" })}>Add token…</button>
+            <Tip text="Optional. Raises GitHub's limit from 60 to 5,000 requests an hour.">
+              {#snippet children({ props })}<button {...mergeProps(props, { onclick: () => (store.dialog = { kind: "key", name: "github" }) })} type="button" class="btn btn-sm">Add token…</button>{/snippet}
+            </Tip>
           {/if}
           <input id="src-github" type="checkbox" checked={s.github} onchange={(e) => save({ github: e.currentTarget.checked })} />
         </div>
@@ -115,14 +118,15 @@
             <button type="button" class="btn btn-sm btn-quiet" onclick={() => clearKey("curseforge")}>Remove key</button>
             <button type="button" class="btn btn-sm" onclick={() => (store.dialog = { kind: "key", name: "curseforge" })}>Replace key…</button>
           {:else}
-            <button type="button" class="btn btn-sm" data-tip="Free from console.curseforge.com. Some authors block downloads outside the CurseForge app."
-              onclick={() => (store.dialog = { kind: "key", name: "curseforge" })}>Add key…</button>
+            <Tip text="Free from console.curseforge.com. Some authors block downloads outside the CurseForge app.">
+              {#snippet children({ props })}<button {...mergeProps(props, { onclick: () => (store.dialog = { kind: "key", name: "curseforge" }) })} type="button" class="btn btn-sm">Add key…</button>{/snippet}
+            </Tip>
           {/if}
           <input id="src-cf" type="checkbox" checked={s.curseforge} disabled={!s.keyCurseforge}
             onchange={(e) => save({ curseforge: e.currentTarget.checked })} />
         </div>
-        <div class="frow toggle" data-tip="Wago only gives API keys to paying subscribers, so it is not supported.">
-          <span class="t off">Wago</span>
+        <div class="frow toggle">
+          <Tip text="Wago only gives API keys to paying subscribers, so it is not supported.">{#snippet children({ props })}<span {...props} class="t off">Wago</span>{/snippet}</Tip>
           <input type="checkbox" disabled checked={false} aria-label="Wago (not supported)" />
         </div>
         </div>
@@ -132,7 +136,7 @@
         <h2>Privacy and diagnostics</h2>
         <div class="group">
         <label class="frow toggle">
-          <span class="t" data-tip-start data-tip="One request to GitHub on launch. Nothing is downloaded.">Check for new versions of Nexforge</span>
+          <Tip text="One request to GitHub on launch. Nothing is downloaded.">{#snippet children({ props })}<span {...props} class="t">Check for new versions of Nexforge</span>{/snippet}</Tip>
           <input type="checkbox" checked={s.selfUpdateCheck}
             onchange={(e) => {
               const on = e.currentTarget.checked;

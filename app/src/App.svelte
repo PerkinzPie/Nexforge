@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Tooltip } from "bits-ui";
   import Activity from "./components/Activity.svelte";
   import Dialogs from "./components/Dialogs.svelte";
   import Sidebar from "./components/Sidebar.svelte";
@@ -38,6 +39,7 @@
 
 <svelte:window onkeydown={keys} />
 
+<Tooltip.Provider delayDuration={300}>
 <div class="shell">
   <Sidebar />
   <main>
@@ -70,6 +72,7 @@
   <Activity />
   <Toast />
 </div>
+</Tooltip.Provider>
 
 <style>
   .shell { display: flex; height: 100%; min-width: 900px; }

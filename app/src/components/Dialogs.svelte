@@ -1,5 +1,7 @@
 <script lang="ts">
   // Install from URL / Identify source / Remove / API key / Install anyway.
+  // Bits UI Dialog: focus trap, Escape, click-outside and screen-reader roles.
+  import { Dialog } from "bits-ui";
   import Icon from "./Icon.svelte";
   import { api } from "../lib/api";
   import { store } from "../lib/store.svelte";
@@ -18,10 +20,14 @@
     error = null;
     working = false;
     value = d.kind === "install" ? (d.initial ?? suggestion(d.adopt)) : "";
-    // Nothing to type (Remove, Install anyway): focus Cancel, so Enter never
-    // runs the action unread (HIG: a destructive button is never the default).
-    queueMicrotask(() => (input ?? cancel)?.focus());
   });
+
+  // Nothing to type (Remove, Install anyway): focus Cancel, so Enter never
+  // runs the action unread (HIG: a destructive button is never the default).
+  function initialFocus(e: Event) {
+    e.preventDefault();
+    (input ?? cancel)?.focus();
+  }
 
   function suggestion(a: typeof store.addons[number] | undefined): string {
     if (!a) return "";
@@ -80,17 +86,19 @@
   }
 </script>
 
-{#if d}
-  <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) close(); }}>
-    <div role="dialog" aria-modal="true" aria-labelledby="dlg-title" class="dlg-wrap">
+<Dialog.Root bind:open={() => !!store.dialog, (v) => { if (!v) close(); }}>
+  <Dialog.Portal>
+  <Dialog.Overlay class="scrim" />
+  {#if d}
+  <Dialog.Content class="dlg-layer" onOpenAutoFocus={initialFocus}>
     <form class="dlg" onsubmit={submit}>
       <div class="head">
-        <h2 id="dlg-title">
+        <Dialog.Title level={2} class="dlg-title">
           {#if d.kind === "install"}{d.adopt ? `Identify source for ${d.adopt.name}` : "Install from URL"}
           {:else if d.kind === "remove"}Remove {d.addon.name}?
           {:else if d.kind === "key"}{d.name === "curseforge" ? "CurseForge API key" : "GitHub token"}
           {:else}No {flavour} build listed{/if}
-        </h2>
+        </Dialog.Title>
         <button type="button" class="btn btn-icon" aria-label="Close" onclick={close}><Icon name="x" /></button>
       </div>
 
@@ -117,18 +125,17 @@
         </button>
       </div>
     </form>
-    </div>
-  </div>
-{/if}
-
-<svelte:window onkeydown={(e) => { if (d && e.key === "Escape") close(); }} />
+  </Dialog.Content>
+  {/if}
+  </Dialog.Portal>
+</Dialog.Root>
 
 <style>
-  .scrim { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: 24px; }
-  .dlg-wrap { width: 520px; max-width: 100%; }
+  :global(.scrim) { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.6); }
+  :global(.dlg-layer) { position: fixed; z-index: 51; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 520px; max-width: calc(100% - 48px); outline: none; }
   .dlg { width: 100%; max-width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); }
   .head { display: flex; align-items: center; gap: 12px; }
-  h2 { margin: 0 auto 0 0; font-size: 15px; font-weight: 700; }
+  :global(.dlg-title) { margin: 0 auto 0 0; font-size: 15px; font-weight: 700; }
   p { margin: 0; line-height: 1.4; }
   .err { color: var(--accent-text); font-weight: 600; }
   .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }

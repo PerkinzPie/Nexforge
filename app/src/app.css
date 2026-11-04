@@ -167,23 +167,15 @@ tr:last-child td { border-bottom: 0; }
 .notice.err { border-color: #5a2a36; background: var(--accent-tint); color: var(--accent-text); }
 .empty { padding: 28px 16px; text-align: center; color: var(--text-2); }
 
-/* Tooltips: data-tip="…" on any element; shown on hover and keyboard focus.
-   They open leftward from the element's right edge (controls sit on the right);
-   add data-tip-start for elements on the left, which open rightward. */
-[data-tip] { position: relative; }
-[data-tip]:hover::after, [data-tip]:focus-visible::after {
-  content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 40;
-  width: max-content; max-width: 260px; padding: 7px 10px; border-radius: var(--r-sm); background: var(--text); color: var(--bg);
-  font: 600 12px/1.4 var(--sans); text-transform: none; letter-spacing: 0; white-space: normal; text-align: left; pointer-events: none;
-}
-[data-tip-start]:hover::after, [data-tip-start]:focus-visible::after { right: auto; left: 0; }
-/* The rail's labels open to its right. */
-[data-tip-right] { position: relative; }
-[data-tip-right]:hover::after, [data-tip-right]:focus-visible::after {
-  content: attr(data-tip-right); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); z-index: 40;
-  width: max-content; padding: 6px 10px; border-radius: var(--r-sm); background: var(--text); color: var(--bg);
-  font: 600 12px/1.4 var(--sans); pointer-events: none;
-}
+/* Floating layers from Bits UI (portalled to <body>, so styled globally). */
+.tip { z-index: 90; max-width: 260px; padding: 6px 10px; border-radius: var(--r-sm); background: var(--text); color: var(--bg); font: 600 12px/1.4 var(--sans); }
+.dd { z-index: 70; min-width: 200px; padding: 4px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--raised); display: flex; flex-direction: column; gap: 2px; outline: none; }
+.dd-item { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-radius: var(--r-sm); color: var(--text); font: 600 13px var(--sans); cursor: pointer; outline: none; white-space: nowrap; user-select: none; }
+.dd-item[data-highlighted] { background: var(--raised-hover); }
+.dd-item[data-disabled] { color: var(--text-3); cursor: default; }
+.dd-item.danger { color: var(--accent-text); }
+.dd-item .cur { margin-left: auto; display: flex; color: var(--good); }
+.dd-sep { height: 1px; margin: 3px 2px; background: var(--border); }
 
 /* Loading placeholders: a soft pulse in the shape of what is coming. Only for
    things fetched from the network; local state paints at once. */

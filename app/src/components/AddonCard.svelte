@@ -1,7 +1,9 @@
 <script lang="ts">
   // A Browse card: the addon's artwork leads, then name, one line of summary
   // and author/downloads. The card opens details; the corner button installs.
+  import { mergeProps } from "bits-ui";
   import Icon from "./Icon.svelte";
+  import Tip from "./Tip.svelte";
   import RowMenu from "./RowMenu.svelte";
   import Tile from "./Tile.svelte";
   import type { Hit } from "../lib/api";
@@ -33,15 +35,19 @@
   </button>
   <div class="a">
     {#if hit.installed}
-      <span class="done" aria-label="Installed" data-tip="Installed"><Icon name="check" size={15} stroke={2.6} /></span>
+      <Tip text="Installed">{#snippet children({ props })}<span {...props} class="done" aria-label="Installed"><Icon name="check" size={15} stroke={2.6} /></span>{/snippet}</Tip>
     {:else if busy}
       <span class="pct" role="progressbar" aria-label="{busy} {hit.name}" aria-valuenow={pct ?? undefined}>{pct == null || pct >= 100 ? "…" : `${pct}%`}</span>
     {:else if noBuild}
       <RowMenu label="More actions for {hit.name}" items={[{ label: "Install anyway", run: () => oninstall(true) }]} />
     {:else}
-      <button type="button" class="btn btn-icon get" aria-label="Install {hit.name}" data-tip="Install" onclick={() => oninstall(false)}>
-        <Icon name="download" size={16} stroke={2.4} />
-      </button>
+      <Tip text="Install">
+        {#snippet children({ props })}
+          <button {...mergeProps(props, { onclick: () => oninstall(false) })} type="button" class="btn btn-icon get" aria-label="Install {hit.name}">
+            <Icon name="download" size={16} stroke={2.4} />
+          </button>
+        {/snippet}
+      </Tip>
     {/if}
   </div>
 </div>

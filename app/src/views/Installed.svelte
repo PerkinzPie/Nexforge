@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Tabs } from "bits-ui";
   import Icon from "../components/Icon.svelte";
   import PageHead from "../components/PageHead.svelte";
   import UpdateActions from "../components/UpdateActions.svelte";
@@ -22,16 +23,6 @@
     { id: "attention", label: "Can't update", n: store.attentionCount, tone: "var(--attention)" },
     { id: "pinned", label: "Pinned", n: store.pinnedCount },
   ]);
-
-  // Left/Right move between tabs, as in any tab list.
-  function tabKeys(e: KeyboardEvent) {
-    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-    e.preventDefault();
-    const i = tabs.findIndex((t) => t.id === store.tab);
-    const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
-    store.tab = next.id;
-    queueMicrotask(() => document.getElementById(`tab-${next.id}`)?.focus());
-  }
 
   const shown = $derived.by(() => {
     const q = store.filter.trim().toLowerCase();
@@ -65,18 +56,20 @@
     <div class="notice err"><Icon name="warn" size={16} /><span><strong>{e.sourceLabel}:</strong> {e.message}</span></div>
   {/each}
 
-  <div class="panel list">
+  <Tabs.Root value={store.tab} onValueChange={(v) => (store.tab = v as InstalledTab)} class="panel list">
     <div class="tabs">
-      <div class="tablist" role="tablist" aria-label="Show addons" tabindex="-1" onkeydown={tabKeys}>
+      <Tabs.List class="tablist" aria-label="Show addons">
         {#each tabs as t (t.id)}
-          <button type="button" role="tab" id="tab-{t.id}" class="tab" class:on={store.tab === t.id}
-            aria-selected={store.tab === t.id} aria-controls="addon-list" tabindex={store.tab === t.id ? 0 : -1}
-            onclick={() => (store.tab = t.id)}>
-            {t.label}
-            {#if t.n !== null}<span class="n" style:color={t.n > 0 && t.tone ? t.tone : null}>{t.n}</span>{/if}
-          </button>
+          <Tabs.Trigger value={t.id}>
+            {#snippet child({ props })}
+              <button {...props} type="button" class="tab" class:on={store.tab === t.id}>
+                {t.label}
+                {#if t.n !== null}<span class="n" style:color={t.n > 0 && t.tone ? t.tone : null}>{t.n}</span>{/if}
+              </button>
+            {/snippet}
+          </Tabs.Trigger>
         {/each}
-      </div>
+      </Tabs.List>
       <div class="tools">
         <div class="search">
           <label for="filter" class="sr">Filter installed addons</label>
@@ -85,8 +78,9 @@
         </div>
       </div>
     </div>
+    <Tabs.Content value={store.tab}>
     {#if shown.length}
-      <table id="addon-list" aria-labelledby="tab-{store.tab}">
+      <table>
         <tbody>
           {#each shown as a (a.id)}
             {@const s = store.status(a.id)}
@@ -151,13 +145,14 @@
     {:else}
       <div class="empty">No addons yet. <a href="#browse" onclick={(e) => { e.preventDefault(); store.view = "browse"; }}>Browse</a></div>
     {/if}
-  </div>
+    </Tabs.Content>
+  </Tabs.Root>
 </div>
 
 <style>
-  .list { overflow: hidden; }
+  :global(.panel.list) { overflow: hidden; }
   .tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 8px 0 8px; border-bottom: 1px solid var(--border); }
-  .tablist { display: flex; align-items: center; gap: 4px; }
+  :global(.tablist) { display: flex; align-items: center; gap: 4px; }
   .tab { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border: 0; background: none; color: var(--text-2); font: 600 13px var(--sans); cursor: pointer; }
   .tab:hover { color: var(--text); }
   .tab .n { font: 600 12px var(--display); color: var(--text-3); font-variant-numeric: tabular-nums; }
