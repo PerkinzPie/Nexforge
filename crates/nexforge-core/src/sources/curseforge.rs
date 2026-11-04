@@ -383,6 +383,7 @@ impl Source for CurseForge {
             icon_url: m.logo.and_then(|l| l.thumbnail_url.or(l.url)),
             screenshots: m.screenshots.into_iter().filter_map(|s| s.url).collect(),
             summary: m.summary,
+            description: None,
             url: m.links.and_then(|l| l.website_url),
         })
     }

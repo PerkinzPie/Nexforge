@@ -148,41 +148,67 @@ impl Snapshot {
     }
 }
 
+/// One line of markdown or BBCode as plain text: `[text](url)` keeps its
+/// text, tags like `[b]` and HTML line breaks are dropped.
+fn clean_markup(s: &str) -> String {
+    let mut out = String::new();
+    let mut rest = s;
+    while let Some(i) = rest.find('[') {
+        out.push_str(&rest[..i]);
+        let after = &rest[i + 1..];
+        match (after.find("]("), after.find(']')) {
+            (Some(j), _) if after[j + 2..].contains(')') => {
+                out.push_str(&after[..j]);
+                let close = after[j + 2..].find(')').unwrap_or(0);
+                rest = &after[j + 2 + close + 1..];
+            }
+            (_, Some(j)) => {
+                // BBCode tag like [b] or [/url]: drop it.
+                rest = &after[j + 1..];
+            }
+            _ => {
+                out.push('[');
+                rest = after;
+            }
+        }
+    }
+    out.push_str(rest);
+    out.replace("**", "")
+        .replace('`', "")
+        .replace("<br />", " ")
+        .replace("<br>", " ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// A long description as plain paragraphs (headings and blank lines dropped).
+pub fn paragraphs(text: Option<&str>, max: usize) -> Vec<String> {
+    let Some(text) = text else {
+        return vec![];
+    };
+    text.lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .map(|l| {
+            let l = l
+                .strip_prefix("- ")
+                .or_else(|| l.strip_prefix("* "))
+                .or_else(|| l.strip_prefix("[*]"))
+                .unwrap_or(l);
+            clean_markup(l)
+        })
+        .filter(|l| !l.is_empty())
+        .take(max)
+        .collect()
+}
+
 /// First few release-note bullets, as plain text.
 pub fn note_lines(changelog: Option<&str>, max: usize) -> Vec<String> {
     let Some(text) = changelog else {
         return vec![];
     };
-    let clean = |s: &str| -> String {
-        // [text](url) -> text, drop markdown/BBCode markup.
-        let mut out = String::new();
-        let mut rest = s;
-        while let Some(i) = rest.find('[') {
-            out.push_str(&rest[..i]);
-            let after = &rest[i + 1..];
-            match (after.find("]("), after.find(']')) {
-                (Some(j), _) if after[j + 2..].contains(')') => {
-                    out.push_str(&after[..j]);
-                    let close = after[j + 2..].find(')').unwrap_or(0);
-                    rest = &after[j + 2 + close + 1..];
-                }
-                (_, Some(j)) => {
-                    // BBCode tag like [b] or [/url]: drop it.
-                    rest = &after[j + 1..];
-                }
-                _ => {
-                    out.push('[');
-                    rest = after;
-                }
-            }
-        }
-        out.push_str(rest);
-        out.replace("**", "")
-            .replace('`', "")
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ")
-    };
+    let clean = clean_markup;
     let lines: Vec<&str> = text.lines().map(str::trim).collect();
     let bullets: Vec<String> = lines
         .iter()
@@ -409,6 +435,49 @@ pub struct InfoDto {
     pub icon_url: Option<String>,
     pub summary: Option<String>,
     pub url: Option<String>,
+}
+
+/// Everything the details view shows that is not in local state.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DetailsDto {
+    pub name: String,
+    pub authors: Vec<String>,
+    pub icon_url: Option<String>,
+    pub screenshots: Vec<String>,
+    pub summary: Option<String>,
+    pub about: Vec<String>,
+    pub url: Option<String>,
+    pub releases: Vec<HistoryDto>,
+}
+
+/// One release in the details view's version history.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryDto {
+    pub version: String,
+    pub published_at: Option<DateTime<Utc>>,
+    pub size: Option<u64>,
+    pub channel: String,
+    pub flavours: Vec<String>,
+    pub notes: Vec<String>,
+}
+
+impl From<&Release> for HistoryDto {
+    fn from(r: &Release) -> Self {
+        HistoryDto {
+            version: r.version.clone(),
+            published_at: r.published_at,
+            size: r.size,
+            channel: format!("{:?}", r.channel).to_lowercase(),
+            flavours: r
+                .flavours
+                .iter()
+                .map(|f| f.short_label().to_string())
+                .collect(),
+            notes: note_lines(r.changelog.as_deref(), 6),
+        }
+    }
 }
 
 #[derive(Serialize)]

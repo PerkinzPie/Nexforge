@@ -709,6 +709,31 @@ async fn addon_info(source: String, source_id: String) -> Res<InfoDto> {
     })
 }
 
+/// The details view: the host's description, screenshots and the last ten
+/// releases. Releases failing to load still shows the rest.
+#[tauri::command]
+async fn details(source: String, source_id: String) -> Res<DetailsDto> {
+    let mgr = manager()?;
+    let s: SourceId = source.parse().map_err(err)?;
+    let src = mgr
+        .source(s)
+        .ok_or_else(|| format!("{} is not available.", s.label()))?;
+    let (info, releases) = tokio::join!(src.resolve(&source_id), src.all_releases(&source_id));
+    let info = info.map_err(err)?;
+    let mut releases = releases.unwrap_or_default();
+    releases.sort_by_key(|r| std::cmp::Reverse(r.published_at));
+    Ok(DetailsDto {
+        about: paragraphs(info.description.as_deref().or(info.summary.as_deref()), 12),
+        name: info.name,
+        authors: info.authors,
+        icon_url: info.icon_url,
+        screenshots: info.screenshots.into_iter().take(12).collect(),
+        summary: info.summary,
+        url: info.url,
+        releases: releases.iter().take(10).map(HistoryDto::from).collect(),
+    })
+}
+
 #[tauri::command]
 fn settings() -> Res<SettingsDto> {
     Ok(settings_dto(&manager()?))
@@ -887,6 +912,7 @@ pub fn run() {
             release_notes,
             self_update,
             addon_info,
+            details,
             settings,
             save_settings,
             set_key,

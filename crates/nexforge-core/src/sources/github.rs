@@ -317,6 +317,7 @@ impl Source for GitHub {
             icon_url: r.owner.avatar_url,
             screenshots: vec![],
             summary: r.description,
+            description: None,
             url: Some(r.html_url),
         })
     }

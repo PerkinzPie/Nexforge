@@ -143,6 +143,9 @@ pub struct AddonInfo {
     #[serde(default)]
     pub screenshots: Vec<String>,
     pub summary: Option<String>,
+    /// The host's long description (may hold markup), for the details view.
+    #[serde(default)]
+    pub description: Option<String>,
     pub url: Option<String>,
 }
 

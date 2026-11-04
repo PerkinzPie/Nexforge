@@ -215,6 +215,7 @@ impl Source for WowInterface {
             icon_url,
             screenshots,
             summary: s(&d, "UIDescription").map(|t| t.chars().take(300).collect()),
+            description: s(&d, "UIDescription"),
             url: Some(format!(
                 "https://www.wowinterface.com/downloads/info{source_id}"
             )),

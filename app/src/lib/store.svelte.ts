@@ -1,10 +1,18 @@
 // App state. Paints from the local snapshot first; network results update in place.
 
-import { api, inTauri, onProgress, type Addon, type AddonStatus, type Recent, type Snapshot, type SourceError } from "./api";
+import { api, inTauri, onProgress, type Addon, type AddonStatus, type Hit, type Recent, type Snapshot, type SourceError } from "./api";
 
 export type View = "installed" | "updates" | "browse" | "settings";
 export type InstalledTab = "all" | "updates" | "attention" | "pinned";
 export interface Toast { kind: "ok" | "err"; text: string; undo?: () => void }
+/** An addon's details page, opened from a row; Back returns to `from`. */
+export interface DetailTarget {
+  name: string; iconUrl: string | null; source: string | null; sourceId: string;
+  /** Installed addon, if any. */
+  addonId?: string;
+  /** The Browse result it came from, if any. */
+  hit?: Hit;
+}
 
 export type Dialog =
   | { kind: "install"; adopt?: Addon; initial?: string }
@@ -15,7 +23,17 @@ export type Dialog =
 class Store {
   snap = $state<Snapshot | null>(null);
   loadError = $state<string | null>(null);
-  view = $state<View>("installed");
+  #view = $state<View>("installed");
+  /** The open details page, drawn over the current view. */
+  detail = $state<DetailTarget | null>(null);
+  get view() {
+    return this.#view;
+  }
+  /** Going to any view closes a details page. */
+  set view(v: View) {
+    this.#view = v;
+    this.detail = null;
+  }
   statuses = $state<Record<string, AddonStatus>>({});
   checkedAt = $state<string | null>(null);
   checking = $state(false);

@@ -47,6 +47,7 @@
 
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
   const noBuild = (h: Hit) => !h.forFlavour && !h.flavourUnknown;
+  const openHit = (h: Hit) => (store.detail = { name: h.name, iconUrl: h.iconUrl, source: h.source, sourceId: h.sourceId, hit: h });
   const on = $derived(store.snap?.sourcesOn ?? []);
 
   // Debounced search; the GitHub index answers instantly, hosts in place.
@@ -79,8 +80,8 @@
           .filter((h) => source === "all" || h.source === source),
   );
   const shown = $derived(inSource.filter((h) => !onlyFlavour || h.forFlavour || h.flavourUnknown));
-  /** Results the "Builds for" filter hid (no build listed for this client). */
-  const hidden = $derived(inSource.length - shown.length);
+  /** Results with no build listed for this client (hidden unless asked for). */
+  const other = $derived(inSource.filter((h) => noBuild(h)).length);
 
   const chips = $derived([
     { id: "github", label: "GitHub", enabled: on.includes("github"), why: "Turned off in Settings" },
@@ -88,17 +89,6 @@
     { id: "wowinterface", label: "WoWInterface", enabled: on.includes("wowinterface"), why: "Turned off in Settings" },
     { id: "curseforge", label: "CurseForge", enabled: on.includes("curseforge"), why: "Needs an API key (Settings)" },
   ]);
-
-  // Picking a client filters to its builds and makes it the install target
-  // (the same switch as the sidebar). "Any flavour" keeps the current target.
-  async function pickBuilds(value: string) {
-    if (value === "any") {
-      onlyFlavour = false;
-      return;
-    }
-    onlyFlavour = true;
-    await store.switchTo(value);
-  }
 
   async function install(h: Hit, anyway: boolean) {
     const ok = await store.install(h.spec, null, anyway);
@@ -136,13 +126,6 @@
         {c.label}
       </button>
     {/each}
-    <label class="builds" for="builds-for">
-      <span>Builds for</span>
-      <select id="builds-for" value={onlyFlavour ? store.current ?? "any" : "any"} onchange={(e) => pickBuilds(e.currentTarget.value)}>
-        {#each store.snap?.installations ?? [] as i (i.id)}<option value={i.id}>{i.label}</option>{/each}
-        <option value="any">Any flavour</option>
-      </select>
-    </label>
   </div>
 
   {#each errors as e (e.sourceLabel)}
@@ -155,15 +138,20 @@
       <div class="pops">
         {#each popular as h (h.spec)}
           <div class="pop">
-            <Tile name={h.name} iconUrl={h.iconUrl} size={40} />
-            <div class="pt"><span class="pn">{h.name}</span>{#if h.authors.length}<span class="dim tiny">{h.authors[0]}</span>{/if}</div>
+            <button type="button" class="open" onclick={() => openHit(h)} aria-label="Details for {h.name}">
+              <Tile name={h.name} iconUrl={h.iconUrl} size={48} />
+              <span class="pt">
+                <span class="pn">{h.name}</span>
+                <span class="pm">
+                  {#if h.authors.length}<span><Icon name="user" size={12} stroke={2.2} />{h.authors[0]}</span>{/if}
+                  {#if h.downloads}<span><Icon name="download" size={12} stroke={2.2} />{count(h.downloads)}</span>{/if}
+                </span>
+              </span>
+            </button>
             {#if h.installed}
-              <span class="ok done"><Icon name="check" size={14} stroke={2.6} />Installed</span>
+              <span class="ok done" aria-label="Installed"><Icon name="check" size={14} stroke={2.6} /></span>
             {:else if noBuild(h) && !store.busy[h.spec]}
-              <div class="pa">
-                <span class="nobuild">No {flavour} build</span>
-                <RowMenu label="More actions for {h.name}" items={[{ label: "Install anyway", run: () => install(h, true) }]} />
-              </div>
+              <RowMenu label="More actions for {h.name}" items={[{ label: "Install anyway", run: () => install(h, true) }]} />
             {:else}
               <ProgressButton label="Install" busy={store.busy[h.spec] ?? null} pct={store.progress[h.spec]} onclick={() => install(h, false)} />
             {/if}
@@ -183,8 +171,9 @@
           {@const busy = store.busy[h.spec]}
           {@const pct = store.progress[h.spec]}
           <div class="row hit">
+            <button type="button" class="open" onclick={() => openHit(h)} aria-label="Details for {h.name}">
             <Tile name={h.name} iconUrl={h.iconUrl} size={36} />
-            <div class="body">
+            <span class="body">
               <span class="line">
                 <span class="n">{h.name}</span>
                 {#if h.authors.length}<span class="dim small">{h.authors.slice(0, 2).join(", ")}</span>{/if}
@@ -192,7 +181,8 @@
                 {#each h.alsoOn as o (o)}<SourceTag label={o} muted />{/each}
               </span>
               {#if h.summary}<span class="desc" title={h.summary}>{h.summary}</span>{/if}
-            </div>
+            </span>
+            </button>
             {#if noBuild(h)}
               <span class="side nobuild">No {flavour} build</span>
             {:else}
@@ -214,10 +204,12 @@
         {/each}
       </div>
     {/if}
-    {#if onlyFlavour && hidden > 0 && query.trim()}
-      <button type="button" class="more" onclick={() => (onlyFlavour = false)}>{hidden} more with no {flavour} build</button>
+    {#if other > 0 && (query.trim() || source !== "all")}
+      <button type="button" class="more" onclick={() => (onlyFlavour = !onlyFlavour)}>
+        {onlyFlavour ? `Show ${other} with no ${flavour} build` : `Hide ${other} with no ${flavour} build`}
+      </button>
     {/if}
-    {#if !shown.length && !hidden && !loading && query.trim()}
+    {#if !shown.length && !other && !loading && query.trim()}
       <div class="panel empty">No results.</div>
     {/if}
   </div>
@@ -226,15 +218,18 @@
 <style>
   .more { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--info); font: 700 12px var(--sans); cursor: pointer; }
   .popular { display: flex; flex-direction: column; gap: 12px; }
-  .pops { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-  .pop { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
-  .pt { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 100%; }
+  .pops { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+  .pop { display: flex; align-items: center; gap: 10px; padding: 12px 14px 12px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+  .pop:hover { background: var(--raised); }
+  .pt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .pn { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pm { display: flex; gap: 10px; font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; }
+  .pm > span { display: inline-flex; align-items: center; gap: 4px; }
+  /* Tile and text open the details page; actions stay separate buttons. */
+  .open { display: flex; align-items: center; gap: 12px; flex: 1 1 auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .open:hover .n, .open:hover .pn { text-decoration: underline; text-underline-offset: 3px; }
   .title { margin-right: auto; }
   .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: -8px; }
-  .builds { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12px; font-weight: 600; color: var(--text-2); }
-  .builds select { height: 28px; padding: 0 30px 0 12px; border: 1px solid var(--border); border-radius: 7px; background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A8A8B0' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color: var(--text); font: 600 12px var(--sans); appearance: none; cursor: pointer; }
-  .builds select:hover { background-color: var(--raised-hover); }
   .results { display: flex; flex-direction: column; gap: 10px; }
   .count { font-size: 12px; font-weight: 600; }
   .body { display: flex; flex-direction: column; gap: 2px; flex: 1 1 300px; min-width: 0; }
@@ -249,10 +244,8 @@
   .line > :global(*) { flex-shrink: 0; }
   .line .n, .line .small { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .act { flex: 0 0 auto; min-width: 88px; display: flex; justify-content: flex-end; }
-  .pa { display: flex; align-items: center; justify-content: space-between; gap: 8px; align-self: stretch; }
   .n { font-size: 13px; font-weight: 700; }
   .small { font-size: 12px; }
-  .tiny { font-size: 11px; }
   .nobuild { font-size: 11px; font-weight: 600; color: var(--attention); }
   .done { animation: pop 0.3s ease-out; }
   @keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: none; opacity: 1; } }

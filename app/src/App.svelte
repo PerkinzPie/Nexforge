@@ -5,6 +5,7 @@
   import Toast from "./components/Toast.svelte";
   import { store } from "./lib/store.svelte";
   import Browse from "./views/Browse.svelte";
+  import Details from "./views/Details.svelte";
   import Installed from "./views/Installed.svelte";
   import Settings from "./views/Settings.svelte";
   import Updates from "./views/Updates.svelte";
@@ -48,6 +49,8 @@
       <!-- Local state loads in milliseconds; no spinner. -->
     {:else if store.firstRun}
       <Welcome />
+    {:else if store.detail}
+      {#key store.detail}<Details target={store.detail} />{/key}
     {:else if store.view === "installed"}
       <Installed bind:filterInput />
     {:else if store.view === "updates"}

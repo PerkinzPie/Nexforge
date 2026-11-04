@@ -1,11 +1,12 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
-  import RowMenu, { type Item } from "../components/RowMenu.svelte";
+  import RowMenu from "../components/RowMenu.svelte";
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
-  import { api, type Addon } from "../lib/api";
+  import type { Addon } from "../lib/api";
   import { ago, plural } from "../lib/format";
+  import { addonMenu, openDetails } from "../lib/menu";
   import { store, type InstalledTab } from "../lib/store.svelte";
 
   let { filterInput = $bindable() }: { filterInput?: HTMLInputElement } = $props();
@@ -50,18 +51,6 @@
   });
   const updatable = $derived(store.updates.filter((a) => !a.pinned));
 
-  function menu(a: Addon): Item[] {
-    const s = store.status(a.id);
-    const items: Item[] = [];
-    if (a.managed) items.push({ label: a.pinned ? "Unpin" : "Pin (never update)", run: () => store.setPinned(a, !a.pinned) });
-    if (s?.release && (s.kind === "available" || s.kind === "pinned"))
-      items.push({ label: `Skip ${s.release.version}`, run: () => store.skip(a, s.release!.version) });
-    items.push({ label: a.managed ? "Change source…" : "Identify source…", run: () => (store.dialog = { kind: "install", adopt: a }) });
-    items.push({ label: "Open folder", run: () => api.open("addon", store.current!, a.id).catch((e) => store.say("err", e.message)) });
-    if (a.website) items.push({ label: "Open website", run: () => api.openUrl(a.website!).catch((e) => store.say("err", e.message)) });
-    items.push({ label: "Remove…", danger: true, run: () => (store.dialog = { kind: "remove", addon: a }) });
-    return items;
-  }
 </script>
 
 <div class="page">
@@ -101,7 +90,7 @@
         {/each}
       </div>
       <div class="tools">
-        {#if store.checking}<span class="checked">Checking…</span>{:else if store.checkedAt}<span class="checked">Checked {ago(store.checkedAt, now)}</span>{/if}
+        {#if store.checking}<span class="checked">Checking…</span>{:else if store.checkedAt && !store.updates.length}<span class="checked ok" data-tip="Checked {ago(store.checkedAt, now)}"><Icon name="check" size={13} stroke={2.6} />Up to date</span>{/if}
         <div class="search">
           <label for="filter" class="sr">Filter installed addons</label>
           <Icon name="search" size={15} colour="var(--text-3)" />
@@ -119,13 +108,13 @@
             {@const next = s?.release && (s.kind === "available" || s.kind === "pinned") ? s.release.version : null}
             <tr>
               <td>
-                <div class="who">
+                <button type="button" class="who" onclick={() => openDetails(a)} aria-label="Details for {a.name}">
                   <Tile name={a.name} iconUrl={a.iconUrl} size={32} unknown={!a.managed} />
-                  <div class="names">
+                  <span class="names">
                     <span class="n">{a.name}</span>
                     <span class="dim small">{plural(a.folders.length, "folder")}{a.managed && a.author ? ` · ${a.author}` : ""}</span>
-                  </div>
-                </div>
+                  </span>
+                </button>
               </td>
               <td>
                 <div class="ver">
@@ -160,7 +149,7 @@
                   <span class="dim state">{store.checking ? "Checking…" : "Not checked"}</span>
                 {/if}
               </td>
-              <td><RowMenu label="More actions for {a.name}" items={menu(a)} /></td>
+              <td><RowMenu label="More actions for {a.name}" items={addonMenu(a)} /></td>
             </tr>
           {/each}
         </tbody>
@@ -189,10 +178,12 @@
   .tab.on::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--text); }
   .tools { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-bottom: 4px; }
   .checked { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+  .checked.ok { color: var(--good); }
   table { margin: 0; }
   tbody tr:first-child td { border-top: 0; }
   .small { font-size: 11px; }
-  .who { display: flex; align-items: center; gap: 10px; }
+  .who { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .who:hover .n { text-decoration: underline; text-underline-offset: 3px; }
   .names { display: flex; flex-direction: column; gap: 0; min-width: 0; line-height: 1.3; }
   .n { font-weight: 700; }
   .ver { display: flex; flex-direction: column; gap: 6px; }

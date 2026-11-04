@@ -41,6 +41,11 @@ export interface Hit {
   downloads: number | null; updatedAt: string | null; iconUrl: string | null; installed: boolean; alsoOn: string[];
 }
 export interface SearchResult { hits: Hit[]; errors: SourceError[] }
+export interface HistoryItem { version: string; publishedAt: string | null; size: number | null; channel: string; flavours: string[]; notes: string[] }
+export interface Details {
+  name: string; authors: string[]; iconUrl: string | null; screenshots: string[]; summary: string | null;
+  about: string[]; url: string | null; releases: HistoryItem[];
+}
 export interface Adopted { installation: Installation; addons: number; managed: number }
 export interface CatalogueInfo { total: number; refreshedAt: string | null; errors: SourceError[] }
 export type SettingsInput = Pick<Settings, "checkOnLaunch" | "autoApply" | "keepPreviousVersions" | "selfUpdateCheck" | "github" | "wowinterface" | "curseforge">;
@@ -88,6 +93,7 @@ export const api = {
   open: (what: "log" | "data" | "addons" | "addon", installationId?: string, id?: string) =>
     call<void>("open", { what, installationId, id }),
   openUrl: (url: string) => call<void>("open_url", { url }),
+  details: (source: string, sourceId: string) => call<Details>("details", { source, sourceId }),
   addInstallation: (replace: string | null) => call<Installation | null>("add_installation", { replace }),
 };
 

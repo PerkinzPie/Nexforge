@@ -101,6 +101,23 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
     }
     case "check": await wait(600); return { ...check, checkedAt: new Date().toISOString() };
     case "recent": return recent;
+    case "details": {
+      await wait(300);
+      const h = hits.find((x) => x.source === args.source && x.sourceId === args.sourceId);
+      const ad = addons.find((x) => x.source === args.source && x.sourceId === args.sourceId);
+      const name = h?.name ?? ad?.name ?? String(args.sourceId);
+      return {
+        name, authors: h?.authors ?? (ad?.author ? [ad.author] : []), iconUrl: h?.iconUrl ?? null, screenshots: [],
+        summary: h?.summary ?? null,
+        about: [h?.summary ?? `${name} for World of Warcraft.`, "Sample description paragraph from the host, shown in the browser preview only."],
+        url: `https://example.invalid/${args.sourceId}`,
+        releases: [
+          { version: "2.4.0", publishedAt: "2026-11-02T10:00:00Z", size: 2_100_000, channel: "stable", flavours: ["Forever", "Classic Era"], notes: ["Forever support", "Fixed a tooltip error"] },
+          { version: "2.3.1", publishedAt: "2026-10-12T10:00:00Z", size: 2_000_000, channel: "stable", flavours: ["Classic Era"], notes: ["Bug fixes"] },
+          { version: "2.3.0", publishedAt: "2026-09-30T10:00:00Z", size: 1_900_000, channel: "stable", flavours: ["Classic Era"], notes: [] },
+        ],
+      };
+    }
     case "search": await wait(250); return { hits: hits.filter((h) => h.name.toLowerCase().includes(String(args.query).toLowerCase()) || "bag".includes(String(args.query).toLowerCase())), errors: [] };
     case "settings": return settings;
     case "save_settings": Object.assign(settings, args.s); return settings;
