@@ -1,5 +1,12 @@
-//! CurseForge source, offline. The fixtures are synthetic (see
-//! tests/fixtures/curseforge/README.md) until a key allows recording.
+//! CurseForge source, offline.
+//!
+//! The fixtures in tests/fixtures/curseforge are synthetic, not recordings:
+//! no API key was available, so they were built from the documented `Mod`,
+//! `File`, `FileIndex`, `HashAlgo` and `FileReleaseType` shapes. DungeonJournal
+//! (ExehnTV, project 1707971, game version 1.60.1) is real; file ids,
+//! versions, hashes, image URLs and project 200000 are made up.
+//! `PLACEHOLDER_MD5` is replaced at test time with the synthetic zip's MD5.
+//! Replace them with recorded responses once a key exists.
 
 use md5::{Digest, Md5};
 use nexforge_core::net::FixtureFetch;

@@ -1,5 +1,5 @@
 // Sample data for reviewing the UI in a plain browser (`pnpm dev`, no Tauri).
-// Mirrors docs/mockups. Never used inside the app.
+// Never used inside the app.
 
 import type { Addon, CheckResult, Hit, Progress, Recent, Settings, Snapshot } from "./api";
 

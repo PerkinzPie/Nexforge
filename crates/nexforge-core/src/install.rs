@@ -1,4 +1,4 @@
-//! Install / update / roll back / remove (SPEC §3.7).
+//! Install / update / roll back / remove.
 //!
 //! download → verify → stage → back up → swap → keep. Nothing is ever
 //! extracted straight into AddOns, and a failure part-way restores the
@@ -132,7 +132,8 @@ impl Engine {
         result
     }
 
-    /// Install from an archive already on disk. Steps 2–7 of SPEC §3.7.
+    /// Install from an archive already on disk: inspect, stage, back up,
+    /// swap, keep the archive, save state.
     pub fn apply_archive(
         &self,
         t: &mut Target<'_>,

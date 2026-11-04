@@ -1,4 +1,4 @@
-/* Tokens from docs/BRAND.md. Components follow docs/mockups/*.html. */
+/* Design tokens. Every text colour clears WCAG 4.5:1 on the surface it is used on. */
 :root {
   --nx-indigo: #2c2a4e;
   --nx-coral: #d74653;

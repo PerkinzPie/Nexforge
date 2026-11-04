@@ -242,7 +242,8 @@ pub fn toc_files(folder: &Path) -> Result<Vec<TocFile>> {
 }
 
 /// Pick the TOC the client would load for `flavour`, following the suffix
-/// order in SPEC §3.2. Returns `None` when no TOC applies to this flavour.
+/// order in [`Flavour::toc_suffixes`]. Returns `None` when no TOC applies to
+/// this flavour.
 pub fn select_toc(files: &[TocFile], flavour: Flavour) -> Option<&TocFile> {
     flavour.toc_suffixes().iter().find_map(|want| {
         files.iter().find(|f| match (&f.suffix, *want) {

@@ -24,7 +24,8 @@ pub const GAME_ID: u32 = 1;
 
 // ---- flavour labels: the one place CurseForge's names map to `Flavour` ----
 
-/// `gameVersionTypeId` for a flavour (docs/API-NOTES.md).
+/// `gameVersionTypeId` for a flavour. Forever's 88568 comes from WowUp's
+/// provider and is unconfirmed until a real CurseForge response is recorded.
 pub fn game_version_type(f: Flavour) -> u64 {
     match f {
         Flavour::Forever => 88568,

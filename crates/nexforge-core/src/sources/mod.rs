@@ -24,7 +24,7 @@ pub enum SourceId {
 }
 
 impl SourceId {
-    /// Preference when several hosts can serve one addon (SPEC §3.3): keys and
+    /// Preference when several hosts can serve one addon: keys and
     /// author opt-outs make CurseForge the least reliable.
     pub const PREFERENCE: [SourceId; 4] = [
         SourceId::Wago,

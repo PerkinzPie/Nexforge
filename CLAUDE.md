@@ -2,16 +2,10 @@
 
 A fast, trustworthy World of Warcraft addon manager by Nexabyte Entertainment. Browse, install, update, pin, roll back and remove addons from GitHub Releases, WoWInterface, Wago.io and CurseForge, for WoW Forever and Classic Era/Anniversary installs.
 
-Read these before writing code, in order:
-
-1. `docs/SPEC.md` — what we are building and why; architecture, data model, every screen, the phased plan.
-2. `docs/API-NOTES.md` — verified facts about the four hosts and the Forever client. Do not re-derive these from memory; they were checked against live sources on 2026-11-04.
-3. `docs/BRAND.md` — colours, type and the design rules. `docs/mockups/*.html` are the signed-off screens; open them in a browser.
-
 ## Stack
 
 - **Core:** Rust crate `nexforge-core` (no UI deps). Tokio, reqwest (rustls), serde, toml, rusqlite (bundled), zip, sha2, keyring. Edition 2021, MSRV = current stable.
-- **App:** Tauri 2 shell `nexforge-app` over the core. Svelte 5 + TypeScript + Vite frontend, no component framework; plain CSS with the tokens in `docs/BRAND.md`.
+- **App:** Tauri 2 shell `nexforge-app` over the core. Svelte 5 + TypeScript + Vite frontend, no component framework; plain CSS; design tokens live in `app/src/app.css`.
 - **CLI:** `nexforge-cli` over the core, for testing and scripting. Build this before the GUI.
 - **Target:** Windows first (the author's machine). Keep the core cross-platform.
 
@@ -44,9 +38,9 @@ nexforge/
     nexforge-cli/
   app/                  # Tauri 2 shell + Svelte UI
   assets/               # crest SVG, icons
-  docs/                 # SPEC, API-NOTES, BRAND, mockups
+  .github/workflows/     # CI on every push; release on v* tags
 ```
 
 ## Status
 
-Design is signed off (see mockups). Phase 1 (core + CLI) is implemented: `crates/nexforge-core`, `crates/nexforge-cli` (`nexforge detect|toc|reconcile|search|list|check|update|install|remove|pin|unpin|skip|rollback|kept|key`). The CurseForge source is implemented and on only when a key is saved; its tests use synthetic fixtures until one is. Wago needs a paid key and is not implemented. GitHub plus the bundled index `crates/nexforge-core/data/github-index.toml` and WoWInterface are the no-key sources; only add index entries after the check described in `docs/API-NOTES.md`. Phases 1-4 are built: catalogue (SQLite + FTS5), the Tauri app to the mockups, MSI installer, first-run screen, opt-in self-update check. Published at https://github.com/PerkinzPie/Nexforge (MIT). CI runs on every push (`.github/workflows/ci.yml`); pushing a `v*` tag builds the MSI and publishes a GitHub release (`release.yml`), which is what the self-update check reads. Not yet verified live: CurseForge (no key yet) and launch-night Forever addons. Toolchain: rustup stable (MSVC), installed 2026-11-04.
+Built and published at https://github.com/PerkinzPie/Nexforge (MIT). Sources: GitHub releases (with the bundled index `crates/nexforge-core/data/github-index.toml`; add entries only after the check in its header), WoWInterface, and CurseForge (on only with a key; its tests use synthetic fixtures). Wago is not supported (paid key). Pushing a `v*` tag builds the MSI and publishes a release, which the opt-in self-update check reads. Not yet verified live: CurseForge, and Forever addons after launch. The design docs and mockups were removed once built; they remain in git history before the commit that removed them.

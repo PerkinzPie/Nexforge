@@ -1,4 +1,4 @@
-//! The local catalogue behind Browse (SPEC §3.8): SQLite with an FTS5 index.
+//! The local catalogue behind Browse: SQLite with an FTS5 index.
 //!
 //! Searches hit this file only, so typing never waits on the network. It is a
 //! cache: hosts refill it, and a missing or damaged file is simply rebuilt.

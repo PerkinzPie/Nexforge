@@ -37,8 +37,6 @@ pnpm tauri build                # release build and .msi
 
 The `nexforge` command-line tool (`crates/nexforge-cli`) does everything the app does: `detect`, `reconcile`, `search`, `check`, `update`, `install`, `remove`, `pin`, `rollback` and more.
 
-Design and decisions: [`docs/SPEC.md`](docs/SPEC.md), [`docs/API-NOTES.md`](docs/API-NOTES.md), [`docs/BRAND.md`](docs/BRAND.md).
-
 ## Licence
 
 MIT. Not affiliated with Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment.

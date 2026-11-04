@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Line icons from docs/mockups (24-unit grid).
+  // Line icons on a 24-unit grid.
   type Name =
     | "installed" | "updates" | "browse" | "settings" | "chevrons" | "refresh" | "download" | "more"
     | "check" | "pin" | "warn" | "search" | "link" | "home" | "globe" | "shield" | "x" | "folder";

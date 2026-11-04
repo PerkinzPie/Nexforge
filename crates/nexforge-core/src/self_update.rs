@@ -1,4 +1,4 @@
-//! Opt-in check for a newer Nexforge (off by default, SPEC §4.5).
+//! Opt-in check for a newer Nexforge (off by default).
 //!
 //! One request to GitHub for the newest release of Nexforge itself. It only
 //! reports; nothing is downloaded or installed.
