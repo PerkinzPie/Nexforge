@@ -11,11 +11,11 @@
 
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
 
-  // Counts are the filters (SPEC 4.2): All · Updates · Needs a look · Pinned.
+  // Counts are the filters (SPEC 4.2): All · Updates · Can't update · Pinned.
   const tabs = $derived<{ id: InstalledTab; label: string; n: number | null; tone?: string }[]>([
     { id: "all", label: "All", n: store.addons.length },
     { id: "updates", label: "Updates", n: store.checkedAt ? store.updates.length : null, tone: "var(--accent-text)" },
-    { id: "attention", label: "Needs a look", n: store.attentionCount, tone: "var(--attention)" },
+    { id: "attention", label: "Can't update", n: store.attentionCount, tone: "var(--attention)" },
     { id: "pinned", label: "Pinned", n: store.pinnedCount },
   ]);
   let now = $state(Date.now());
@@ -77,10 +77,10 @@
   {#if !store.snap?.installations.length}
     <div class="notice attn">
       <Icon name="warn" size={16} />
-      <span>No WoW installation found. <a href="#settings" onclick={(e) => { e.preventDefault(); store.view = "settings"; }}>Add one in Settings</a>.</span>
+      <span>No WoW installation found. <a href="#settings" onclick={(e) => { e.preventDefault(); store.view = "settings"; }}>Add one</a></span>
     </div>
   {:else if store.snap && !store.snap.addonsDirExists}
-    <div class="notice attn"><Icon name="warn" size={16} /><span>This installation has no Interface\AddOns folder yet. Start the game once, or install an addon from Browse.</span></div>
+    <div class="notice attn"><Icon name="warn" size={16} /><span>No AddOns folder yet. Start the game once.</span></div>
   {/if}
 
   {#each store.sourceErrors as e (e.source)}
@@ -122,7 +122,7 @@
                   <Tile name={a.name} iconUrl={a.iconUrl} unknown={!a.managed} />
                   <div class="names">
                     <span class="n">{a.name}</span>
-                    <span class="dim small">{plural(a.folders.length, "folder")} · {a.managed ? (a.author ? `by ${a.author}` : a.sourceLabel) : "found in AddOns, not managed yet"}</span>
+                    <span class="dim small">{plural(a.folders.length, "folder")}{a.managed && a.author ? ` · ${a.author}` : ""}</span>
                   </div>
                 </div>
               </td>
@@ -151,7 +151,7 @@
                 {:else if s?.kind === "no_build"}
                   <span class="warn"><Icon name="warn" size={12} stroke={2.4} />No {flavour} build</span>
                 {:else if s?.kind === "failed" || s?.kind === "unavailable"}
-                  <span class="warn" title={s.message ?? ""}><Icon name="warn" size={12} stroke={2.4} />{s.kind === "failed" ? "Check failed" : "Source unavailable"}</span>
+                  <span class="warn" title={s.message ?? ""}><Icon name="warn" size={12} stroke={2.4} />{s.kind === "failed" ? "Check failed" : "Needs key"}</span>
                 {:else if s?.kind === "up_to_date" || s?.kind === "skipped"}
                   <span class="ok"><Icon name="check" size={14} stroke={2.6} />Up to date</span>
                 {:else if a.flavourMismatch}
@@ -166,15 +166,13 @@
         </tbody>
       </table>
     {:else if store.filter}
-      <div class="empty">No {store.tab === "all" ? "installed addon" : "addon in this list"} matches “{store.filter}”.</div>
+      <div class="empty">No matches.</div>
     {:else if store.tab === "updates"}
-      <div class="empty">{store.checkedAt ? "Everything is up to date." : "Check for updates to see what is new."}</div>
-    {:else if store.tab === "attention"}
-      <div class="empty">Nothing needs a look. Every addon has a source and a {flavour} build.</div>
-    {:else if store.tab === "pinned"}
-      <div class="empty">No pinned addons. Pin one from its menu to hold it at its current version.</div>
+      <div class="empty">{store.checkedAt ? "All up to date." : "Not checked yet."}</div>
+    {:else if store.tab !== "all"}
+      <div class="empty">None.</div>
     {:else}
-      <div class="empty">No addons here yet. Find some in <a href="#browse" onclick={(e) => { e.preventDefault(); store.view = "browse"; }}>Browse</a>.</div>
+      <div class="empty">No addons yet. <a href="#browse" onclick={(e) => { e.preventDefault(); store.view = "browse"; }}>Browse</a></div>
     {/if}
   </div>
 </div>

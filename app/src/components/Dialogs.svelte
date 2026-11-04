@@ -62,7 +62,7 @@
         const s = await api.setKey(d.name, value);
         if (store.snap) store.snap.settings = s;
         store.dialog = null;
-        store.say("ok", d.name === "curseforge" ? "CurseForge key saved to Windows Credential Manager. CurseForge is on." : "GitHub token saved to Windows Credential Manager.");
+        store.say("ok", d.name === "curseforge" ? "CurseForge key saved." : "GitHub token saved.");
         await store.load();
       }
     } catch (err) {
@@ -88,20 +88,17 @@
       </div>
 
       {#if d.kind === "install"}
-        <p class="dim">Paste a GitHub, WoWInterface or CurseForge address, type <span class="mono">github:owner/repo</span> or <span class="mono">wowi:12345</span>, or an addon name from Browse.
-          {#if d.adopt}Its folders ({d.adopt.folders.join(", ")}) will be backed up and replaced by the release you pick.{/if}</p>
+        <p class="dim">A link, an addon name, or <span class="mono">github:owner/repo</span>.{#if d.adopt} Replaces {d.adopt.folders.join(", ")} (backed up first).{/if}</p>
         <label class="sr" for="dlg-in">Address or name</label>
         <input id="dlg-in" class="text-input" bind:this={input} bind:value placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false" />
       {:else if d.kind === "remove"}
-        <p class="dim">Deletes {d.addon.folders.length === 1 ? "the folder" : `its ${d.addon.folders.length} folders`} ({d.addon.folders.join(", ")}) from AddOns. A zip copy is kept in the data folder first. Your settings in WTF are not touched.</p>
+        <p class="dim">Deletes {d.addon.folders.join(", ")}. A backup is kept; WTF settings stay.</p>
       {:else if d.kind === "key"}
-        <p class="dim">{d.name === "curseforge"
-          ? "Stored in Windows Credential Manager, never in a file. Some authors do not allow downloads outside the CurseForge app; those addons show as unavailable."
-          : "Optional. Raises GitHub's limit from 60 to 5,000 requests an hour. Stored in Windows Credential Manager."}</p>
+        <p class="dim">Saved in Windows Credential Manager.</p>
         <label class="sr" for="dlg-key">Key</label>
         <input id="dlg-key" class="text-input" type="password" bind:this={input} bind:value autocomplete="off" spellcheck="false" />
       {:else}
-        <p class="dim">The host does not say this release runs on {flavour}. Install the newest release anyway? It may not load in game.</p>
+        <p class="dim">It may not load on {flavour}.</p>
       {/if}
 
       {#if error}<p class="err" role="alert">{error}</p>{/if}

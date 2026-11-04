@@ -44,7 +44,7 @@ Derived from the Nexabyte design system (`Nexabyte-Tools/Herald/App.xaml`, `Shel
 }
 ```
 
-Source colours (always shown with the name beside the dot): GitHub `--info`, Wago `--good`, WoWInterface `--attention`, CurseForge `--act`, Unknown `--text-3`.
+Sources are shown as neutral chips with their name (`--raised` background, `--text-soft` text); further hosts for the same addon as outlined chips. No coloured source dots (changed 2026-11-04).
 
 ## Type
 
@@ -69,7 +69,8 @@ Both faces are on Google Fonts; bundle them with the app (OFL) rather than loadi
 ## Rules
 
 1. Coral means "there is something to do". Nothing decorative is coral.
-2. One source, one colour, always with its name beside it.
-3. Icon tiles show the host's real icon at runtime; a monogram on a tinted tile is the fallback.
+2. A source is a neutral chip with its name. Colour is kept for status, not for hosts.
+3. Icon tiles show the host's real icon at runtime; a monogram on a tinted tile is the fallback. Game clients show their own icon, read from the local `Wow.exe` / `WowClassic.exe`.
 4. The indigo panel is for brand surfaces only: the sidebar and the About block.
 5. Paint from local state first. Network results update in place; never a full-screen spinner.
+6. Copy is short: a label, not a sentence. Empty states say what is ("All up to date", "None."), not why.

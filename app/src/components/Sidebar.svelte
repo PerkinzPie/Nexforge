@@ -1,8 +1,9 @@
 <script lang="ts">
+  import ClientIcon from "./ClientIcon.svelte";
   import Crest from "./Crest.svelte";
   import Icon from "./Icon.svelte";
   import { api } from "../lib/api";
-  import { ago, flavourTile, plural } from "../lib/format";
+  import { ago, plural } from "../lib/format";
   import { store, type View } from "../lib/store.svelte";
 
   let open = $state(false);
@@ -20,7 +21,6 @@
   ];
 
   const inst = $derived(store.installation);
-  const tile = $derived(flavourTile(inst?.flavour ?? "forever"));
   const updates = $derived(store.updates.length);
   const errored = $derived(store.sourceErrors.length > 0);
 </script>
@@ -32,7 +32,7 @@
     <div class="switch-wrap">
       <button type="button" class="switch" aria-haspopup="listbox" aria-expanded={open}
         aria-label="Switch game flavour, currently {inst.label}" onclick={() => (open = !open)}>
-        <div class="ft" style:background={tile.bg}>{tile.letter}</div>
+        <ClientIcon id={inst.id} flavour={inst.flavour} size={34} />
         <div class="who">
           <span class="n">{inst.label}</span>
           <span class="m">{plural(store.addons.length, "addon")}{store.checkedAt ? ` · ${plural(updates, "update")}` : ""}</span>
@@ -42,10 +42,9 @@
       {#if open}
         <div class="menu" role="listbox">
           {#each store.snap?.installations ?? [] as i (i.id)}
-            {@const t = flavourTile(i.flavour)}
             <button type="button" role="option" aria-selected={i.id === inst.id}
               onclick={() => { open = false; store.switchTo(i.id); }}>
-              <span class="ft sm" style:background={t.bg}>{t.letter}</span>{i.label}
+              <ClientIcon id={i.id} flavour={i.flavour} size={24} />{i.label}
               {#if i.id === inst.id}<span class="cur"><Icon name="check" size={14} stroke={2.6} /></span>{/if}
             </button>
           {/each}
@@ -92,8 +91,6 @@
   .switch-wrap { position: relative; margin-bottom: 14px; }
   .switch { width: 100%; display: flex; align-items: center; gap: 10px; height: 60px; padding: 0 8px 0 11px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; background: rgba(0, 0, 0, 0.22); text-align: left; cursor: pointer; color: inherit; }
   .switch:hover { background: rgba(0, 0, 0, 0.32); }
-  .ft { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; font-size: 16px; color: #fff; flex: 0 0 auto; }
-  .ft.sm { width: 24px; height: 24px; border-radius: 7px; font-size: 12px; }
   .who { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
   .who .n { font-size: 13.5px; font-weight: 700; color: #fff; }
   .who .n, .who .m { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

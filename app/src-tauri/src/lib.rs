@@ -451,6 +451,83 @@ async fn image(url: String) -> Res<String> {
     ))
 }
 
+/// The game client's own icon, read from its `Wow.exe` / `WowClassic.exe`
+/// on this machine and returned as an `.ico` data URL. Nothing is bundled or
+/// downloaded; the result is cached per client build. `None` if the client
+/// has no readable icon (the UI then shows a letter tile).
+#[tauri::command]
+async fn client_icon(installation_id: String) -> Res<Option<String>> {
+    use base64::Engine as _;
+    let paths = AppPaths::discover().map_err(err)?;
+    let config =
+        nexforge_core::state::Config::load_or_default(&paths.config_file()).map_err(err)?;
+    let Some(c) = config
+        .installations
+        .iter()
+        .find(|c| c.id == installation_id)
+    else {
+        return Ok(None);
+    };
+    let Some(exe) = ["Wow.exe", "WowClassic.exe"]
+        .iter()
+        .map(|n| c.path.join(n))
+        .find(|p| p.is_file())
+    else {
+        return Ok(None);
+    };
+    let stamp = std::fs::metadata(&exe)
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let cache = paths.image_cache().join(format!(
+        "client-{}-{stamp}.ico",
+        nexforge_core::paths::sanitize(&c.id)
+    ));
+    let bytes = match std::fs::read(&cache) {
+        Ok(b) => Some(b),
+        Err(_) => {
+            let exe2 = exe.clone();
+            let ico = tokio::task::spawn_blocking(move || exe_icon(&exe2))
+                .await
+                .map_err(err)?;
+            if let Some(b) = &ico {
+                if let Some(dir) = cache.parent() {
+                    let _ = std::fs::create_dir_all(dir);
+                }
+                let _ = std::fs::write(&cache, b);
+            }
+            ico
+        }
+    };
+    Ok(bytes.map(|b| {
+        format!(
+            "data:image/x-icon;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(b)
+        )
+    }))
+}
+
+/// First icon group in a Windows executable, written out as an `.ico` file.
+fn exe_icon(path: &std::path::Path) -> Option<Vec<u8>> {
+    let map = pelite::FileMap::open(path).ok()?;
+    let mut out = Vec::new();
+    if let Ok(file) = pelite::pe64::PeFile::from_bytes(&map) {
+        use pelite::pe64::Pe;
+        let res = file.resources().ok()?;
+        let (_, group) = res.icons().filter_map(Result::ok).next()?;
+        group.write(&mut out).ok()?;
+    } else {
+        use pelite::pe32::Pe;
+        let file = pelite::pe32::PeFile::from_bytes(&map).ok()?;
+        let res = file.resources().ok()?;
+        let (_, group) = res.icons().filter_map(Result::ok).next()?;
+        group.write(&mut out).ok()?;
+    }
+    (!out.is_empty()).then_some(out)
+}
+
 /// Website for an addon's page on its host (opened in the player's browser).
 #[tauri::command]
 async fn addon_info(source: String, source_id: String) -> Res<InfoDto> {
@@ -639,6 +716,7 @@ pub fn run() {
             recent,
             search,
             image,
+            client_icon,
             addon_info,
             settings,
             save_settings,
@@ -650,4 +728,41 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running Nexforge");
+}
+
+#[cfg(test)]
+mod tests {
+    /// Runs only where a WoW client is installed (the author's machine).
+    #[test]
+    fn reads_the_icon_from_a_local_client() {
+        let root = std::path::Path::new(r"E:\Program Files (x86)\World of Warcraft");
+        for (dir, exe) in [
+            ("_forever_", "Wow.exe"),
+            ("_classic_era_", "WowClassic.exe"),
+        ] {
+            let p = root.join(dir).join(exe);
+            if !p.is_file() {
+                continue;
+            }
+            let ico = super::exe_icon(&p).expect("icon");
+            assert_eq!(&ico[..4], &[0, 0, 1, 0], "{dir}: ICO header");
+            let images = u16::from_le_bytes([ico[4], ico[5]]);
+            assert!(images >= 1, "{dir}: no images");
+            eprintln!(
+                "{dir}: {} bytes, {images} sizes, largest {}px",
+                ico.len(),
+                (0..images as usize)
+                    .map(|i| {
+                        let w = ico[6 + i * 16];
+                        if w == 0 {
+                            256
+                        } else {
+                            w as u32
+                        }
+                    })
+                    .max()
+                    .unwrap()
+            );
+        }
+    }
 }

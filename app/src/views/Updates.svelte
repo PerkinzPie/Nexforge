@@ -15,7 +15,7 @@
     <div class="page-title">
       <h1 class="h1">Updates</h1>
       <span class="dim">
-        {#if store.checkedAt}{store.updates.length} available · nothing is applied until you click{:else if store.checking}Checking…{:else}Not checked yet · nothing is applied until you click{/if}
+        {#if store.checkedAt}{plural(store.updates.length, "update")} available{:else if store.checking}Checking…{:else}Not checked yet{/if}
       </span>
     </div>
     <button type="button" class="btn" onclick={() => store.check()} disabled={store.checking || !store.current}>
@@ -45,7 +45,7 @@
               <span class="mono">{a.version} {#if r}<span class="dim">→</span> <strong>{r.version}</strong>{/if}</span>
               <SourceTag source={a.source} label={a.sourceLabel} />
               {#if r && (r.publishedAt || r.size)}<span class="dim small">{[r.publishedAt ? `Released ${shortDate(r.publishedAt)}` : "", size(r.size)].filter(Boolean).join(" · ")}</span>{/if}
-              {#if r?.flavourUnknown}<span class="warn">Flavour not stated</span>{/if}
+
             </span>
           </div>
           {#if busy}
@@ -67,18 +67,14 @@
       </div>
     {:else}
       <div class="panel empty">
-        {#if !store.checkedAt}
-          Check for updates to see what is new. Nothing is downloaded until you click Update.
-        {:else}
-          <span class="ok"><Icon name="check" size={14} stroke={2.6} />Everything is up to date.</span>
-        {/if}
+        {#if !store.checkedAt}Not checked yet.{:else}<span class="ok"><Icon name="check" size={14} stroke={2.6} />All up to date</span>{/if}
       </div>
     {/each}
   </div>
 
   {#if store.recent.length}
     <div class="recent narrow">
-      <h2 class="h2">Recently updated · one click to roll back</h2>
+      <h2 class="h2">Recently updated</h2>
       <div class="panel">
         {#each store.recent as r (r.id)}
           <div class="row rrow">
@@ -95,8 +91,6 @@
         {/each}
       </div>
     </div>
-  {:else if store.checkedAt}
-    <p class="dim small narrow">Every update keeps the previous version ({plural(store.snap?.settings.keepPreviousVersions ?? 3, "version")} by default), so a bad release is one click to undo.</p>
   {/if}
 </div>
 

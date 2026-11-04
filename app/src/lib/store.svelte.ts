@@ -81,7 +81,7 @@ class Store {
     });
     await this.load(null);
     if (this.snap?.adoptedNow) {
-      this.say("ok", `Found ${this.addons.length} addons in AddOns and wrote addons.toml. Nothing was moved.`);
+      this.say("ok", `Adopted ${this.addons.length} addons.`);
     }
     if (this.snap?.settings.checkOnLaunch && this.current) {
       await this.check();
@@ -154,7 +154,7 @@ class Store {
     if (!inst || !a) return;
     this.progress[id] = 0;
     const r = await this.run(id, "Updating", () => api.update(inst, id), (r) =>
-      r ? `Updated ${r.name} to ${r.version}. The previous version is kept for rollback.` : `${a.name} is already up to date.`,
+      r ? `Updated ${r.name} to ${r.version}.` : `${a.name} is up to date.`,
     );
     if (r !== undefined) {
       const s = this.statuses[id];
@@ -190,7 +190,7 @@ class Store {
     const inst = this.current;
     if (!inst) return;
     const r = await this.run(id, "Rolling back", () => api.rollback(inst, id), (r) =>
-      `Rolled ${name} back from ${r.from} to ${r.to}. ${r.from} will be skipped.`,
+      `Rolled ${name} back to ${r.to}.`,
     );
     if (r) {
       const s = this.statuses[id];
@@ -203,7 +203,7 @@ class Store {
     const inst = this.current;
     if (!inst) return;
     const ok = await this.run(a.id, "Removing", () => api.remove(inst, a.id).then(() => true), () =>
-      `Removed ${a.name}. A copy is kept in the data folder.`,
+      `Removed ${a.name}.`,
     );
     if (ok) {
       delete this.statuses[a.id];

@@ -79,7 +79,7 @@
   <div class="page-head">
     <div class="page-title">
       <h1 class="h1">Browse</h1>
-      <span class="dim">GitHub index{on.includes("wowinterface") ? " · WoWInterface" : ""}{on.includes("curseforge") ? " · CurseForge" : ""} · installs into {store.installation?.label ?? "WoW Forever"}</span>
+      <span class="dim">Installs into {store.installation?.label ?? "WoW Forever"}</span>
     </div>
     <button type="button" class="btn" onclick={() => (store.dialog = { kind: "install" })} disabled={!store.current}>
       <Icon name="link" size={15} stroke={2.2} />Install from URL
@@ -97,7 +97,7 @@
     {#each chips as c (c.id)}
       <button type="button" class="chip" class:on={source === c.id} disabled={!c.enabled} title={c.enabled ? "" : c.why}
         onclick={() => (source = c.id)}>
-        <span class="dot" style:background={`var(--${{ github: "info", wago: "good", wowinterface: "attention", curseforge: "act" }[c.id]})`}></span>{c.label}
+        {c.label}
       </button>
     {/each}
     <label class="builds" for="builds-for">
@@ -117,7 +117,7 @@
     <span class="dim count">
       {#if loading && !hits.length}Searching…
       {:else if query.trim()}{shown.length} result{shown.length === 1 ? "" : "s"} for “{query.trim()}”{loading ? " · updating…" : ""}
-      {:else}Addons in the GitHub index · type to search every source{/if}
+      {:else}From the GitHub index{/if}
     </span>
     {#if shown.length}
       <div class="panel">
@@ -130,15 +130,15 @@
               <span class="line">
                 <span class="n">{h.name}</span>
                 {#if h.authors.length}<span class="dim small">by {h.authors.slice(0, 2).join(", ")}</span>{/if}
-                <SourceTag source={h.source} label={h.sourceLabel} small />
-                {#if h.alsoOn.length}<span class="dim tiny">+ {h.alsoOn.join(", ")}</span>{/if}
+                <SourceTag label={h.sourceLabel} />
+                {#each h.alsoOn as o (o)}<SourceTag label={o} muted />{/each}
               </span>
               {#if h.summary}<span class="desc">{h.summary}</span>{/if}
               {#if !h.forFlavour && !h.flavourUnknown}
-                <span class="nobuild">{h.flavours.join(", ") || "Other"} build only · no {flavour} build listed</span>
+                <span class="nobuild">No {flavour} build</span>
               {:else}
                 <span class="dim tiny">
-                  {[h.updatedAt ? `Updated ${ago(h.updatedAt)}` : "", h.downloads ? `${count(h.downloads)} downloads` : "", h.flavourUnknown ? "flavour shown per release" : ""].filter(Boolean).join(" · ")}
+                  {[h.updatedAt ? `Updated ${ago(h.updatedAt)}` : "", h.downloads ? `${count(h.downloads)} downloads` : ""].filter(Boolean).join(" · ")}
                 </span>
               {/if}
             </div>
@@ -155,7 +155,7 @@
         {/each}
       </div>
     {:else if !loading && query.trim()}
-      <div class="panel empty">Nothing found{onlyFlavour ? ` with a ${flavour} build` : ""}. {#if onlyFlavour}<a href="#all" onclick={(e) => { e.preventDefault(); onlyFlavour = false; }}>Show every flavour</a>, or paste{:else}Try another name, or paste{/if} a link with Install from URL.</div>
+      <div class="panel empty">No results.{#if onlyFlavour} <a href="#all" onclick={(e) => { e.preventDefault(); onlyFlavour = false; }}>Show every flavour</a>{/if}</div>
     {/if}
   </div>
 </div>

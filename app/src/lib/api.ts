@@ -72,6 +72,7 @@ export const api = {
   recent: (installationId: string) => call<Recent[]>("recent", { installationId }),
   search: (installationId: string | null, query: string) => call<SearchResult>("search", { installationId, query }),
   image: (url: string) => call<string>("image", { url }),
+  clientIcon: (installationId: string) => call<string | null>("client_icon", { installationId }),
   settings: () => call<Settings>("settings"),
   saveSettings: (s: SettingsInput) => call<Settings>("save_settings", { s }),
   setKey: (name: string, value: string) => call<Settings>("set_key", { name, value }),
