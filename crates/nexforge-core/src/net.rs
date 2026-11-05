@@ -584,19 +584,6 @@ impl Fetch for Net {
             .unwrap_or("")
             .trim()
             .to_ascii_lowercase();
-        if !content_type.starts_with("image/") {
-            self.log(
-                &host,
-                &path,
-                "refused",
-                0,
-                &format!("{reason} (not an image)"),
-            );
-            return Err(Error::BadResponse {
-                host,
-                message: format!("expected an image, got \"{content_type}\""),
-            });
-        }
         let too_big = |host: &str| Error::BadResponse {
             host: host.to_string(),
             message: "the image is larger than 10 MB".into(),
@@ -615,11 +602,46 @@ impl Fetch for Net {
                 return Err(too_big(&host));
             }
         }
+        // Trust the bytes, not just the label: CurseForge's CDN serves its
+        // screenshot thumbnails as `application/x-amz-json-1.0` (seen
+        // 2026-11-05). Anything that is not a known image format is refused.
+        let content_type = if content_type.starts_with("image/") {
+            content_type
+        } else if let Some(t) = sniff_image(&bytes) {
+            t.to_string()
+        } else {
+            self.log(
+                &host,
+                &path,
+                "refused",
+                0,
+                &format!("{reason} (not an image)"),
+            );
+            return Err(Error::BadResponse {
+                host,
+                message: format!("expected an image, got \"{content_type}\""),
+            });
+        };
         self.log(&host, &path, &code, bytes.len() as u64, reason);
         Ok(Image {
             bytes,
             content_type,
         })
+    }
+}
+
+/// The image type a file's first bytes say it is (JPEG, PNG, GIF or WebP).
+fn sniff_image(b: &[u8]) -> Option<&'static str> {
+    if b.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        Some("image/jpeg")
+    } else if b.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("image/png")
+    } else if b.starts_with(b"GIF87a") || b.starts_with(b"GIF89a") {
+        Some("image/gif")
+    } else if b.len() >= 12 && &b[..4] == b"RIFF" && &b[8..12] == b"WEBP" {
+        Some("image/webp")
+    } else {
+        None
     }
 }
 
@@ -763,6 +785,25 @@ impl Fetch for FixtureFetch {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sniffs_images_by_their_bytes() {
+        // First bytes of real CurseForge thumbnails served as JSON.
+        assert_eq!(
+            sniff_image(&[0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J']),
+            Some("image/jpeg")
+        );
+        assert_eq!(sniff_image(b"GIF89a\x16\x01"), Some("image/gif"));
+        assert_eq!(sniff_image(b"\x89PNG\r\n\x1a\n\0\0"), Some("image/png"));
+        assert_eq!(sniff_image(b"RIFF\0\0\0\0WEBPVP8 "), Some("image/webp"));
+        assert_eq!(sniff_image(b"{\"__type\":\"x\"}"), None);
+        assert_eq!(
+            sniff_image(b"<svg xmlns="),
+            None,
+            "SVG can carry script; never as an image"
+        );
+        assert_eq!(sniff_image(b""), None);
+    }
 
     #[test]
     fn allowlist() {

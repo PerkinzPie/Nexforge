@@ -12,7 +12,7 @@
     failed = false;
     const u = url;
     let live = true;
-    api.image(u).then((d) => live && (src = d)).catch(() => live && (failed = true));
+    api.image(u, "screenshot").then((d) => live && (src = d)).catch(() => live && (failed = true));
     return () => { live = false; };
   });
 </script>

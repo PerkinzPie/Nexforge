@@ -403,7 +403,8 @@ impl Manager {
     }
 
     /// An icon or screenshot, from the disk cache (7 days) or an image host.
-    pub async fn image(&self, url: &str) -> Result<crate::net::Image> {
+    /// `reason` goes to the network log.
+    pub async fn image(&self, url: &str, reason: &str) -> Result<crate::net::Image> {
         use sha2::{Digest, Sha256};
         let key: String = Sha256::digest(url.as_bytes())[..16]
             .iter()
@@ -426,7 +427,7 @@ impl Manager {
                 });
             }
         }
-        let img = self.fetch.get_image(url, "addon icon").await?;
+        let img = self.fetch.get_image(url, reason).await?;
         if std::fs::create_dir_all(&dir).is_ok() {
             let _ = std::fs::write(&body, &img.bytes);
             let _ = std::fs::write(&kind, &img.content_type);

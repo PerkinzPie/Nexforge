@@ -83,7 +83,8 @@ export const api = {
   rollback: (installationId: string, id: string, to: string | null = null) => call<{ from: string; to: string }>("rollback", { installationId, id, to }),
   recent: (installationId: string) => call<Recent[]>("recent", { installationId }),
   search: (installationId: string | null, query: string) => call<SearchResult>("search", { installationId, query }),
-  image: (url: string) => call<string>("image", { url }),
+  /** A host image as a data: URL; `reason` is written to the network log. */
+  image: (url: string, reason = "addon icon") => call<string>("image", { url, reason }),
   refreshCatalogue: (force: boolean) => call<CatalogueInfo>("refresh_catalogue", { force }),
   popular: (installationId: string | null, source: string | null = null) => call<Hit[]>("popular", { installationId, source }),
   releaseNotes: (installationId: string, id: string) => call<{ lines: string[]; hasMore: boolean }>("release_notes", { installationId, id }),

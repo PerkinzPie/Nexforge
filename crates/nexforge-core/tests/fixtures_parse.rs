@@ -212,10 +212,10 @@ async fn icons_come_from_image_hosts_and_are_cached() {
         Arc::new(f.clone()),
         SourceKeys::default(),
     );
-    let img = mgr.image(&url).await.unwrap();
+    let img = mgr.image(&url, "addon icon").await.unwrap();
     assert_eq!(img.bytes.len(), 4);
     // Second call is served from the disk cache.
-    mgr.image(&url).await.unwrap();
+    mgr.image(&url, "addon icon").await.unwrap();
     assert_eq!(f.hits().len(), 1);
 
     // GitHub search rows carry the owner avatar.

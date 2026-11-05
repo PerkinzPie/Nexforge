@@ -627,7 +627,7 @@ async fn popular(installation_id: Option<String>, source: Option<String>) -> Res
 
 /// An icon as a `data:` URL, via the core's image-only allowlist and cache.
 #[tauri::command]
-async fn image(url: String) -> Res<String> {
+async fn image(url: String, reason: Option<String>) -> Res<String> {
     use base64::Engine as _;
     // Images need no keys or config: skip the credential store reads.
     let paths = AppPaths::discover().map_err(err)?;
@@ -639,7 +639,10 @@ async fn image(url: String) -> Res<String> {
         std::sync::Arc::new(net),
         nexforge_core::SourceKeys::default(),
     );
-    let img = mgr.image(&url).await.map_err(err)?;
+    let img = mgr
+        .image(&url, reason.as_deref().unwrap_or("addon icon"))
+        .await
+        .map_err(err)?;
     Ok(format!(
         "data:{};base64,{}",
         img.content_type,
