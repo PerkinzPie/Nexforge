@@ -32,7 +32,7 @@
     "targets": [
       "msi"
     ],
-    "publisher": "Nexabyte Entertainment",
+    "publisher": "Nexabyte Ltd",
     "shortDescription": "WoW addon manager. No account, no telemetry.",
     "icon": [
       "icons/32x32.png",

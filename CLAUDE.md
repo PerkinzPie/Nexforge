@@ -1,6 +1,6 @@
 # Nexforge
 
-A fast, trustworthy World of Warcraft addon manager by Nexabyte Entertainment. Browse, install, update, pin, roll back and remove addons from GitHub Releases, WoWInterface, Wago.io and CurseForge, for WoW Forever and Classic Era/Anniversary installs.
+A fast, trustworthy World of Warcraft addon manager by Nexabyte Ltd. Browse, install, update, pin, roll back and remove addons from GitHub Releases, WoWInterface, Wago.io and CurseForge, for WoW Forever and Classic Era/Anniversary installs.
 
 ## Stack
 
