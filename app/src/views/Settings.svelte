@@ -131,12 +131,9 @@
         <h2>Privacy and diagnostics</h2>
         <div class="group">
         <label class="frow toggle" for="self-check">
-          <span class="lead">
-            <Tip text="Ticked: one request to GitHub on launch. Nothing is downloaded.">
-              {#snippet children({ props })}<span {...props} class="t">Check for new versions of Nexforge</span>{/snippet}
-            </Tip>
-            <button type="button" class="btn btn-sm" disabled={store.checkingSelf} onclick={() => store.checkSelfNow()}>Check now</button>
-          </span>
+          <Tip text="Ticked: one request to GitHub on launch. Nothing is downloaded.">
+            {#snippet children({ props })}<span {...props} class="t">Check for new versions of Nexforge</span>{/snippet}
+          </Tip>
           <input id="self-check" type="checkbox" checked={s.selfUpdateCheck}
             onchange={(e) => {
               const on = e.currentTarget.checked;
@@ -158,7 +155,10 @@
         <div class="ab">
           <div class="abt">
             <span class="wm">Nexforge</span>
-            <span>Version {s.version}</span>
+            <span class="ver">
+              Version {s.version}
+              <button type="button" class="btn btn-sm" disabled={store.checkingSelf} onclick={() => store.checkSelfNow()}>Check for updates</button>
+            </span>
             <span>Not affiliated with Blizzard Entertainment.</span>
           </div>
           <img src={wordmark} width="180" height="25" alt="Nexabyte" />
@@ -176,9 +176,6 @@
   .toggle.off, .field { cursor: default; }
   .toggle .t, .field .t { margin-right: auto; font-size: 13px; font-weight: 600; }
   .toggle .t.dim-t { color: var(--text-3); }
-  /* A label with its own action right after it (Check now). */
-  .lead { display: flex; align-items: center; gap: 12px; margin-right: auto; min-width: 0; }
-  .lead .t { margin-right: 0; }
   .toggle input[type="checkbox"] { width: 18px; height: 18px; }
   /* A section's own action sits on its heading line, outside the list. */
   .sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 0 0 4px; }
@@ -187,4 +184,5 @@
   .ab { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 20px; }
   .abt { display: flex; flex-direction: column; gap: 4px; margin-right: auto; font-size: 12px; color: var(--text-soft); }
   .abt .wm { font-size: 20px; color: #fff; }
+  .abt .ver { display: flex; align-items: center; gap: 12px; }
 </style>
