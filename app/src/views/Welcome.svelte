@@ -2,7 +2,7 @@
   // First run: find the game clients, adopt each AddOns folder (writes
   // addons.toml only), show what was found, done.
   import ClientIcon from "../components/ClientIcon.svelte";
-  import Crest from "../components/Crest.svelte";
+  import Logo from "../components/Logo.svelte";
   import Icon from "../components/Icon.svelte";
   import { api, type Adopted } from "../lib/api";
   import { plural } from "../lib/format";
@@ -37,7 +37,7 @@
 
 <div class="page welcome">
   <div class="box">
-    <Crest size={44} />
+    <Logo width={64} />
     <h1 class="h1">Your game clients</h1>
 
     {#if error}

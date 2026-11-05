@@ -37,10 +37,10 @@ nexforge/
     nexforge-core/
     nexforge-cli/
   app/                  # Tauri 2 shell + Svelte UI
-  assets/               # crest SVG, icons
+  assets/               # app icon: nexforge-icon.svg, 1024 PNG (source for `tauri icon`), hand-made .ico
   .github/workflows/     # CI on every push; release on v* tags
 ```
 
 ## Status
 
-Built and published at https://github.com/PerkinzPie/Nexforge (MIT). Sources: GitHub releases (with the bundled index `crates/nexforge-core/data/github-index.toml`; add entries only after the check in its header), WoWInterface, and CurseForge (on only with a key; its tests use synthetic fixtures). Wago is not supported (paid key). Pushing a `v*` tag builds the MSI and publishes a release, which the opt-in self-update check reads. Not yet verified live: CurseForge, and Forever addons after launch. The design docs and mockups were removed once built; they remain in git history before the commit that removed them.
+Built and published at https://github.com/PerkinzPie/Nexforge (MIT). Sources: GitHub releases (with the bundled index `crates/nexforge-core/data/github-index.toml`; add entries only after the check in its header), WoWInterface, and CurseForge (on only with a key; its tests use synthetic fixtures). CurseForge was verified live on 2026-11-04: installs by Project ID, the batch update check, featured lists (which fill its catalogue), and Forever's `gameVersionTypeId` 88568; its search answers 403 intermittently, so a refusal pauses search for a minute. Authors who disallow third-party distribution cannot be installed. Wago is not supported (paid key). Pushing a `v*` tag builds the MSI and publishes a release, which the opt-in self-update check reads. Not yet verified live: Forever addons after launch. The design docs and mockups were removed once built; they remain in git history before the commit that removed them.

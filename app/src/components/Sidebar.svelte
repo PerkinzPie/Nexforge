@@ -1,7 +1,7 @@
 <script lang="ts">
-  // The icon rail: crest, the three main views, Settings at the foot, and the
+  // The icon rail: logo, the three main views, Settings at the foot, and the
   // version. Labels show as tooltips; counts as badges.
-  import Crest from "./Crest.svelte";
+  import Logo from "./Logo.svelte";
   import { mergeProps } from "bits-ui";
   import Icon from "./Icon.svelte";
   import Tip from "./Tip.svelte";
@@ -19,7 +19,7 @@
 </script>
 
 <nav aria-label="Main">
-  <button type="button" class="crest" aria-label="Nexforge: Installed" onclick={() => (store.view = "installed")}><Crest size={30} /></button>
+  <button type="button" class="logo" aria-label="Nexforge: Installed" onclick={() => (store.view = "installed")}><Logo width={36} /></button>
 
   {#each nav as n (n.view)}
     <Tip text={n.label} side="right">
@@ -58,7 +58,7 @@
 
 <style>
   nav { flex: 0 0 64px; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0 12px; background: var(--rail); border-right: 1px solid var(--divider); }
-  .crest { display: flex; padding: 4px; margin-bottom: 12px; border: 0; border-radius: var(--r-sm); background: none; cursor: pointer; }
+  .logo { display: flex; padding: 4px; margin-bottom: 12px; border: 0; border-radius: var(--r-sm); background: none; cursor: pointer; }
   .item { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 40px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-3); cursor: pointer; }
   .item:hover { background: var(--surface); color: var(--text); }
   .item.on { background: var(--accent-tint); color: var(--accent-text); box-shadow: inset 0 0 0 1px #5a2c33; }
