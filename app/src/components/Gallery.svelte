@@ -9,12 +9,10 @@
     open = $bindable(false),
     index = $bindable(0),
     images,
-    thumbs = [],
     name,
-  }: { open?: boolean; index?: number; images: string[]; thumbs?: string[]; name: string } = $props();
+  }: { open?: boolean; index?: number; images: string[]; name: string } = $props();
 
   const n = $derived(images.length);
-  const thumb = (i: number) => (thumbs.length === n ? thumbs[i] : images[i]);
   const go = (d: number) => (index = (index + d + n) % n);
 
   function keys(e: KeyboardEvent) {
@@ -43,7 +41,7 @@
         <div class="strip" role="group" aria-label="Screenshots">
           {#each images as _, i (i)}
             <button type="button" class="th" class:on={i === index} aria-label="Screenshot {i + 1}" aria-current={i === index ? "true" : undefined}
-              onclick={() => (index = i)}><Image url={thumb(i)} alt="" /></button>
+              onclick={() => (index = i)}><Image url={images[i]} alt="" /></button>
           {/each}
         </div>
       {/if}

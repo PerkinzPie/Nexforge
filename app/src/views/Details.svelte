@@ -24,7 +24,6 @@
   // Only promise screenshots we know are coming: on WoWInterface the icon is
   // the first screenshot's thumbnail; GitHub has none; CurseForge can't say.
   const expectShots = $derived(target.source === "wowinterface" && !!target.iconUrl);
-  const thumbs = $derived(info && info.screenshotThumbs.length === shots.length ? info.screenshotThumbs : shots);
   function view(i: number) {
     galleryAt = i;
     galleryOpen = true;
@@ -132,7 +131,7 @@
     <section class="block" aria-labelledby="shots-h">
       <h2 class="h2" id="shots-h">Screenshots <span class="dim n">{shots.length}</span></h2>
       <ul class="shots">
-        {#each thumbs as url, i (i)}
+        {#each shots as url, i (i)}
           <li><button type="button" class="shot" aria-label="View screenshot {i + 1} of {shots.length}" onclick={() => view(i)}>
             <Image {url} alt="" />
           </button></li>
@@ -222,7 +221,7 @@
   </div>
 </div>
 
-<Gallery bind:open={galleryOpen} bind:index={galleryAt} images={shots} {thumbs} name={info?.name ?? target.name} />
+<Gallery bind:open={galleryOpen} bind:index={galleryAt} images={shots} name={info?.name ?? target.name} />
 
 <style>
   .back { align-self: flex-start; margin: -8px 0 -8px -10px; gap: 4px; }

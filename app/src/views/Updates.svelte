@@ -88,7 +88,8 @@
               <span class="skl"><span class="skel" style:width="40%" style:height="13px"></span><span class="skel" style:width="25%" style:height="11px"></span></span></div>
           {/each}
         </div>
-      {:else}
+      {:else if !store.recent.length}
+        <!-- Nothing else on the page: say so. Otherwise each row says it. -->
         <div class="panel empty">
           {#if !store.checkedAt}Not checked yet.{:else}<span class="ok"><Icon name="check" size={14} stroke={2.6} />All up to date</span>{/if}
         </div>
@@ -102,6 +103,7 @@
       <div class="panel">
         {#each store.recent as r (r.id)}
           {@const a = store.addons.find((x) => x.id === r.id)}
+          {@const st = store.status(r.id)?.kind}
           <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (the name button opens it from the keyboard) -->
           <div class="row" class:open-card={!!a} onclick={(e) => a && clickRow(e, () => openDetails(a))}>
             <Tile name={r.name} iconUrl={a?.iconUrl ?? null} size={32} />
@@ -112,7 +114,10 @@
             {#if store.busy[r.id]}
               <span class="dim small">{store.busy[r.id]}…</span>
             {:else}
-              <RowMenu label="More actions for {r.name}" items={[{ label: `Roll back to ${r.from}`, run: () => store.rollback(r.id, r.name) }]} />
+              {#if store.checking}<span class="skel stsk" aria-label="Checking"></span>
+              {:else if st === "up_to_date" || st === "skipped"}<span class="quiet">Up to date</span>
+              {:else if st === "available"}<span class="avail">Update available</span>{/if}
+              <RowMenu label="More actions for {r.name}" items={[{ label: `Roll back to ${r.from}`, run: () => store.rollback(r.id, r.name, r.from) }]} />
             {/if}
           </div>
         {/each}
@@ -127,6 +132,9 @@
   .meta { display: flex; flex-direction: column; gap: 2px; margin-right: auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
   .open-card { cursor: pointer; }
   .skcards { display: flex; flex-direction: column; gap: 12px; }
+  .quiet { font-size: 12px; color: var(--text-3); }
+  .avail { font-size: 12px; font-weight: 600; color: var(--accent-text); }
+  .stsk { width: 64px; height: 12px; }
   .skcard { flex-direction: row; align-items: center; }
   .skl { display: flex; flex-direction: column; gap: 7px; flex: 1; }
   .open-card:hover { background: var(--raised); }

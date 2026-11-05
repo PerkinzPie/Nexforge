@@ -447,9 +447,9 @@ pub struct DetailsDto {
     pub name: String,
     pub authors: Vec<String>,
     pub icon_url: Option<String>,
+    /// Full size: the hosts' thumbnails are too small to look sharp (CurseForge
+    /// 310x172, WoWInterface about 120px), so the UI scales these down.
     pub screenshots: Vec<String>,
-    /// Same order as `screenshots`; empty means use the full images.
-    pub screenshot_thumbs: Vec<String>,
     pub summary: Option<String>,
     pub about: Vec<String>,
     pub url: Option<String>,

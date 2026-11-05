@@ -118,7 +118,7 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
       const name = h?.name ?? ad?.name ?? String(args.sourceId);
       return {
         name, authors: h?.authors ?? (ad?.author ? [ad.author] : []), iconUrl: h?.iconUrl ?? null,
-        screenshots: [1, 2, 3, 4, 5].map((n) => `preview://shot/${n}`), screenshotThumbs: [1, 2, 3, 4, 5].map((n) => `preview://shot/${n}`),
+        screenshots: [1, 2, 3, 4, 5].map((n) => `preview://shot/${n}`),
         summary: h?.summary ?? null,
         about: [h?.summary ?? `${name} for World of Warcraft.`, "Sample description paragraph from the host, shown in the browser preview only."],
         url: `https://example.invalid/${args.sourceId}`,
