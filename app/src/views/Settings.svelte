@@ -1,5 +1,6 @@
 <script lang="ts">
   import ClientIcon from "../components/ClientIcon.svelte";
+  import Logo from "../components/Logo.svelte";
   import PageHead from "../components/PageHead.svelte";
   import RowMenu from "../components/RowMenu.svelte";
   import Tip from "../components/Tip.svelte";
@@ -151,19 +152,17 @@
         </div>
       </section>
 
-      <section class="about">
-        <div class="ab">
-          <div class="abt">
-            <span class="wm">Nexforge</span>
-            <span class="ver">
-              Version {s.version}
-              <button type="button" class="btn btn-sm" disabled={store.checkingSelf} onclick={() => store.checkSelfNow()}>Check for updates</button>
-            </span>
-            <span>Not affiliated with Blizzard Entertainment.</span>
-          </div>
-          <img src={wordmark} width="180" height="25" alt="Nexabyte" />
+      <!-- About, as a quiet page footer rather than another card. -->
+      <footer class="foot">
+        <div class="foot-row">
+          <Logo width={28} />
+          <span class="wm">Nexforge</span>
+          <span class="dim fv">Version {s.version}</span>
+          <button type="button" class="btn btn-sm btn-quiet" disabled={store.checkingSelf} onclick={() => store.checkSelfNow()}>Check for updates</button>
+          <img class="nb" src={wordmark} width="130" height="18" alt="Nexabyte" />
         </div>
-      </section>
+        <p class="legal">Not affiliated with Blizzard Entertainment or any game studio. World of Warcraft is a trademark of Blizzard Entertainment, Inc. © 2026 Nexabyte Ltd. Released under the MIT licence.</p>
+      </footer>
     </div>
   {/if}
 </div>
@@ -180,9 +179,10 @@
   /* A section's own action sits on its heading line, outside the list. */
   .sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 0 0 4px; }
   .sec-head h2 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-2); }
-  .about { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
-  .ab { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 20px; }
-  .abt { display: flex; flex-direction: column; gap: 4px; margin-right: auto; font-size: 12px; color: var(--text-soft); }
-  .abt .wm { font-size: 20px; color: #fff; }
-  .abt .ver { display: flex; align-items: center; gap: 12px; }
+  .foot { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; padding: 16px 4px 4px; border-top: 1px solid var(--divider); }
+  .foot-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .foot-row .wm { font-size: 14px; color: var(--text); }
+  .fv { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .nb { margin-left: auto; opacity: 0.8; }
+  .legal { margin: 0; max-width: 80ch; font-size: 11px; line-height: 1.5; color: var(--text-3); }
 </style>
