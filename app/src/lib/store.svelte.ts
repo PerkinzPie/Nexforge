@@ -134,6 +134,22 @@ class Store {
     api.selfUpdate().then((n) => (this.newVersion = n)).catch(() => {});
   }
 
+  /** Settings' Check now: always asks, and says what it found. */
+  checkingSelf = $state(false);
+  async checkSelfNow() {
+    if (this.checkingSelf) return;
+    this.checkingSelf = true;
+    try {
+      const n = await api.selfUpdate(true);
+      this.newVersion = n;
+      this.say("ok", n ? `Nexforge ${n.version} is available.` : `Nexforge ${this.snap?.settings.version ?? ""} is the latest version.`);
+    } catch (e) {
+      this.say("err", (e as Error).message);
+    } finally {
+      this.checkingSelf = false;
+    }
+  }
+
   /** Refill the Browse catalogue in the background (at most daily), then
    *  repaint so Installed picks up host icons it now knows. */
   refreshCatalogue() {

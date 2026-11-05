@@ -555,22 +555,26 @@ async fn release_notes(installation_id: String, id: String) -> Res<NotesDto> {
     Ok(NotesDto { lines, has_more })
 }
 
-/// Opt-in check for a newer Nexforge. `None` when off, current, or offline.
+/// Is there a newer Nexforge? On launch this is opt-in and quiet: `None` when
+/// off, current, or offline. `now` is the Check now button: it always asks,
+/// and says why when it can't.
 #[tauri::command]
-async fn self_update() -> Res<Option<NewVersionDto>> {
+async fn self_update(now: Option<bool>) -> Res<Option<NewVersionDto>> {
     let mgr = manager()?;
-    if !mgr.config.self_update_check {
+    let now = now.unwrap_or(false);
+    if !now && !mgr.config.self_update_check {
         return Ok(None);
     }
-    Ok(mgr
-        .newer_nexforge(env!("CARGO_PKG_VERSION"))
-        .await
-        .ok()
-        .flatten()
-        .map(|n| NewVersionDto {
-            version: n.version,
-            url: n.url,
-        }))
+    let found = mgr.newer_nexforge(env!("CARGO_PKG_VERSION")).await;
+    let found = if now {
+        found.map_err(err)?
+    } else {
+        found.ok().flatten()
+    };
+    Ok(found.map(|n| NewVersionDto {
+        version: n.version,
+        url: n.url,
+    }))
 }
 
 /// Refill the Browse catalogue (at most daily unless `force`).

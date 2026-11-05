@@ -115,7 +115,7 @@
                 {:else if busy}
                   <span class="dim state">{busy}…</span>
                 {:else if !a.managed}
-                  <a href="#identify" class="identify" onclick={(e) => { e.preventDefault(); store.dialog = { kind: "install", adopt: a }; }}>Identify source</a>
+                  <!-- No source yet: "Identify source" is in the row's menu. -->
                 {:else if a.pinned}
                   <span class="pin"><Icon name="pin" size={14} stroke={2.2} />Pinned</span>
                 {:else if s?.kind === "available"}
@@ -173,5 +173,4 @@
   .ver { display: flex; flex-direction: column; gap: 6px; }
   .ver strong { color: var(--text); font-weight: 600; }
   .state { font-size: 12px; font-weight: 600; }
-  .identify { font-size: 12px; font-weight: 700; }
 </style>

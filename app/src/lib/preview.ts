@@ -160,7 +160,7 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><rect width="1280" height="720" fill="hsl(${hue} 30% 22%)"/><rect x="80" y="80" width="420" height="260" rx="8" fill="hsl(${hue} 30% 32%)"/><text x="640" y="400" font-family="sans-serif" font-size="96" fill="hsl(${hue} 40% 75%)" text-anchor="middle">Screenshot ${m[1]}</text></svg>`;
       return `data:image/svg+xml;base64,${btoa(svg)}`;
     }
-    case "self_update": return settings.selfUpdateCheck ? { version: "0.2.0", url: "https://github.com/PerkinzPie/Nexforge/releases" } : null;
+    case "self_update": return settings.selfUpdateCheck || args.now ? { version: "0.2.0", url: "https://github.com/PerkinzPie/Nexforge/releases" } : null;
     case "refresh_catalogue": await wait(300); return { total: 8264, refreshedAt: new Date().toISOString(), errors: [] };
     case "popular": return args.source ? hits.filter((h) => h.source === args.source) : hits.filter((h) => h.forFlavour).map((h) => ({ ...h }));
     default: throw new Error(`"${cmd}" is not available in the browser preview.`);

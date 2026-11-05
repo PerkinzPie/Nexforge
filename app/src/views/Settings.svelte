@@ -1,7 +1,7 @@
 <script lang="ts">
   import ClientIcon from "../components/ClientIcon.svelte";
-  import { mergeProps } from "bits-ui";
   import PageHead from "../components/PageHead.svelte";
+  import RowMenu from "../components/RowMenu.svelte";
   import Tip from "../components/Tip.svelte";
   import wordmark from "../assets/nexabyte-wordmark.svg";
   import { api, type Settings, type SettingsInput } from "../lib/api";
@@ -98,14 +98,12 @@
         <h2>Sources</h2>
         <div class="group">
         <div class="frow toggle">
-          <label class="t" for="src-github">GitHub</label>
-          {#if s.keyGithub}
-            <button type="button" class="btn btn-sm btn-quiet" onclick={() => clearKey("github")}>Remove token</button>
-          {:else}
-            <Tip text="Optional. Raises GitHub's limit from 60 to 5,000 requests an hour.">
-              {#snippet children({ props })}<button {...mergeProps(props, { onclick: () => (store.dialog = { kind: "key", name: "github" }) })} type="button" class="btn btn-sm">Add token</button>{/snippet}
-            </Tip>
-          {/if}
+          <Tip text="A token is optional. It raises GitHub's limit from 60 to 5,000 requests an hour.">
+            {#snippet children({ props })}<label {...props} class="t" for="src-github">GitHub</label>{/snippet}
+          </Tip>
+          <RowMenu label="GitHub token" items={s.keyGithub
+            ? [{ label: "Replace token", run: () => (store.dialog = { kind: "key", name: "github" }) }, { label: "Remove token", danger: true, run: () => clearKey("github") }]
+            : [{ label: "Add token", run: () => (store.dialog = { kind: "key", name: "github" }) }]} />
           <input id="src-github" type="checkbox" checked={s.github} onchange={(e) => save({ github: e.currentTarget.checked })} />
         </div>
         <label class="frow toggle">
@@ -113,15 +111,12 @@
           <input type="checkbox" checked={s.wowinterface} onchange={(e) => save({ wowinterface: e.currentTarget.checked })} />
         </label>
         <div class="frow toggle">
-          <label class="t" for="src-cf">CurseForge</label>
-          {#if s.keyCurseforge}
-            <button type="button" class="btn btn-sm btn-quiet" onclick={() => clearKey("curseforge")}>Remove key</button>
-            <button type="button" class="btn btn-sm" onclick={() => (store.dialog = { kind: "key", name: "curseforge" })}>Replace key</button>
-          {:else}
-            <Tip text="Free from console.curseforge.com. Some authors block downloads outside the CurseForge app.">
-              {#snippet children({ props })}<button {...mergeProps(props, { onclick: () => (store.dialog = { kind: "key", name: "curseforge" }) })} type="button" class="btn btn-sm">Add key</button>{/snippet}
-            </Tip>
-          {/if}
+          <Tip text={s.keyCurseforge ? "Some authors block downloads outside the CurseForge app." : "Needs an API key, free from console.curseforge.com."}>
+            {#snippet children({ props })}<label {...props} class="t" for="src-cf">CurseForge</label>{/snippet}
+          </Tip>
+          <RowMenu label="CurseForge key" items={s.keyCurseforge
+            ? [{ label: "Replace key", run: () => (store.dialog = { kind: "key", name: "curseforge" }) }, { label: "Remove key", danger: true, run: () => clearKey("curseforge") }]
+            : [{ label: "Add key", run: () => (store.dialog = { kind: "key", name: "curseforge" }) }]} />
           <input id="src-cf" type="checkbox" checked={s.curseforge} disabled={!s.keyCurseforge}
             onchange={(e) => save({ curseforge: e.currentTarget.checked })} />
         </div>
@@ -135,14 +130,17 @@
       <section class="sec">
         <h2>Privacy and diagnostics</h2>
         <div class="group">
-        <label class="frow toggle">
-          <Tip text="One request to GitHub on launch. Nothing is downloaded.">{#snippet children({ props })}<span {...props} class="t">Check for new versions of Nexforge</span>{/snippet}</Tip>
-          <input type="checkbox" checked={s.selfUpdateCheck}
+        <div class="frow toggle">
+          <Tip text="Ticked: one request to GitHub on launch. Nothing is downloaded.">
+            {#snippet children({ props })}<label {...props} class="t" for="self-check">Check for new versions of Nexforge</label>{/snippet}
+          </Tip>
+          <button type="button" class="btn btn-sm" disabled={store.checkingSelf} onclick={() => store.checkSelfNow()}>Check now</button>
+          <input id="self-check" type="checkbox" checked={s.selfUpdateCheck}
             onchange={(e) => {
               const on = e.currentTarget.checked;
               save({ selfUpdateCheck: on }).then(() => (on ? store.checkSelf() : (store.newVersion = null)));
             }} />
-        </label>
+        </div>
         <div class="frow">
           <div class="lbl"><span class="t">Network log</span></div>
           <button type="button" class="btn btn-sm" onclick={() => open("log")}>Open log</button>

@@ -71,7 +71,7 @@ export const api = {
   snapshot: (installationId: string | null) => call<Snapshot>("snapshot", { installationId }),
   reconcile: (installationId: string) => call<number>("reconcile_now", { installationId }),
   adoptAll: () => call<Adopted[]>("adopt_all"),
-  selfUpdate: () => call<{ version: string; url: string } | null>("self_update"),
+  selfUpdate: (now = false) => call<{ version: string; url: string } | null>("self_update", { now }),
   check: (installationId: string) => call<CheckResult>("check", { installationId }),
   update: (installationId: string, id: string) => call<Addon | null>("update", { installationId, id }),
   install: (installationId: string, spec: string, adopt: string | null, anyway: boolean) =>
