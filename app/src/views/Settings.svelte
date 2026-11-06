@@ -43,7 +43,7 @@
       const saved = await api.clearKey(name);
       if (store.snap) store.snap.settings = saved;
       await store.load();
-      store.say("ok", "Key removed from Windows Credential Manager.");
+      store.say("ok", "Key removed.");
     } catch (e) {
       store.say("err", (e as Error).message);
     }
@@ -99,7 +99,7 @@
         <h2>Sources</h2>
         <div class="group">
         <label class="frow toggle" for="src-github">
-          <Tip text="A token is optional. It raises GitHub's limit from 60 to 5,000 requests an hour.">
+          <Tip text="Optional. Raises GitHub's hourly limit.">
             {#snippet children({ props })}<span {...props} class="t">GitHub</span>{/snippet}
           </Tip>
           <RowMenu label="GitHub token" items={s.keyGithub
@@ -122,7 +122,7 @@
             onchange={(e) => save({ curseforge: e.currentTarget.checked })} />
         </label>
         <label class="frow toggle off" for="src-wago">
-          <Tip text="Wago only gives API keys to paying subscribers, so it is not supported.">{#snippet children({ props })}<span {...props} class="t dim-t">Wago</span>{/snippet}</Tip>
+          <Tip text="Wago keys need a paid subscription.">{#snippet children({ props })}<span {...props} class="t dim-t">Wago</span>{/snippet}</Tip>
           <input id="src-wago" type="checkbox" disabled checked={false} aria-label="Wago (not supported)" />
         </label>
         </div>
@@ -132,7 +132,7 @@
         <h2>Privacy and diagnostics</h2>
         <div class="group">
         <label class="frow toggle" for="self-check">
-          <Tip text="Ticked: one request to GitHub on launch. Nothing is downloaded.">
+          <Tip text="Never downloads or installs anything.">
             {#snippet children({ props })}<span {...props} class="t">Check for new versions of Nexforge</span>{/snippet}
           </Tip>
           <input id="self-check" type="checkbox" checked={s.selfUpdateCheck}

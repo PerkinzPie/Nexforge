@@ -113,7 +113,7 @@ class Store {
       return; // the welcome screen adopts, then calls finishFirstRun()
     }
     if (this.snap?.adoptedNow) {
-      this.say("ok", `Adopted ${this.addons.length} addons.`);
+      this.say("ok", `Found ${this.addons.length} addons.`);
     } else {
       await this.rescan();
     }
@@ -177,11 +177,11 @@ class Store {
       this.snap = s;
       this.loadError = null;
       if (s.recovered.length) {
-        this.say("ok", `Put back ${s.recovered.join(", ")} after an update was interrupted.`);
+        this.say("ok", `Restored ${s.recovered.join(", ")} after an interrupted update.`);
       }
       if (s.configReset && !this.#toldReset) {
         this.#toldReset = true;
-        this.say("err", `Settings couldn't be read, so they were reset. The old file is kept as ${s.configReset}.`);
+        this.say("err", `Settings couldn't be read and were reset. The old file is saved as ${s.configReset}.`);
       }
       if (s.current) this.recent = await api.recent(s.current).catch(() => []);
     } catch (e) {
@@ -261,7 +261,7 @@ class Store {
     try {
       const kept = await api.resetState(inst);
       await this.load();
-      this.say("ok", `Started a fresh list. The old addons.toml is kept as ${kept}.`);
+      this.say("ok", `Addon list rebuilt. The old one is saved as ${kept}.`);
     } catch (e) {
       this.say("err", (e as Error).message);
     }

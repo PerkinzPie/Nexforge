@@ -152,7 +152,7 @@
                 {:else if s?.kind === "available"}
                   <ProgressButton label="Update" busy={null} onclick={() => store.update(a.id)} />
                 {:else if s?.kind === "no_build"}
-                  <NoBuild text="No {flavour} build listed. It may not load in {flavour}." />
+                  <NoBuild text="May not load in {flavour}." />
                 {:else if s?.kind === "failed" || s?.kind === "unavailable"}
                   <Tip text={s.message}>
                     {#snippet children({ props })}
@@ -162,7 +162,7 @@
                 {:else if s?.kind === "up_to_date" || s?.kind === "skipped"}
                   <span class="quiet">Up to date</span>
                 {:else if a.flavourMismatch}
-                  <NoBuild text="Its TOC doesn't list {flavour}. It may not load." />
+                  <NoBuild text="May not load in {flavour}." />
                 {:else}
                   {#if store.checking}<span class="skel pillskel" aria-label="Checking"></span>{:else}<span class="quiet">Not checked</span>{/if}
                 {/if}

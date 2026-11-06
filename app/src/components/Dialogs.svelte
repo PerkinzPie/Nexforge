@@ -105,12 +105,12 @@
       {#if d.kind === "install"}
         <p class="dim">A link, an addon name, or a CurseForge Project ID.</p>
         {#if d.adopt}
-          <p class="dim">Replaces {d.adopt.folders.length === 1 ? d.adopt.folders[0] : `all ${d.adopt.folders.length} ${d.adopt.name} folders`}. Its current version is kept, so you can roll back.</p>
+          <p class="dim">Replaces {d.adopt.folders.length === 1 ? d.adopt.folders[0] : `all ${d.adopt.folders.length} ${d.adopt.name} folders`}. You can roll back afterwards.</p>
         {/if}
         <label class="sr" for="dlg-in">Address or name</label>
         <input id="dlg-in" class="text-input" bind:this={input} bind:value placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false" />
       {:else if d.kind === "remove"}
-        <p class="dim">Deletes {d.addon.folders.join(", ")}. A backup is kept; WTF settings stay.</p>
+        <p class="dim">Deletes {d.addon.folders.join(", ")}. Your addon settings are kept.</p>
       {:else if d.kind === "key"}
         <p class="dim">Saved in Windows Credential Manager.</p>
         <label class="sr" for="dlg-key">Key</label>

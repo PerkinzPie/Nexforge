@@ -56,7 +56,7 @@ fn swap_dir(addons: &Path, op: &str) -> PathBuf {
 
 fn link_error(f: &str) -> Error {
     Error::Other(format!(
-        "{f} is a link to a folder elsewhere, so Nexforge won't change it. Remove the link, then try again."
+        "{f} links to another folder. Nexforge won't change it."
     ))
 }
 

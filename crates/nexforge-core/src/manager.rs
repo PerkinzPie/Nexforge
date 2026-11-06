@@ -335,9 +335,12 @@ impl Manager {
         flavour: Flavour,
         anyway: bool,
     ) -> Result<(Release, bool)> {
-        let source = entry
-            .source
-            .ok_or_else(|| Error::NotManaged(format!("{} is not managed yet. Install it from a source first (nexforge install <source:id> --as {}).", entry.name, entry.id)))?;
+        let source = entry.source.ok_or_else(|| {
+            Error::NotManaged(format!(
+                "{} has no source yet. Choose Identify source on it.",
+                entry.name
+            ))
+        })?;
         let src = self.require_source(source)?;
         let rels = src.releases(&entry.source_id, flavour).await?;
         let picked = match pick_release(&rels, flavour, entry.channel) {

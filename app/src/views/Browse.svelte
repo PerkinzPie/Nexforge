@@ -99,9 +99,9 @@
 
   const chips = $derived([
     { id: "github", label: "GitHub", enabled: on.includes("github"), why: "Turned off in Settings" },
-    { id: "wago", label: "Wago", enabled: false, why: "Wago needs a paid API key; not supported" },
+    { id: "wago", label: "Wago", enabled: false, why: "Needs a paid Wago subscription" },
     { id: "wowinterface", label: "WoWInterface", enabled: on.includes("wowinterface"), why: "Turned off in Settings" },
-    { id: "curseforge", label: "CurseForge", enabled: on.includes("curseforge"), why: "Needs an API key (Settings)" },
+    { id: "curseforge", label: "CurseForge", enabled: on.includes("curseforge"), why: "Add a CurseForge key in Settings" },
   ]);
 
   async function install(h: Hit, anyway: boolean) {

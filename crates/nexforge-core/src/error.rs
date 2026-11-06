@@ -18,13 +18,13 @@ pub enum Error {
     #[error("{path} is not valid: {message}")]
     BadStateFile { path: PathBuf, message: String },
 
-    #[error("Nexforge only talks to its known addon hosts, and {host} is not one of them, so the request was blocked.")]
+    #[error("Nexforge doesn't connect to {host}.")]
     HostNotAllowed { host: String },
 
     #[error("{host} could not be reached: {message}")]
     Network { host: String, message: String },
 
-    #[error("{host} answered with HTTP {status} for {path}.")]
+    #[error("{host} returned error {status}. Try again later.")]
     Http {
         host: String,
         path: String,
@@ -37,25 +37,25 @@ pub enum Error {
         reset_at: String,
     },
 
-    #[error("{host} sent something Nexforge could not read: {message}")]
+    #[error("{host} sent a reply Nexforge couldn't read: {message}")]
     BadResponse { host: String, message: String },
 
-    #[error("The download did not match the checksum the host published, so it was thrown away. Try again; if it keeps happening the file on the host may be damaged.")]
+    #[error("The download was damaged. Try again.")]
     ChecksumMismatch,
 
     #[error("The downloaded archive is not a usable addon: {0}")]
     BadArchive(String),
 
-    #[error("No addon called \"{0}\" is in addons.toml. Run `nexforge list` to see the ids.")]
+    #[error("{0} isn't installed.")]
     UnknownAddon(String),
 
     #[error("{0}")]
     NotManaged(String),
 
-    #[error("The folder {folder} belongs to {owner}. Remove that addon first, or install this one somewhere else.")]
+    #[error("{folder} belongs to {owner}. Remove {owner} first.")]
     FolderOwned { folder: String, owner: String },
 
-    #[error("AddOns already has a folder called {0} that Nexforge doesn't manage yet. Refresh to pick it up, then choose Identify source on it.")]
+    #[error("{0} is already in your AddOns folder. Refresh, then choose Identify source on it.")]
     FolderUnmanaged(String),
 
     #[error("{name} is already installed from {from}. To get it from {to} instead, choose Change source on it.")]
@@ -71,7 +71,7 @@ pub enum Error {
     #[error("No release of {name} is listed for {flavour}.")]
     NoRelease { name: String, flavour: String },
 
-    #[error("No previous version of {0} is kept, so there is nothing to roll back to.")]
+    #[error("There's no earlier version of {0} to roll back to.")]
     NoBackup(String),
 
     #[error("{0}")]
@@ -80,7 +80,7 @@ pub enum Error {
     #[error("The installation could not be found: {0}")]
     NoInstallation(String),
 
-    #[error("Could not use the system credential store: {0}")]
+    #[error("Couldn't reach Windows Credential Manager: {0}")]
     Keyring(String),
 
     #[error("{0}")]

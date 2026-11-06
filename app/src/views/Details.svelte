@@ -90,7 +90,7 @@
       <Tile name={target.name} iconUrl={info?.iconUrl ?? target.iconUrl} size={64} unknown={!target.source} />
     {/if}
     <div class="who">
-      <span class="tl"><h1 class="h1">{info?.name ?? target.name}</h1>{#if noBuild}<NoBuild text="No {flavour} build listed. It may not load in {flavour}." size={17} />{/if}</span>
+      <span class="tl"><h1 class="h1">{info?.name ?? target.name}</h1>{#if noBuild}<NoBuild text="May not load in {flavour}." size={17} />{/if}</span>
       <span class="by">
         {#if authors.length}<span class="dim"><Icon name="user" size={13} stroke={2.2} />{authors.join(", ")}</span>{/if}
         {#if label}<SourceTag label={label} />{/if}
@@ -160,7 +160,7 @@
           {:else if hit?.summary}
             <p>{hit.summary}</p>
           {:else if !target.source}
-            <p class="dim">Nexforge doesn't know where this addon comes from. Identify its source to get updates and details.</p>
+            <p class="dim">Source unknown. Identify its source to get updates.</p>
           {/if}
         </section>
       {/if}
