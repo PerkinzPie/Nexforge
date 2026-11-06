@@ -4,13 +4,13 @@ An addon manager for World of Warcraft: **WoW Forever**, **Classic Era** and **A
 
 ## Features
 
-- Automatically detects your installed addons and where each one came from.
-- Searches GitHub, WoWInterface and CurseForge at once.
-- Shows release notes before you update. Update one addon or all of them.
-- Keeps the previous version of every addon it updates, so you can roll back in one click.
-- Pin an addon to its current version, or skip a single release.
-- Manages Forever, Classic Era and Anniversary installs side by side.
-- Restores your addons if an update is interrupted by a crash or power cut.
+- Automatically detects your installed addons.
+- Search GitHub, WoWInterface and CurseForge at once.
+- Install, update and remove addons in one click.
+- Update one addon or all of them, with release notes.
+- Roll back any addon to an earlier version.
+- Pin an addon to its current version, or skip a release.
+- Manage Forever, Classic Era and Anniversary installs side by side.
 
 ## Privacy and safety
 
