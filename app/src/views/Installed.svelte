@@ -131,7 +131,7 @@
                 </div>
               </td>
               <td><SourceTag source={a.source} label={a.sourceLabel} /></td>
-              <td>
+              <td class="st">
                 {#if busy === "Updating" || busy === "Installing"}
                   <ProgressButton label="Update" {busy} {pct} onclick={() => {}} />
                 {:else if busy}
@@ -189,6 +189,8 @@
   .c-ver { width: 200px; }
   .c-src { width: 136px; }
   .c-st { width: 124px; }
+  /* Update button, progress and status text share one centre line. */
+  td.st { text-align: center; }
   .c-act { width: 48px; }
   .ver .num { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .names .n, .names .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -196,7 +198,7 @@
   .open-row { cursor: pointer; }
   .open-row:hover td { background: var(--raised); }
   .quiet { font-size: 12px; color: var(--text-3); }
-  .pillskel { display: block; width: 76px; height: 14px; }
+  .pillskel { display: block; width: 76px; height: 14px; margin: 0 auto; }
   .names { display: flex; flex-direction: column; gap: 0; min-width: 0; line-height: 1.3; }
   .n { font-weight: 700; }
   .ver { display: flex; flex-direction: column; gap: 6px; }

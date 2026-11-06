@@ -248,7 +248,9 @@
   .line { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
   .line > :global(*) { flex-shrink: 0; }
   .line .n, .line .small { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .act { flex: 0 0 auto; width: 96px; display: flex; justify-content: flex-end; }
+  /* Every state (Install, progress, Installed, ⋯) is centred in the same
+     96px, so their centres line up down the column. */
+  .act { flex: 0 0 auto; width: 96px; display: flex; justify-content: center; }
   .n { font-size: 13px; font-weight: 700; }
   .small { font-size: 12px; }
   .done { animation: pop 0.3s ease-out; }
