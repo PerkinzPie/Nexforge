@@ -1,12 +1,24 @@
 # Nexforge
 
-A fast World of Warcraft addon manager for **WoW Forever**, **Classic Era** and **Anniversary**. Install, update, pin, roll back and remove addons from GitHub releases, WoWInterface and CurseForge.
+A fast, quiet addon manager for World of Warcraft: **WoW Forever**, **Classic Era** and **Anniversary**. Addons come from GitHub releases, WoWInterface and CurseForge.
 
-- No account, no telemetry, no ads, no tray process, no auto-start.
-- Talks only to the addon hosts, and logs every request it makes.
-- Nothing is updated until you click (unless you turn on automatic updates). Pinned addons are never touched.
-- Never touches `WTF`, `SavedVariables` or any folder it did not install or adopt. Every update keeps the previous version, so rollback is one click.
-- State is plain files you can read: `addons.toml` next to your addons, `config.toml` for settings. API keys live in Windows Credential Manager.
+## Features
+
+- **Picks up what you already have.** Your existing addons are recognised and matched to where they came from; nothing is moved or reinstalled.
+- **One search across every host.** Results are ranked by name, with screenshots, descriptions and the right build for your client.
+- **Updates you can read first.** See each update's release notes, then update one addon or all of them.
+- **One-click rollback.** Every update keeps the version before it, so a broken release is one click from gone.
+- **Pin or skip.** Hold an addon at its current version, or skip one release and take the next.
+- **Every client in one place.** Forever, Classic Era and Anniversary installs side by side, each with its own addon list.
+- **Safe if something goes wrong.** An update cut short by a crash or power cut is put back the next time Nexforge opens.
+
+## What it won't do
+
+- **No account, telemetry, ads, tray icon or auto-start.**
+- **No surprise updates.** Nothing changes until you click, unless you turn on automatic updates. Pinned addons are never touched.
+- **No wandering.** It never touches `WTF`, `SavedVariables` or any folder it didn't install or adopt.
+- **No hidden traffic.** It talks only to the addon hosts, and logs every request it makes.
+- **No lock-in.** Your addon list is a plain `addons.toml` next to your addons, settings are `config.toml`, and API keys stay in Windows Credential Manager.
 
 ## Install
 
