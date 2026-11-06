@@ -94,7 +94,7 @@
     <form class="dlg" onsubmit={submit}>
       <div class="head">
         <Dialog.Title level={2} class="dlg-title">
-          {#if d.kind === "install"}{d.adopt ? `Identify source for ${d.adopt.name}` : "Install from URL"}
+          {#if d.kind === "install"}{d.adopt ? `${d.adopt.managed ? "Change" : "Identify"} source for ${d.adopt.name}` : "Install from URL"}
           {:else if d.kind === "remove"}Remove {d.addon.name}?
           {:else if d.kind === "key"}{d.name === "curseforge" ? "CurseForge API key" : "GitHub token"}
           {:else}No {flavour} build listed{/if}
@@ -103,7 +103,10 @@
       </div>
 
       {#if d.kind === "install"}
-        <p class="dim">A link, an addon name, or a CurseForge Project ID.{#if d.adopt} Replaces {d.adopt.folders.join(", ")} (backed up first).{/if}</p>
+        <p class="dim">A link, an addon name, or a CurseForge Project ID.</p>
+        {#if d.adopt}
+          <p class="dim">Replaces {d.adopt.folders.length === 1 ? d.adopt.folders[0] : `all ${d.adopt.folders.length} ${d.adopt.name} folders`}. Its current version is kept, so you can roll back.</p>
+        {/if}
         <label class="sr" for="dlg-in">Address or name</label>
         <input id="dlg-in" class="text-input" bind:this={input} bind:value placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false" />
       {:else if d.kind === "remove"}
