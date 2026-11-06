@@ -1,0 +1,46 @@
+name: Release PR
+
+# On every push to master with change files in .changeset/, open or refresh a
+# "Release x.y.z" pull request: version bumped in every file, CHANGELOG.md
+# updated, change files removed. Merging it runs release.yml.
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-pr
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0 # Knope reads the last version tag
+      - name: Look for change files
+        id: changes
+        shell: bash
+        run: |
+          if compgen -G ".changeset/*.md" > /dev/null; then
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No change files: nothing to release."
+          fi
+      - name: Configure Git
+        if: steps.changes.outputs.pending == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - uses: knope-dev/action@19617851f9f13ab2f27a05989c55efb18aca3675 # v2.1.2
+        if: steps.changes.outputs.pending == 'true'
+        with:
+          version: 0.23.2
+      - run: knope prepare-release --verbose
+        if: steps.changes.outputs.pending == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

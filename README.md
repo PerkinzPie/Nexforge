@@ -37,6 +37,24 @@ pnpm tauri build                # release build and .msi
 
 The `nexforge` command-line tool (`crates/nexforge-cli`) does everything the app does: `detect`, `reconcile`, `search`, `check`, `update`, `install`, `remove`, `pin`, `rollback` and more.
 
+## Releases
+
+What changed in each version is in [CHANGELOG.md](CHANGELOG.md). Releases are made with [Knope](https://knope.tech):
+
+1. With a change players would notice, add a change file: run `knope document-change`, or add `.changeset/<name>.md` by hand:
+
+   ```markdown
+   ---
+   default: minor
+   ---
+
+   Search finds names with symbols in them.
+   ```
+
+   `major` is for a change in how something works, `minor` for something new, `patch` for a fix. While Nexforge is 0.x, `major` bumps the middle number and the others bump the last.
+2. Each push to `master` with change files opens or refreshes a **Release x.y.z** pull request. It bumps the version in `Cargo.toml`, `Cargo.lock`, `app/package.json` and `tauri.conf.json`, and adds the new section to `CHANGELOG.md`.
+3. Merge that pull request to build the `.msi`, tag `vx.y.z` and publish the GitHub release, with the changelog section as its notes.
+
 ## Licence
 
 MIT. Not affiliated with Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment.

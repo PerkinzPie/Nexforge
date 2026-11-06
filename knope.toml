@@ -1,0 +1,67 @@
+# Release tooling: https://knope.tech
+#
+# Every change worth telling players about gets a change file in .changeset/
+# (run `knope document-change`, or write one by hand). On each push to master,
+# CI runs `knope prepare-release` and keeps a "Release x.y.z" pull request open
+# with the version bump and the new CHANGELOG.md section. Merging that pull
+# request builds the installer and publishes the GitHub release.
+
+[changes]
+# Commit messages here are plain sentences; only change files count.
+ignore_conventional_commits = true
+
+[package]
+versioned_files = [
+  "Cargo.toml",
+  { path = "Cargo.lock", dependency = "nexforge-core" },
+  { path = "Cargo.lock", dependency = "nexforge-cli" },
+  { path = "Cargo.lock", dependency = "nexforge-app" },
+  "app/package.json",
+  "app/src-tauri/tauri.conf.json",
+]
+changelog = "CHANGELOG.md"
+assets = "artifacts/*"
+
+[[workflows]]
+name = "document-change"
+
+[[workflows.steps]]
+type = "CreateChangeFile"
+
+[[workflows]]
+name = "prepare-release"
+
+[[workflows.steps]]
+type = "Command"
+command = "git switch -C release"
+
+[[workflows.steps]]
+type = "PrepareRelease"
+
+[[workflows.steps]]
+type = "Command"
+command = "git commit -m \"Release $version\""
+
+[[workflows.steps]]
+type = "Command"
+command = "git push --force --set-upstream origin release"
+
+[[workflows.steps]]
+type = "CreatePullRequest"
+base = "master"
+
+[workflows.steps.title]
+template = "Release $version"
+
+[workflows.steps.body]
+template = "Merging this builds the installer and publishes Nexforge $version.\n\n$changelog"
+
+[[workflows]]
+name = "release"
+
+[[workflows.steps]]
+type = "Release"
+
+[github]
+owner = "PerkinzPie"
+repo = "Nexforge"
