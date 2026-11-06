@@ -1,7 +1,7 @@
 //! High-level operations shared by the CLI and (later) the app: update
 //! checks, update, install, pin. Thin over sources + engine + state.
 
-use crate::catalogue::{matches_words, relevance};
+use crate::catalogue::{matches_words, query_variants, relevance};
 use crate::error::{Error, Result};
 use crate::flavour::Flavour;
 use crate::install::{Engine, Target};
@@ -450,12 +450,13 @@ impl Manager {
             (Some(c), false) if c.stats().total > 0 => Some(c.clone()),
             _ => None,
         };
+        // "Forever++" is also searched as "foreverplusplus" (its name on hosts).
+        let variants = query_variants(q);
         if let Some(cat) = local {
             let on = self.available_sources();
-            let mut hits: Vec<_> = cat
-                .search(q, 80)
-                .unwrap_or_default()
-                .into_iter()
+            let mut hits: Vec<_> = variants
+                .iter()
+                .flat_map(|v| cat.search(v, 80).unwrap_or_default())
                 .filter(|h| on.contains(&h.source))
                 .collect();
             let indexed: Vec<SourceId> = cat.stats().per_source.iter().map(|(s, _)| *s).collect();
@@ -463,7 +464,8 @@ impl Manager {
                 .sources
                 .iter()
                 .filter(|s| !indexed.contains(&s.id()) || s.live_search())
-                .map(|s| async move { (s.id(), s.search(q, flavour).await) });
+                .flat_map(|s| variants.iter().map(move |v| (s, v)))
+                .map(|(s, v)| async move { (s.id(), s.search(v, flavour).await) });
             let mut errors = Vec::new();
             for (id, r) in join_all(live).await {
                 match r {
@@ -474,9 +476,12 @@ impl Manager {
                     Err(e) => errors.push((id, e.to_string())),
                 }
             }
-            // The catalogue and a live search can both list the same addon.
+            // The catalogue and a live search can both list the same addon,
+            // and each spelling searched can report the same host's error.
             let mut seen = std::collections::HashSet::new();
             hits.retain(|h| seen.insert((h.source, h.source_id.clone())));
+            let mut failed = std::collections::HashSet::new();
+            errors.retain(|(id, _)| failed.insert(*id));
             // Best name match first; popularity only breaks ties.
             hits.sort_by_key(|h| {
                 (
@@ -490,7 +495,8 @@ impl Manager {
         let jobs = self
             .sources
             .iter()
-            .map(|s| async move { (s.id(), s.search(q, flavour).await) });
+            .flat_map(|s| variants.iter().map(move |v| (s, v)))
+            .map(|(s, v)| async move { (s.id(), s.search(v, flavour).await) });
         let mut hits = Vec::new();
         let mut errors = Vec::new();
         for (id, r) in join_all(jobs).await {
@@ -499,6 +505,10 @@ impl Manager {
                 Err(e) => errors.push((id, e.to_string())),
             }
         }
+        let mut seen = std::collections::HashSet::new();
+        hits.retain(|h| seen.insert((h.source, h.source_id.clone())));
+        let mut failed = std::collections::HashSet::new();
+        errors.retain(|(id, _)| failed.insert(*id));
         // Best name match first, then builds for this flavour, then by
         // downloads; GitHub index entries (curated, no download counts) lead
         // within each band.

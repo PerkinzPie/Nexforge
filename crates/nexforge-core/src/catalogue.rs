@@ -77,7 +77,33 @@ fn query_words(q: &str) -> Vec<String> {
         .collect()
 }
 
+/// A name with spelled-out symbols and nothing else: "Forever++" and
+/// "ForeverPlusPlus" are both `foreverplusplus`.
+pub fn compact(s: &str) -> String {
+    s.to_lowercase()
+        .replace('+', "plus")
+        .replace('&', "and")
+        .chars()
+        .filter(|c| c.is_alphanumeric())
+        .collect()
+}
+
+/// Other spellings worth searching for: with symbols spelled out
+/// ("Forever++" is also "foreverplusplus"), the original first.
+pub fn query_variants(q: &str) -> Vec<String> {
+    let mut out = vec![q.trim().to_string()];
+    if q.contains(['+', '&']) {
+        let c = compact(q);
+        if !c.is_empty() && !out.contains(&c) {
+            out.push(c);
+        }
+    }
+    out
+}
+
 /// Does every word of `q` appear in the entry's name, authors or summary?
+/// A name that matches `q` once spelled out (ForeverPlusPlus for
+/// "Forever++") counts too.
 /// Live host searches (CurseForge) also return loose matches; this keeps
 /// them to what the local catalogue would have found.
 pub fn matches_words(q: &str, e: &CatalogueEntry) -> bool {
@@ -89,18 +115,22 @@ pub fn matches_words(q: &str, e: &CatalogueEntry) -> bool {
     )
     .to_lowercase();
     query_words(q).iter().all(|w| hay.contains(w.as_str()))
+        || compact(&e.name).contains(&compact(q))
 }
 
 /// How well an entry's name matches `q`, best first: 0 the exact name,
-/// 1 the name starts with it, 2 the name contains it (symbols and all),
-/// 3 the name holds every word, 4 only the authors or summary match.
+/// 1 the name starts with it, 2 the name contains it, 3 the name holds every
+/// word, 4 only the authors or summary match. Names are compared with
+/// spaces and punctuation ignored and symbols spelled out, so "Forever++"
+/// is an exact match for ForeverPlusPlus.
 pub fn relevance(q: &str, e: &CatalogueEntry) -> u8 {
     let (name, ql) = (e.name.to_lowercase(), q.trim().to_lowercase());
-    if name == ql {
+    let (cn, cq) = (compact(&e.name), compact(q));
+    if name == ql || (!cq.is_empty() && cn == cq) {
         0
-    } else if name.starts_with(&ql) {
+    } else if name.starts_with(&ql) || (!cq.is_empty() && cn.starts_with(&cq)) {
         1
-    } else if name.contains(&ql) {
+    } else if name.contains(&ql) || (!cq.is_empty() && cn.contains(&cq)) {
         2
     } else if query_words(q).iter().all(|w| name.contains(w.as_str())) {
         3
@@ -427,6 +457,17 @@ mod tests {
         assert_eq!(relevance("Forever++", &summary_only), 4);
         assert_eq!(relevance("atlas", &named), 1);
         assert_eq!(relevance("loot classic", &named), 2);
+
+        // Symbols spelled out: the addon named ForeverPlusPlus is "Forever++".
+        let plus = e(cf, "5", "ForeverPlusPlus", "xIGBClutchIx", 1, &[]);
+        assert_eq!(relevance("Forever++", &plus), 0);
+        assert_eq!(relevance("forever plus plus", &plus), 0);
+        assert!(matches_words("Forever++", &plus));
+        assert_eq!(
+            query_variants("Forever++"),
+            vec!["Forever++", "foreverplusplus"]
+        );
+        assert_eq!(query_variants("questie"), vec!["questie"]);
 
         // A loose live match with none of the words anywhere is dropped.
         assert!(matches_words("Forever++", &summary_only));
