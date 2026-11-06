@@ -2,6 +2,13 @@
 
 Notable changes to Nexforge, newest first. Nexforge is in 0.x: a release that changes how something works bumps the middle number, anything else bumps the last.
 
+## 0.1.2 (2026-11-06)
+
+### Fixes
+
+- Shorter, clearer messages and tooltips.
+- New Nexforge icon and colours.
+
 ## 0.1.1 (2026-11-06)
 
 ### Features
