@@ -4,33 +4,33 @@
   --nx-coral: #d74653;
   --nx-plum: #653350;
 
-  /* Radix Slate (dark): grey with a faint blue cast, in even lightness steps,
-     so addon artwork carries the colour; coral stays the brand accent. */
-  --rail: #111113;
-  --bg: #18191b;
-  --surface: #212225;
-  --raised: #272a2d;
-  --raised-hover: #2e3135;
-  --border: #363a3f;
-  --divider: #2b2e32;
+  /* Brand navy (#151b24) in even lightness steps, so addon artwork carries
+     the colour; coral stays the brand accent. */
+  --rail: #0f141b;
+  --bg: #151b24;
+  --surface: #1c232e;
+  --raised: #232b37;
+  --raised-hover: #2a3340;
+  --border: #36404d;
+  --divider: #28313d;
 
   --text: #edeef0;
-  --text-2: #b0b4ba;
-  --text-3: #969ba3;
-  --text-soft: #cfd2d6;
+  --text-2: #b0b8c4;
+  --text-3: #959fac;
+  --text-soft: #cfd4dc;
 
   --accent-fill: #e35a66;
   --accent-fill-hover: #eb6f7a;
   --accent-text: #ef7c86;
-  --accent-tint: #3b2327;
-  --accent-tint-hover: #4a2a30;
+  --accent-tint: #36252f;
+  --accent-tint-hover: #4b2c35;
 
   --good: #4fd1b5;
-  --good-tint: #1c3431;
+  --good-tint: #1c3136;
   --attention: #f5c451;
-  --attn-tint: #36311f;
+  --attn-tint: #2f2f29;
   --info: #a6aaf0;
-  --info-tint: #252a3c;
+  --info-tint: #272c3d;
   --act: #ef7c86;
 
   /* Corners: small for controls, medium for surfaces, large only for dialogs. */
@@ -40,7 +40,7 @@
 
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --sans: Manrope, system-ui, sans-serif;
-  --display: Jost, Manrope, sans-serif;
+  --display: "Space Grotesk", Manrope, sans-serif;
 
   color-scheme: dark;
 }
@@ -63,13 +63,13 @@ a:hover { color: #c3c6f5; }
 button { font-family: inherit; }
 :focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
 
-.wm { font-family: var(--display); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.wm { font-family: var(--display); font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .mono { font-family: var(--mono); font-size: 12px; color: var(--text-soft); }
 .dim { color: var(--text-2); }
 /* Version numbers: tabular figures in the body face. */
 .num { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--text-soft); }
-.h1 { margin: 0; font-family: var(--display); font-size: 26px; font-weight: 600; letter-spacing: 0.01em; line-height: 1.2; }
+.h1 { margin: 0; font-family: var(--display); font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
 .h2 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-2); }
 
 /* Page layout */
@@ -167,8 +167,8 @@ td.actions { width: 1%; padding-right: 8px; text-align: right; white-space: nowr
 
 /* Empty / notices */
 .notice { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); font-size: 13px; }
-.notice.attn { border-color: #5a4c26; background: var(--attn-tint); color: var(--attention); }
-.notice.err { border-color: #5a2a36; background: var(--accent-tint); color: var(--accent-text); }
+.notice.attn { border-color: #514830; background: var(--attn-tint); color: var(--attention); }
+.notice.err { border-color: #562f39; background: var(--accent-tint); color: var(--accent-text); }
 .empty { padding: 28px 16px; text-align: center; color: var(--text-2); }
 
 /* Floating layers from Bits UI (portalled to <body>, so styled globally). */

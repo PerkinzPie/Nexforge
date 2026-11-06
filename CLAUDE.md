@@ -5,7 +5,7 @@ A fast, trustworthy World of Warcraft addon manager by Nexabyte Ltd. Browse, ins
 ## Stack
 
 - **Core:** Rust crate `nexforge-core` (no UI deps). Tokio, reqwest (rustls), serde, toml, rusqlite (bundled), zip, sha2, keyring. Edition 2021, MSRV = current stable.
-- **App:** Tauri 2 shell `nexforge-app` over the core. Svelte 5 + TypeScript + Vite frontend; plain CSS with design tokens in `app/src/app.css` (Radix Colors Slate). Bits UI (headless) for menus, dialogs, tooltips and tabs; Lucide icons in `Icon.svelte`. No styled component kit.
+- **App:** Tauri 2 shell `nexforge-app` over the core. Svelte 5 + TypeScript + Vite frontend; plain CSS with design tokens in `app/src/app.css` (brand navy `#151b24`, coral `#d74653`; Space Grotesk for the wordmark and headings, Manrope for text). Bits UI (headless) for menus, dialogs, tooltips and tabs; Lucide icons in `Icon.svelte`. No styled component kit.
 - **CLI:** `nexforge-cli` over the core, for testing and scripting. Build this before the GUI.
 - **Target:** Windows first (the author's machine). Keep the core cross-platform.
 
@@ -38,7 +38,7 @@ nexforge/
     nexforge-core/
     nexforge-cli/
   app/                  # Tauri 2 shell + Svelte UI
-  assets/               # app icon: nexforge-icon.svg, 1024 PNG (source for `tauri icon`), hand-made .ico
+  assets/               # brand: icon PNGs for dark and light backgrounds (dark 1024 is the source for `tauri icon`), .ico, cropped README logos
   .github/workflows/     # CI on every push; release on v* tags
 ```
 

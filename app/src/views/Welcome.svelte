@@ -37,7 +37,7 @@
 
 <div class="page welcome">
   <div class="box">
-    <Logo width={64} />
+    <div class="lockup"><Logo width={64} /><span class="wm">Nexforge</span></div>
     <h1 class="h1">Your game clients</h1>
 
     {#if error}
@@ -82,6 +82,8 @@
 <style>
   .welcome { align-items: center; justify-content: center; }
   .box { width: 640px; max-width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+  .lockup { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .lockup .wm { font-size: 24px; line-height: 1; color: var(--text); }
   .list { width: 100%; }
   .row { display: flex; align-items: center; gap: 14px; }
   .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; margin-right: auto; }

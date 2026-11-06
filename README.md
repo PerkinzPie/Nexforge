@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/nexforge-logo-dark.png">
+  <img src="assets/nexforge-logo-light.png" width="120" alt="">
+</picture>
+
 # Nexforge
 
 An addon manager for World of Warcraft: **WoW Forever**, **Classic Era** and **Anniversary**. It installs and updates addons from GitHub releases, WoWInterface and CurseForge.

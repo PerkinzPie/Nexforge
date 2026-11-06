@@ -61,7 +61,7 @@
   .logo { display: flex; padding: 4px; margin-bottom: 12px; border: 0; border-radius: var(--r-sm); background: none; cursor: pointer; }
   .item { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 40px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-3); cursor: pointer; }
   .item:hover { background: var(--surface); color: var(--text); }
-  .item.on { background: var(--accent-tint); color: var(--accent-text); box-shadow: inset 0 0 0 1px #5a2c33; }
+  .item.on { background: var(--accent-tint); color: var(--accent-text); box-shadow: inset 0 0 0 1px #552f39; }
   .item.new { color: var(--good); }
   .badge { position: absolute; top: 3px; right: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent-fill); color: var(--bg); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums; }
   .foot { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 6px; }

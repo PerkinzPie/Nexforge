@@ -57,7 +57,7 @@
   .count { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
   .stage { position: relative; flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; }
   .shot { width: 100%; height: 100%; border-radius: var(--r-md); overflow: hidden; }
-  .nav { position: absolute; top: 50%; z-index: 1; display: flex; align-items: center; justify-content: center; width: 40px; height: 56px; margin-top: -28px; border: 1px solid var(--border); border-radius: var(--r-md); background: rgba(24, 25, 27, 0.8); color: var(--text); cursor: pointer; }
+  .nav { position: absolute; top: 50%; z-index: 1; display: flex; align-items: center; justify-content: center; width: 40px; height: 56px; margin-top: -28px; border: 1px solid var(--border); border-radius: var(--r-md); background: rgba(21, 27, 36, 0.8); color: var(--text); cursor: pointer; }
   .nav:hover { background: var(--raised); }
   .prev { left: 0; }
   .next { right: 0; }
