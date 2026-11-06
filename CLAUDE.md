@@ -27,6 +27,7 @@ A fast, trustworthy World of Warcraft addon manager by Nexabyte Ltd. Browse, ins
 - Flavour is an enum; every source maps its own labels to it in one place.
 - Errors: `thiserror` in the core, surfaced to the UI as plain sentences a player can act on.
 - Commit messages: imperative, one line, body only when needed.
+- User-facing text (UI, README, release notes, change files): say what the player can do or what happened, plainly and briefly. Never explain how it works underneath or describe the code; that belongs in comments. No slogans or taglines.
 
 ## Repo layout
 
