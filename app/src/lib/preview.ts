@@ -99,7 +99,7 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
         { installation: s.installations[1], addons: 46, managed: 12 },
       ];
     }
-    case "check": await wait(600); return { ...check, checkedAt: new Date().toISOString() };
+    case "check": await wait(600); return { ...check, results: check.results.map((x) => ({ ...x })), checkedAt: new Date().toISOString() };
     case "recent": return recent;
     case "reconcile_now": return 0;
     case "rollback": {

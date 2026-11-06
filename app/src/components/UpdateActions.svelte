@@ -17,6 +17,11 @@
     </button>
   {/snippet}
 </Tip>
-<button type="button" class="btn" class:btn-primary={updatable.length > 0} onclick={() => store.updateAll()} disabled={!updatable.length}>
+<!-- Fixed width: the count changing ("Update all 3" → 2) never moves Refresh. -->
+<button type="button" class="btn all" class:btn-primary={updatable.length > 0} onclick={() => store.updateAll()} disabled={!updatable.length}>
   <Icon name="download" size={15} stroke={2.4} />{updatable.length ? `Update all ${updatable.length}` : "Update all"}
 </button>
+
+<style>
+  .all { width: 136px; font-variant-numeric: tabular-nums; }
+</style>

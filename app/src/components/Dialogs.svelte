@@ -132,7 +132,7 @@
 
 <style>
   :global(.scrim) { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.6); }
-  :global(.dlg-layer) { position: fixed; z-index: 51; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 520px; max-width: calc(100% - 48px); outline: none; }
+  :global(.dlg-layer) { position: fixed; z-index: 51; left: 50%; top: 22vh; transform: translateX(-50%); width: 520px; max-width: calc(100% - 48px); outline: none; }
   .dlg { width: 100%; max-width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); }
   .head { display: flex; align-items: center; gap: 12px; }
   :global(.dlg-title) { margin: 0 auto 0 0; font-size: 15px; font-weight: 700; }

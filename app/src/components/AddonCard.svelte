@@ -63,7 +63,8 @@
   .nl { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .m { display: flex; gap: 12px; font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; }
   .m > span { display: inline-flex; align-items: center; gap: 4px; }
-  .a { flex: 0 0 auto; align-self: flex-start; display: flex; }
+  /* Fixed width: install icon, percentage and tick swap without moving the text. */
+  .a { flex: 0 0 auto; width: 44px; align-self: flex-start; display: flex; justify-content: flex-end; }
   .get { color: var(--accent-text); }
   .get:hover { background: var(--accent-tint); color: var(--accent-text); }
   .done { display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; color: var(--good); }

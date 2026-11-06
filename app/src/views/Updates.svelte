@@ -11,7 +11,9 @@
   import { shortDate, size, when } from "../lib/format";
   import { store } from "../lib/store.svelte";
 
-  const cards = $derived(store.addons.filter((a) => store.status(a.id)?.kind === "available" || (store.busy[a.id] === "Updating")));
+  // Cards that finished updating stay (marked Updated) until the next check,
+  // so the list doesn't close up under the pointer.
+  const cards = $derived(store.addons.filter((a) => store.status(a.id)?.kind === "available" || store.busy[a.id] === "Updating" || a.id in store.updatedNow));
 
   // Opening Updates before anything was checked (launch checks off, or a
   // different client) checks once for this client; it only lists updates.
@@ -62,14 +64,17 @@
           <button type="button" class="meta" data-row-open aria-label="Details for {a.name}">
             <span class="n">{a.name}</span>
             <span class="line">
-              <span class="num">{a.version} {#if r}<span class="dim">→</span> <strong>{r.version}</strong>{/if}</span>
+              <span class="num">{a.version} {#if r && !store.updatedNow[a.id]}<span class="dim">→</span> <strong>{r.version}</strong>{/if}</span>
               <SourceTag source={a.source} label={a.sourceLabel} />
               {#if r && (r.publishedAt || r.size)}<span class="dim small">{[r.publishedAt ? `Released ${shortDate(r.publishedAt)}` : "", size(r.size)].filter(Boolean).join(" · ")}</span>{/if}
 
             </span>
           </button>
-          {#if r && !busy}<button type="button" class="btn btn-quiet" onclick={() => store.skip(a, r.version)}>Skip {r.version}</button>{/if}
-          {#if r || busy}<ProgressButton label="Update" busy={busy ?? null} {pct} onclick={() => store.update(a.id)} />{/if}
+          {#if store.updatedNow[a.id] && !busy}<span class="ok done-st"><Icon name="check" size={14} stroke={2.6} />Updated</span>
+          {:else}
+            {#if r && !busy}<button type="button" class="btn btn-quiet" onclick={() => store.skip(a, r.version)}>Skip {r.version}</button>{/if}
+            {#if r || busy}<ProgressButton label="Update" busy={busy ?? null} {pct} onclick={() => store.update(a.id)} />{/if}
+          {/if}
         </div>
         {#if notes.length}
           <ul class="notes">{#each notes as n}<li>{n}</li>{/each}</ul>
@@ -133,6 +138,7 @@
   .open-card { cursor: pointer; }
   .skcards { display: flex; flex-direction: column; gap: 12px; }
   .quiet { font-size: 12px; color: var(--text-3); }
+  .done-st { width: 96px; justify-content: center; }
   .avail { font-size: 12px; font-weight: 600; color: var(--accent-text); }
   .stsk { width: 64px; height: 12px; }
   .skcard { flex-direction: row; align-items: center; }

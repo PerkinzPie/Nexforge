@@ -28,15 +28,18 @@
     <span class="txt">{text}</span>
   </span>
 {:else}
-  <button type="button" class="btn" class:btn-row={!ghost} class:btn-ghost={ghost} {disabled} {onclick}>{label}</button>
+  <button type="button" class="btn pbtn" class:btn-row={!ghost} class:btn-ghost={ghost} {disabled} {onclick}>{label}</button>
 {/if}
 
 <style>
-  .pb { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 88px; height: 28px; padding: 0 12px; border-radius: var(--r-sm); background: var(--accent-tint); overflow: hidden; }
+  /* The button and its progress bar are the same fixed width, so nothing
+     around them moves as an install runs ("Update" → 34% → Unpacking…). */
+  .pbtn { width: 96px; }
+  .pb { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 96px; height: 28px; padding: 0 6px; border-radius: var(--r-sm); background: var(--accent-tint); overflow: hidden; }
   .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent-fill); transition: width 0.25s linear; }
   /* Size unknown, or unpacking: a solid block slides across (no gradients). */
   .fill.indeterminate { width: 35% !important; animation: slide-block 1.1s ease-in-out infinite; }
-  .txt { position: relative; font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .txt { position: relative; white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
   @keyframes slide-block { from { left: -35%; } to { left: 100%; } }
   @media (prefers-reduced-motion: reduce) { .fill.indeterminate { animation: none; width: 100% !important; left: 0; opacity: 0.55; } }
 </style>

@@ -170,6 +170,7 @@ class Store {
       if (s.current !== this.snap?.current) {
         this.tab = "all";
         this.statuses = {};
+        this.updatedNow = {};
         this.checkedAt = null;
         this.sourceErrors = [];
       }
@@ -221,6 +222,7 @@ class Store {
       const next: Record<string, AddonStatus> = {};
       for (const s of r.results) next[s.id] = s;
       this.statuses = next;
+      this.updatedNow = {};
       this.checkedAt = r.checkedAt;
       this.sourceErrors = r.sourceErrors;
     } catch (e) {
@@ -252,6 +254,9 @@ class Store {
     }
   }
 
+  /** id → version updated to since the last check; Updates keeps their cards in place. */
+  updatedNow = $state<Record<string, string>>({});
+
   async update(id: string) {
     const inst = this.current;
     const a = this.addons.find((x) => x.id === id);
@@ -261,9 +266,11 @@ class Store {
       r ? `Updated ${r.name} to ${r.version}.` : `${a.name} is up to date.`,
       (r) => (r ? () => this.rollback(id, a.name) : undefined),
     );
+    if (r) this.updatedNow[id] = r.version;
     if (r !== undefined) {
       const s = this.statuses[id];
-      if (s) this.statuses[id] = { ...s, kind: "up_to_date", release: null };
+      // Keep the release (its notes) so the Updates card keeps its size until the next check.
+      if (s) this.statuses[id] = { ...s, kind: "up_to_date" };
       await this.load();
     }
   }

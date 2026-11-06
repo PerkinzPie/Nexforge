@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Tabs } from "bits-ui";
+  import { untrack } from "svelte";
   import Icon from "../components/Icon.svelte";
   import NoBuild from "../components/NoBuild.svelte";
   import PageHead from "../components/PageHead.svelte";
@@ -30,13 +31,31 @@
     const list = store.addons
       .filter((a) => store.inTab(a, store.tab))
       .filter((a) => !q || a.name.toLowerCase().includes(q) || a.folders.some((f) => f.toLowerCase().includes(q)) || (a.author ?? "").toLowerCase().includes(q));
-    // Things to do first, then the rest by name.
-    const rank = (a: Addon) => {
-      if (a.id in store.busy) return 0;
-      const k = store.status(a.id)?.kind;
-      return k === "available" ? 1 : !a.managed || k === "no_build" || k === "failed" ? 2 : 3;
-    };
+    // Things to do first, then the rest by name, in the order of the last
+    // check: rows never jump while updates run.
+    const rank = (a: Addon) => ranks[a.id] ?? 3;
     return [...list].sort((x, y) => rank(x) - rank(y) || x.name.localeCompare(y.name));
+  });
+
+  // Ranks are taken when a check finishes or the list of addons changes, not
+  // as each update starts and ends.
+  let ranks = $state<Record<string, number>>({});
+  // Deriveds, so a fresh snapshot with the same client and addons (as after
+  // every update) does not count as a change.
+  const members = $derived(store.addons.map((a) => a.id).sort().join("|"));
+  const client = $derived(store.current);
+  $effect(() => {
+    void store.checkedAt;
+    void client;
+    void members;
+    untrack(() => {
+      const r: Record<string, number> = {};
+      for (const a of store.addons) {
+        const k = store.status(a.id)?.kind;
+        r[a.id] = k === "available" ? 1 : !a.managed || k === "no_build" || k === "failed" ? 2 : 3;
+      }
+      ranks = r;
+    });
   });
 
 </script>
@@ -82,6 +101,9 @@
     <Tabs.Content value={store.tab}>
     {#if shown.length}
       <table>
+        <!-- Fixed column widths: a status changing (Update → progress → Up to
+             date) never resizes the columns. -->
+        <colgroup><col /><col class="c-ver" /><col class="c-src" /><col class="c-st" /><col class="c-act" /></colgroup>
         <tbody>
           {#each shown as a (a.id)}
             {@const s = store.status(a.id)}
@@ -119,7 +141,7 @@
                 {:else if a.pinned}
                   <span class="pin"><Icon name="pin" size={14} stroke={2.2} />Pinned</span>
                 {:else if s?.kind === "available"}
-                  <button type="button" class="btn btn-row" onclick={() => store.update(a.id)}>Update</button>
+                  <ProgressButton label="Update" busy={null} onclick={() => store.update(a.id)} />
                 {:else if s?.kind === "no_build"}
                   <NoBuild text="No {flavour} build listed. It may not load in {flavour}." />
                 {:else if s?.kind === "failed" || s?.kind === "unavailable"}
@@ -156,14 +178,21 @@
   :global(.tablist) { display: flex; align-items: center; gap: 4px; }
   .tab { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border: 0; background: none; color: var(--text-2); font: 600 13px var(--sans); cursor: pointer; }
   .tab:hover { color: var(--text); }
-  .tab .n { font: 600 12px var(--display); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .tab .n { min-width: 2ch; font: 600 12px var(--display); color: var(--text-3); font-variant-numeric: tabular-nums; }
   .tab.on { color: var(--text); }
   .tab.on::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--text); }
   .tools { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-bottom: 4px; }
   table { margin: 0; }
   tbody tr:first-child td { border-top: 0; }
   .small { font-size: 11px; }
-  .who { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  table { table-layout: fixed; }
+  .c-ver { width: 200px; }
+  .c-src { width: 136px; }
+  .c-st { width: 124px; }
+  .c-act { width: 48px; }
+  .ver .num { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .names .n, .names .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .who { max-width: 100%; display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
   .open-row { cursor: pointer; }
   .open-row:hover td { background: var(--raised); }
   .quiet { font-size: 12px; color: var(--text-3); }

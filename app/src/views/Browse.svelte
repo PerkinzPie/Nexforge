@@ -153,8 +153,9 @@
   {/if}
 
   <div class="results narrow">
-    {#if query.trim() && shown.length && !(loading && stale)}
-      <span class="dim count">{shown.length} result{shown.length === 1 ? "" : "s"}</span>
+    <!-- The count's line is kept while results load, so they never jump. -->
+    {#if query.trim()}
+      <span class="dim count">{#if shown.length && !(loading && stale)}{shown.length} result{shown.length === 1 ? "" : "s"}{/if}</span>
     {/if}
     {#if !query.trim() && (source === "all" ? loading && stale : !topLoaded)}
       <section class="popular" aria-busy="true">
@@ -235,7 +236,7 @@
   .open-row:hover { background: var(--raised); }
   .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .results { display: flex; flex-direction: column; gap: 10px; }
-  .count { font-size: 12px; font-weight: 600; }
+  .count { min-height: 16px; line-height: 16px; font-size: 12px; font-weight: 600; }
   .body { display: flex; flex-direction: column; gap: 2px; flex: 1 1 300px; min-width: 0; }
   /* Two lines per row (name, summary), as HIG lists: details sit at the
      trailing edge, so every row is the same height whatever it holds. */
@@ -247,7 +248,7 @@
   .line { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
   .line > :global(*) { flex-shrink: 0; }
   .line .n, .line .small { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .act { flex: 0 0 auto; min-width: 88px; display: flex; justify-content: flex-end; }
+  .act { flex: 0 0 auto; width: 96px; display: flex; justify-content: flex-end; }
   .n { font-size: 13px; font-weight: 700; }
   .small { font-size: 12px; }
   .done { animation: pop 0.3s ease-out; }

@@ -231,7 +231,8 @@
   .who .h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .by { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; }
   .by .dim { display: inline-flex; align-items: center; gap: 5px; }
-  .acts { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  /* Fixed minimum: Update → progress → Installed never re-wraps the title. */
+  .acts { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex: 0 0 auto; min-width: 200px; }
   .shots { display: flex; gap: 10px; margin: 0; padding: 0 0 6px; list-style: none; overflow-x: auto; }
   .shot { display: block; flex: 0 0 auto; width: 224px; height: 126px; padding: 0; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); overflow: hidden; cursor: zoom-in; }
   .shot:hover { border-color: var(--text-3); }
