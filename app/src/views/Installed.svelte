@@ -18,11 +18,11 @@
 
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
 
-  // Counts are the filters: All · Updates · Can't update · Pinned.
+  // Counts are the filters: All · Updates · Issues (no source, needs key, no build, check failed) · Pinned.
   const tabs = $derived<{ id: InstalledTab; label: string; n: number | null; tone?: string }[]>([
     { id: "all", label: "All", n: store.addons.length },
     { id: "updates", label: "Updates", n: store.checkedAt ? store.updates.length : null, tone: "var(--accent-text)" },
-    { id: "attention", label: "Can't update", n: store.attentionCount, tone: "var(--attention)" },
+    { id: "attention", label: "Issues", n: store.attentionCount, tone: "var(--attention)" },
     { id: "pinned", label: "Pinned", n: store.pinnedCount },
   ]);
 
