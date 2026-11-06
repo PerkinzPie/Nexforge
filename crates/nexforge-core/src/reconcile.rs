@@ -28,7 +28,8 @@ pub fn scan(addons_dir: &Path, flavour: Flavour) -> Result<Scan> {
     let mut entries: Vec<_> = std::fs::read_dir(addons_dir)
         .ctx("read", addons_dir)?
         .flatten()
-        .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+        // Follows links: a folder shared from another client by a junction counts.
+        .filter(|e| e.path().is_dir())
         .collect();
     entries.sort_by_key(|e| e.file_name().to_ascii_lowercase());
     for e in entries {

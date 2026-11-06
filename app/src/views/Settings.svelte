@@ -89,8 +89,8 @@
         </label>
         <label class="frow field" for="keep-versions">
           <span class="t">Keep previous versions</span>
-          <input id="keep-versions" type="number" min="0" max="10" value={s.keepPreviousVersions}
-            onchange={(e) => save({ keepPreviousVersions: Math.max(0, Math.min(10, Number(e.currentTarget.value) || 0)) })} />
+          <input id="keep-versions" type="number" min="1" max="10" value={s.keepPreviousVersions}
+            onchange={(e) => save({ keepPreviousVersions: Math.max(1, Math.min(10, Number(e.currentTarget.value) || 1)) })} />
         </label>
         </div>
       </section>

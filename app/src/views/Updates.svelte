@@ -72,18 +72,24 @@
           </button>
           {#if store.updatedNow[a.id] && !busy}<span class="ok done-st"><Icon name="check" size={14} stroke={2.6} />Updated</span>
           {:else}
-            {#if r && !busy}<button type="button" class="btn btn-quiet" onclick={() => store.skip(a, r.version)}>Skip {r.version}</button>{/if}
+            {#if r}<button type="button" class="btn btn-quiet" disabled={!!busy} onclick={() => store.skip(a, r.version)}>Skip {r.version}</button>{/if}
             {#if r || busy}<ProgressButton label="Update" busy={busy ?? null} {pct} onclick={() => store.update(a.id)} />{/if}
           {/if}
         </div>
-        {#if notes.length}
-          <ul class="notes">{#each notes as n}<li>{n}</li>{/each}</ul>
-        {:else if r && !fetched[`${a.id}@${r.version}`]}
-          <div class="skels" aria-label="Loading release notes"><span class="skel" style:width="62%"></span><span class="skel" style:width="44%"></span></div>
-        {/if}
-        {#if a.website && (r?.hasMoreNotes || extra?.hasMore || !notes.length)}
-          <a href={a.website} class="more" onclick={(e) => { e.preventDefault(); api.openUrl(a.website!).catch((err) => store.say("err", err.message)); }}>Full release notes</a>
-        {/if}
+        <!-- One size whether notes are loading, short or long: the cards
+             below never move when they arrive. -->
+        <div class="nbody">
+          {#if notes.length}
+            <ul class="notes">{#each notes as n}<li>{n}</li>{/each}</ul>
+          {:else if r && !fetched[`${a.id}@${r.version}`]}
+            <div class="skels" aria-label="Loading release notes"><span class="skel" style:width="62%"></span><span class="skel" style:width="48%"></span><span class="skel" style:width="36%"></span></div>
+          {/if}
+        </div>
+        <div class="nmore">
+          {#if a.website && (r?.hasMoreNotes || extra?.hasMore || !notes.length)}
+            <a href={a.website} class="more" onclick={(e) => { e.preventDefault(); api.openUrl(a.website!).catch((err) => store.say("err", err.message)); }}>Full release notes</a>
+          {/if}
+        </div>
       </div>
     {:else}
       {#if store.checking && !store.checkedAt}
@@ -146,6 +152,9 @@
   .open-card:hover { background: var(--raised); }
   .skels { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 2px 18px; }
   .skels .skel { height: 12px; }
+  /* Room for three note lines and the link line, whatever arrives. */
+  .nbody { min-height: 60px; }
+  .nmore { min-height: 18px; margin-top: -6px; }
   .n { font-size: 15px; font-weight: 700; }
   .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .line strong { color: var(--text); font-weight: 600; }

@@ -278,3 +278,100 @@ async fn reconcile_update_rollback() {
         .unwrap_err();
     assert!(matches!(err, nexforge_core::Error::Pinned(_)));
 }
+
+fn github_entry(id: &str, name: &str, repo: &str, folder: &str) -> nexforge_core::AddonEntry {
+    nexforge_core::AddonEntry {
+        id: id.into(),
+        name: name.into(),
+        source: Some(SourceId::Github),
+        source_id: repo.into(),
+        installed_version: "v1".into(),
+        installed_at: None,
+        folders: vec![folder.into()],
+        pinned: false,
+        skipped_version: String::new(),
+        channel: nexforge_core::Channel::Stable,
+        author: None,
+        flavour_mismatch: false,
+        ids: Default::default(),
+    }
+}
+
+/// One repo failing marks only that addon, not the whole source.
+#[tokio::test]
+async fn one_failing_addon_does_not_hide_the_others() {
+    let tmp = tempfile::tempdir().unwrap();
+    let f = FixtureFetch::new();
+    f.route(
+        "https://api.github.com/repos/Questie/Questie/releases?per_page=10",
+        std::fs::read_to_string(fx("github/questie_releases.json")).unwrap(),
+    );
+    f.route_status(
+        "https://api.github.com/repos/gone/gone/releases?per_page=10",
+        500,
+    );
+    let mgr = Manager::with_fetch(
+        AppPaths::at(tmp.path().join("data")),
+        Config::default(),
+        Arc::new(f),
+        nexforge_core::SourceKeys::default(),
+    );
+    let mut state = AddonsFile::new(nexforge_core::Flavour::ClassicEra);
+    state.addons.push(github_entry(
+        "questie",
+        "Questie",
+        "Questie/Questie",
+        "Questie",
+    ));
+    state
+        .addons
+        .push(github_entry("gone", "Gone", "gone/gone", "Gone"));
+    let report = mgr.check(state.flavour, &state).await;
+    assert!(
+        matches!(report.status_of("questie"), Some(Status::Available(_))),
+        "{:?}",
+        report.status_of("questie")
+    );
+    assert!(
+        matches!(report.status_of("gone"), Some(Status::Failed(_))),
+        "{:?}",
+        report.status_of("gone")
+    );
+}
+
+/// Installing an addon already managed from another host says so instead
+/// of making a second entry that would fight over the same folders.
+#[tokio::test]
+async fn installing_from_a_second_host_is_refused() {
+    let tmp = tempfile::tempdir().unwrap();
+    let inst = setup_addons(tmp.path());
+    let mgr = Manager::with_fetch(
+        AppPaths::at(tmp.path().join("data")),
+        Config::default(),
+        Arc::new(FixtureFetch::new()),
+        nexforge_core::SourceKeys::default(),
+    );
+    let mut state = AddonsFile::new(inst.flavour);
+    let mut q = github_entry("questie", "Questie", "1234", "Questie");
+    q.source = Some(SourceId::Wowinterface);
+    q.ids.github = Some("Questie/Questie".into());
+    state.addons.push(q);
+    let err = mgr
+        .install(
+            &inst,
+            &mut state,
+            &inst.state_file(),
+            "github:questie/questie",
+            None,
+            nexforge_core::Channel::Stable,
+            false,
+            &|_, _| {},
+        )
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(err, nexforge_core::Error::AlreadyInstalled { .. }),
+        "{err}"
+    );
+    assert_eq!(state.addons.len(), 1);
+}

@@ -149,7 +149,9 @@ td.actions { width: 1%; padding-right: 8px; text-align: right; white-space: nowr
 .chip { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text-soft); font: 600 12px var(--sans); cursor: pointer; white-space: nowrap; }
 .chip:hover { background: var(--raised); }
 .chip.on { background: var(--text); border-color: var(--text); color: var(--bg); }
-.chip:disabled { opacity: 0.45; cursor: default; }
+.chip:disabled, .chip[aria-disabled="true"] { opacity: 0.45; cursor: default; }
+.chip[aria-disabled="true"]:hover { background: var(--surface); }
+.notice .grow { flex: 1; min-width: 0; }
 .desc { font-size: 12px; color: var(--text-soft); line-height: 1.35; }
 
 .sec { display: flex; flex-direction: column; gap: 8px; }
@@ -188,3 +190,4 @@ td.actions { width: 1%; padding-right: 8px; text-align: right; white-space: nowr
 /* Thin, dark scroll bars to match the surfaces. */
 :root { scrollbar-color: var(--raised-hover) transparent; }
 .shots, .strip { scrollbar-width: thin; }
+button.warn { border: 0; font-family: inherit; cursor: pointer; }

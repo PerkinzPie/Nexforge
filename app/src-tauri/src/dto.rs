@@ -24,7 +24,7 @@ impl From<&Installation> for InstallationDto {
         InstallationDto {
             id: i.id.clone(),
             flavour: i.flavour.as_str().into(),
-            label: i.flavour.label().into(),
+            label: i.label(),
             short: i.flavour.short_label().into(),
             path: i.path.display().to_string(),
             detected: i.addons_dir().is_dir(),
@@ -129,6 +129,12 @@ pub struct Snapshot {
     pub settings: SettingsDto,
     /// Sources usable right now (enabled, and keyed where needed).
     pub sources_on: Vec<String>,
+    /// `addons.toml` could not be read: why (the UI offers to start afresh).
+    pub state_error: Option<String>,
+    /// `config.toml` could not be read and was set aside here; defaults apply.
+    pub config_reset: Option<String>,
+    /// Folders an interrupted update or removal had moved aside, put back.
+    pub recovered: Vec<String>,
 }
 
 impl Snapshot {
@@ -147,6 +153,9 @@ impl Snapshot {
             last_run: None,
             settings,
             sources_on: vec![],
+            state_error: None,
+            config_reset: None,
+            recovered: vec![],
         }
     }
 }

@@ -11,7 +11,6 @@ use chrono::{DateTime, Utc};
 use futures_util::{stream, StreamExt};
 use regex::Regex;
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
@@ -381,7 +380,7 @@ impl Source for GitHub {
         ids: &[String],
         flavour: Flavour,
         channel: Channel,
-    ) -> Result<HashMap<String, Release>> {
+    ) -> Result<super::Latest> {
         let results: Vec<(String, Result<Vec<Release>>)> = stream::iter(ids.iter().cloned())
             .map(|id| async move {
                 let r = self.releases(&id, flavour).await;
@@ -390,16 +389,20 @@ impl Source for GitHub {
             .buffer_unordered(4)
             .collect()
             .await;
-        let mut out = HashMap::new();
+        let mut out = super::Latest::default();
         for (id, r) in results {
             match r {
                 Ok(rels) => {
                     if let Some(rel) = super::pick_release(&rels, flavour, channel) {
-                        out.insert(id, rel.clone());
+                        out.found.insert(id, rel.clone());
                     }
                 }
                 Err(e @ Error::RateLimited { .. }) => return Err(e),
-                Err(_) => {}
+                // One repo failing (renamed, timed out) is that addon's
+                // problem, not "no build for this flavour".
+                Err(e) => {
+                    out.failed.insert(id, e.to_string());
+                }
             }
         }
         Ok(out)

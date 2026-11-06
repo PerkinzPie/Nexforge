@@ -345,9 +345,11 @@ async fn wowinterface_details_and_batch() {
         )
         .await
         .unwrap();
-    assert_eq!(batch["22095"].version, "v12.1.2");
-    assert_eq!(batch["20509"].version, "v2.31.13");
-    assert!(!batch.contains_key("999999"));
+    assert_eq!(batch.found["22095"].version, "v12.1.2");
+    assert_eq!(batch.found["20509"].version, "v2.31.13");
+    // An id the host no longer lists is a failure, not "no build".
+    assert!(!batch.found.contains_key("999999"));
+    assert!(batch.failed["999999"].contains("no longer lists"));
 
     assert_eq!(
         wowi.resolve_url("https://www.wowinterface.com/downloads/info22095-BigWigs_Classic.html")

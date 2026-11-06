@@ -28,8 +28,52 @@ fn err(e: impl std::fmt::Display) -> String {
     e.to_string()
 }
 
+/// One HTTP client for the whole app (TLS setup is not free).
+fn shared_net(paths: &AppPaths) -> Res<std::sync::Arc<nexforge_core::net::Net>> {
+    static NET: std::sync::OnceLock<std::sync::Arc<nexforge_core::net::Net>> =
+        std::sync::OnceLock::new();
+    if let Some(n) = NET.get() {
+        return Ok(n.clone());
+    }
+    let n = std::sync::Arc::new(
+        nexforge_core::net::Net::new(Some(paths.network_log()), Some(paths.http_cache()))
+            .map_err(err)?,
+    );
+    Ok(NET.get_or_init(|| n).clone())
+}
+
+/// Keys from the credential store, read once and kept until they change.
+static KEYS: std::sync::Mutex<Option<nexforge_core::SourceKeys>> = std::sync::Mutex::new(None);
+
+fn source_keys() -> nexforge_core::SourceKeys {
+    let mut k = KEYS.lock().unwrap_or_else(|p| p.into_inner());
+    k.get_or_insert_with(nexforge_core::SourceKeys::from_credential_store)
+        .clone()
+}
+
+fn forget_keys() {
+    *KEYS.lock().unwrap_or_else(|p| p.into_inner()) = None;
+}
+
 fn manager() -> Res<Manager> {
-    Manager::open(AppPaths::discover().map_err(err)?).map_err(err)
+    let paths = AppPaths::discover().map_err(err)?;
+    let net = shared_net(&paths)?;
+    Manager::open_shared(paths, net, source_keys()).map_err(err)
+}
+
+/// The in-app write lock plus the cross-process lock on one installation, so
+/// neither another command here nor the CLI changes it at the same time.
+async fn write_lock<'a>(
+    writes: &'a Writes,
+    mgr: &Manager,
+    inst: &Installation,
+) -> Res<(
+    tokio::sync::MutexGuard<'a, ()>,
+    nexforge_core::paths::InstallLock,
+)> {
+    let w = writes.0.lock().await;
+    let l = mgr.paths.lock(&inst.id).map_err(err)?;
+    Ok((w, l))
 }
 
 /// Make sure config has the installations on this machine (first run).
@@ -97,7 +141,7 @@ async fn snapshot(installation_id: Option<String>, writes: State<'_, Writes>) ->
     // writes addons.toml; it never moves or deletes anything. On first run
     // the welcome screen does this for every client instead.
     if !first_run && !inst.state_file().exists() && inst.addons_dir().is_dir() {
-        let _w = writes.0.lock().await;
+        let _w = write_lock(&writes, &mgr, &inst).await?;
         if !inst.state_file().exists() {
             let r = reconcile(
                 &inst.addons_dir(),
@@ -110,8 +154,20 @@ async fn snapshot(installation_id: Option<String>, writes: State<'_, Writes>) ->
             adopted_now = true;
         }
     }
-    let state = load_state(&inst)?;
+    // An update or removal a crash interrupted is put back, if nothing is
+    // running now (the lock is free).
     let engine = mgr.engine();
+    let recovered = match mgr.paths.try_lock(&inst.id) {
+        Some(_l) => engine.recover(&inst),
+        None => vec![],
+    };
+    // A file that does not read never locks the player out: paint an empty
+    // list and say why; the UI offers to re-read AddOns (`reset_state`).
+    let (state, state_error) = match AddonsFile::load_or_new(&inst.state_file(), inst.flavour) {
+        Ok(s) => (s, None),
+        Err(e @ Error::BadStateFile { .. }) => (AddonsFile::new(inst.flavour), Some(e.to_string())),
+        Err(e) => return Err(err(e)),
+    };
     let mut last_run: Option<LastRun> = None;
     let addons: Vec<AddonDto> = state
         .addons
@@ -169,7 +225,31 @@ async fn snapshot(installation_id: Option<String>, writes: State<'_, Writes>) ->
             .iter()
             .map(|s| s.as_str().to_string())
             .collect(),
+        state_error,
+        config_reset: mgr.config_reset.as_ref().map(|p| p.display().to_string()),
+        recovered,
     })
+}
+
+/// `addons.toml` could not be read: set it aside (kept, renamed
+/// `addons.toml.broken-<time>`) and adopt the AddOns folder afresh.
+#[tauri::command]
+async fn reset_state(installation_id: String, writes: State<'_, Writes>) -> Res<String> {
+    let mgr = manager()?;
+    let inst = installation(&mgr, &installation_id)?;
+    let _w = write_lock(&writes, &mgr, &inst).await?;
+    let moved = nexforge_core::state::quarantine(&inst.state_file()).map_err(err)?;
+    if inst.addons_dir().is_dir() {
+        let r = reconcile(
+            &inst.addons_dir(),
+            inst.flavour,
+            &AddonsFile::new(inst.flavour),
+            &mgr.available_sources(),
+        )
+        .map_err(err)?;
+        r.file.save(&inst.state_file()).map_err(err)?;
+    }
+    Ok(moved.display().to_string())
 }
 
 /// First run: adopt every client's AddOns folder that has no addons.toml yet.
@@ -182,6 +262,7 @@ async fn adopt_all(writes: State<'_, Writes>) -> Res<Vec<AdoptedDto>> {
     let mut out = Vec::new();
     for c in &mgr.config.installations {
         let inst = Installation::from_config(c);
+        let _l = mgr.paths.lock(&inst.id).map_err(err)?;
         if !inst.addons_dir().is_dir() {
             out.push(AdoptedDto {
                 installation: InstallationDto::from(&inst),
@@ -224,7 +305,7 @@ async fn reconcile_now(installation_id: String, writes: State<'_, Writes>) -> Re
     if !inst.addons_dir().is_dir() {
         return Ok(0);
     }
-    let _w = writes.0.lock().await;
+    let _w = write_lock(&writes, &mgr, &inst).await?;
     let existing = load_state(&inst)?;
     let r = reconcile(
         &inst.addons_dir(),
@@ -311,7 +392,7 @@ async fn update(
 ) -> Res<Option<AddonDto>> {
     let mgr = manager()?;
     let inst = installation(&mgr, &installation_id)?;
-    let _w = writes.0.lock().await;
+    let _w = write_lock(&writes, &mgr, &inst).await?;
     let mut state = load_state(&inst)?;
     let cb = progress(&app, &id);
     let r = mgr
@@ -332,7 +413,7 @@ async fn install(
 ) -> Res<AddonDto> {
     let mgr = manager()?;
     let inst = installation(&mgr, &installation_id)?;
-    let _w = writes.0.lock().await;
+    let _w = write_lock(&writes, &mgr, &inst).await?;
     let mut state = load_state(&inst)?;
     let cb = progress(&app, adopt.as_deref().unwrap_or(&spec));
     let e = mgr
@@ -355,7 +436,7 @@ async fn install(
 async fn remove(installation_id: String, id: String, writes: State<'_, Writes>) -> Res<()> {
     let mgr = manager()?;
     let inst = installation(&mgr, &installation_id)?;
-    let _w = writes.0.lock().await;
+    let _w = write_lock(&writes, &mgr, &inst).await?;
     let mut state = load_state(&inst)?;
     let path = inst.state_file();
     let mut t = Target {
@@ -372,7 +453,7 @@ async fn remove(installation_id: String, id: String, writes: State<'_, Writes>) 
 async fn restore(installation_id: String, id: String, writes: State<'_, Writes>) -> Res<AddonDto> {
     let mgr = manager()?;
     let inst = installation(&mgr, &installation_id)?;
-    let _w = writes.0.lock().await;
+    let _w = write_lock(&writes, &mgr, &inst).await?;
     let mut state = load_state(&inst)?;
     let path = inst.state_file();
     let mut t = Target {
@@ -393,7 +474,7 @@ async fn set_pinned(
 ) -> Res<()> {
     let mgr = manager()?;
     let inst = installation(&mgr, &installation_id)?;
-    let _w = writes.0.lock().await;
+    let _w = write_lock(&writes, &mgr, &inst).await?;
     let mut state = load_state(&inst)?;
     state.require_mut(&id).map_err(err)?.pinned = pinned;
     state.save(&inst.state_file()).map_err(err)
@@ -408,7 +489,7 @@ async fn skip(
 ) -> Res<()> {
     let mgr = manager()?;
     let inst = installation(&mgr, &installation_id)?;
-    let _w = writes.0.lock().await;
+    let _w = write_lock(&writes, &mgr, &inst).await?;
     let mut state = load_state(&inst)?;
     state.require_mut(&id).map_err(err)?.skipped_version = version;
     state.save(&inst.state_file()).map_err(err)
@@ -423,7 +504,7 @@ async fn rollback(
 ) -> Res<RollbackDto> {
     let mgr = manager()?;
     let inst = installation(&mgr, &installation_id)?;
-    let _w = writes.0.lock().await;
+    let _w = write_lock(&writes, &mgr, &inst).await?;
     let mut state = load_state(&inst)?;
     let path = inst.state_file();
     let mut t = Target {
@@ -635,12 +716,11 @@ async fn image(url: String, reason: Option<String>) -> Res<String> {
     use base64::Engine as _;
     // Images need no keys or config: skip the credential store reads.
     let paths = AppPaths::discover().map_err(err)?;
-    let net = nexforge_core::net::Net::new(Some(paths.network_log()), Some(paths.http_cache()))
-        .map_err(err)?;
+    let net = shared_net(&paths)?;
     let mgr = Manager::with_fetch(
         paths,
         nexforge_core::state::Config::default(),
-        std::sync::Arc::new(net),
+        net,
         nexforge_core::SourceKeys::default(),
     );
     let img = mgr
@@ -804,7 +884,8 @@ fn save_settings(s: SettingsInput) -> Res<SettingsDto> {
     let c = &mut mgr.config;
     c.check_on_launch = s.check_on_launch;
     c.auto_apply = s.auto_apply;
-    c.keep_previous_versions = s.keep_previous_versions.min(20);
+    // At least one previous version, or rollback and Undo have nothing.
+    c.keep_previous_versions = s.keep_previous_versions.clamp(1, 20);
     c.self_update_check = s.self_update_check;
     c.sources.github = s.github;
     c.sources.wowinterface = s.wowinterface;
@@ -824,6 +905,7 @@ fn set_key(name: String, value: String) -> Res<SettingsDto> {
         return Err("Paste a key first.".into());
     }
     keys::set(&name, &value).map_err(err)?;
+    forget_keys();
     let mut mgr = manager()?;
     if name == "curseforge" {
         mgr.config.sources.curseforge = true;
@@ -835,6 +917,7 @@ fn set_key(name: String, value: String) -> Res<SettingsDto> {
 #[tauri::command]
 fn clear_key(name: String) -> Res<SettingsDto> {
     keys::delete(&name).map_err(err)?;
+    forget_keys();
     let mut mgr = manager()?;
     if name == "curseforge" {
         mgr.config.sources.curseforge = false;
@@ -915,12 +998,12 @@ async fn add_installation(app: AppHandle, replace: Option<String>) -> Res<Option
         .or_else(|_| Installation::from_addons_dir(&path, None))
         .map_err(err)?;
     let mut mgr = manager()?;
-    let cfg = &mut mgr.config.installations;
-    if let Some(old) = replace {
-        cfg.retain(|c| c.id != old);
-    }
-    cfg.retain(|c| c.id != inst.id);
-    cfg.push(inst.to_config());
+    let inst = nexforge_core::installations::add_to_config(
+        &mut mgr.config.installations,
+        inst,
+        replace.as_deref(),
+    )
+    .map_err(err)?;
     mgr.save_config().map_err(err)?;
     Ok(Some(InstallationDto::from(&inst)))
 }
@@ -931,8 +1014,18 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(Writes::default())
+        .setup(|_| {
+            // Tidy the data folder off the UI thread (log rotation, old caches).
+            std::thread::spawn(|| {
+                if let Ok(p) = AppPaths::discover() {
+                    p.housekeeping();
+                }
+            });
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             snapshot,
+            reset_state,
             adopt_all,
             reconcile_now,
             check,

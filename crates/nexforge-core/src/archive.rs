@@ -33,6 +33,55 @@ pub fn md5_file(path: &Path) -> Result<String> {
     digest::<Md5>(path)
 }
 
+/// Most an archive may unpack to (a zip bomb stops here, not on the disk).
+pub const MAX_EXTRACT_BYTES: u64 = 1024 * 1024 * 1024;
+
+/// Is `p` a symbolic link or junction (a folder shared from elsewhere)?
+pub fn is_link(p: &Path) -> bool {
+    std::fs::symlink_metadata(p)
+        .map(|m| m.file_type().is_symlink())
+        .unwrap_or(false)
+}
+
+/// A cheap fingerprint of folders on disk (file count, total size, newest
+/// change): equal fingerprints mean nothing was edited in between.
+pub fn fingerprint(base: &Path, folders: &[String]) -> String {
+    let (mut files, mut bytes, mut newest) = (0u64, 0u64, 0u128);
+    let mut stack: Vec<PathBuf> = folders.iter().map(|f| base.join(f)).collect();
+    while let Some(dir) = stack.pop() {
+        let Ok(rd) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for e in rd.flatten() {
+            let Ok(m) = e.metadata() else { continue };
+            if m.is_dir() {
+                stack.push(e.path());
+            } else {
+                files += 1;
+                bytes += m.len();
+                if let Ok(t) = m.modified().and_then(|t| {
+                    t.duration_since(std::time::UNIX_EPOCH)
+                        .map_err(std::io::Error::other)
+                }) {
+                    newest = newest.max(t.as_nanos());
+                }
+            }
+        }
+    }
+    format!("{files}:{bytes}:{newest}")
+}
+
+/// The parts of an archive path, or `None` if any part is `.`, `..`, a
+/// root or a drive (only plain names are allowed).
+fn plain_parts(path: &Path) -> Option<Vec<String>> {
+    path.components()
+        .map(|c| match c {
+            Component::Normal(s) => Some(s.to_string_lossy().to_string()),
+            _ => None,
+        })
+        .collect()
+}
+
 /// Top-level folders in an addon zip. Requires at least one `Folder/*.toc`.
 pub fn inspect(zip_path: &Path) -> Result<Vec<String>> {
     let file = File::open(zip_path).ctx("open", zip_path)?;
@@ -50,20 +99,31 @@ pub fn inspect(zip_path: &Path) -> Result<Vec<String>> {
                 entry.name()
             )));
         };
-        let parts: Vec<String> = path
-            .components()
-            .filter_map(|c| match c {
-                Component::Normal(s) => Some(s.to_string_lossy().to_string()),
-                _ => None,
-            })
-            .collect();
+        let Some(parts) = plain_parts(&path) else {
+            return Err(Error::BadArchive(format!(
+                "it contains an unsafe path ({})",
+                entry.name()
+            )));
+        };
         let Some(top) = parts.first() else { continue };
         if top == "__MACOSX" || (parts.len() == 1 && !entry.is_dir()) {
             // Mac resource forks and loose top-level files are not addons.
             continue;
         }
-        if !folders.iter().any(|f| f == top) {
-            folders.push(top.clone());
+        if !crate::state::valid_folder_name(top) {
+            return Err(Error::BadArchive(format!(
+                "it has an unusable folder name ({top})"
+            )));
+        }
+        match folders.iter().find(|f| f.eq_ignore_ascii_case(top)) {
+            // Windows folders ignore case: Foo and foo would be one folder.
+            Some(f) if f != top => {
+                return Err(Error::BadArchive(format!(
+                    "it has folders whose names differ only by case ({f}, {top})"
+                )))
+            }
+            Some(_) => {}
+            None => folders.push(top.clone()),
         }
         if parts.len() == 2 && parts[1].to_ascii_lowercase().ends_with(".toc") {
             has_toc = true;
@@ -83,6 +143,7 @@ pub fn extract(zip_path: &Path, dest: &Path, folders: &[String]) -> Result<()> {
     let file = File::open(zip_path).ctx("open", zip_path)?;
     let mut zip = zip::ZipArchive::new(file).map_err(|e| Error::BadArchive(e.to_string()))?;
     std::fs::create_dir_all(dest).ctx("create", dest)?;
+    let mut written: u64 = 0;
     for i in 0..zip.len() {
         let mut entry = zip
             .by_index(i)
@@ -90,6 +151,9 @@ pub fn extract(zip_path: &Path, dest: &Path, folders: &[String]) -> Result<()> {
         let Some(rel) = entry.enclosed_name() else {
             return Err(Error::BadArchive(format!("unsafe path {}", entry.name())));
         };
+        if plain_parts(&rel).is_none() {
+            return Err(Error::BadArchive(format!("unsafe path {}", entry.name())));
+        }
         let top = rel
             .components()
             .next()
@@ -106,7 +170,15 @@ pub fn extract(zip_path: &Path, dest: &Path, folders: &[String]) -> Result<()> {
             std::fs::create_dir_all(p).ctx("create", p)?;
         }
         let mut f = File::create(&out).ctx("create", &out)?;
-        std::io::copy(&mut entry, &mut f).ctx("write", &out)?;
+        // Count real bytes, not the size the archive claims.
+        let left = MAX_EXTRACT_BYTES.saturating_sub(written);
+        let n = std::io::copy(&mut (&mut entry).take(left + 1), &mut f).ctx("write", &out)?;
+        written += n;
+        if written > MAX_EXTRACT_BYTES {
+            return Err(Error::BadArchive(
+                "it unpacks to more than 1 GB, far more than any addon".into(),
+            ));
+        }
     }
     Ok(())
 }
@@ -257,6 +329,17 @@ pub(crate) mod tests {
         make_zip(&z, &[("../evil/Foo.toc", "")]);
         assert!(matches!(inspect(&z), Err(Error::BadArchive(_))));
         std::fs::write(&z, b"not a zip").unwrap();
+        assert!(matches!(inspect(&z), Err(Error::BadArchive(_))));
+    }
+
+    #[test]
+    fn rejects_dot_parts_and_case_clashes() {
+        let t = tempfile::tempdir().unwrap();
+        let z = t.path().join("a.zip");
+        make_zip(&z, &[("Foo/Foo.toc", ""), ("Foo/../Bar/x.lua", "")]);
+        assert!(matches!(inspect(&z), Err(Error::BadArchive(_))));
+        // On Windows these are one folder: unpacking would mix two addons.
+        make_zip(&z, &[("Foo/Foo.toc", ""), ("foo/x.lua", "")]);
         assert!(matches!(inspect(&z), Err(Error::BadArchive(_))));
     }
 }

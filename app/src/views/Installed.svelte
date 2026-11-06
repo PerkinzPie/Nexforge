@@ -3,6 +3,7 @@
   import { untrack } from "svelte";
   import Icon from "../components/Icon.svelte";
   import NoBuild from "../components/NoBuild.svelte";
+  import Tip from "../components/Tip.svelte";
   import PageHead from "../components/PageHead.svelte";
   import UpdateActions from "../components/UpdateActions.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
@@ -70,6 +71,14 @@
     </div>
   {:else if store.snap && !store.snap.addonsDirExists}
     <div class="notice attn"><Icon name="warn" size={16} /><span>No AddOns folder yet. Start the game once.</span></div>
+  {/if}
+
+  {#if store.snap?.stateError}
+    <div class="notice err">
+      <Icon name="warn" size={16} />
+      <span class="grow">{store.snap.stateError}</span>
+      <button type="button" class="btn btn-sm" onclick={() => store.resetState()}>Re-read AddOns</button>
+    </div>
   {/if}
 
   {#each store.sourceErrors as e (e.source)}
@@ -145,7 +154,11 @@
                 {:else if s?.kind === "no_build"}
                   <NoBuild text="No {flavour} build listed. It may not load in {flavour}." />
                 {:else if s?.kind === "failed" || s?.kind === "unavailable"}
-                  <span class="warn" title={s.message ?? ""}><Icon name="warn" size={12} stroke={2.4} />{s.kind === "failed" ? "Check failed" : "Needs key"}</span>
+                  <Tip text={s.message}>
+                    {#snippet children({ props })}
+                      <button {...props} type="button" class="warn" data-row-open><Icon name="warn" size={12} stroke={2.4} />{s.kind === "failed" ? "Check failed" : "Needs key"}</button>
+                    {/snippet}
+                  </Tip>
                 {:else if s?.kind === "up_to_date" || s?.kind === "skipped"}
                   <span class="quiet">Up to date</span>
                 {:else if a.flavourMismatch}

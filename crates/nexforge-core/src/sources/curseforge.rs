@@ -278,8 +278,13 @@ fn check_id(id: &str) -> Result<u64> {
 /// is 1.6.6); the whole name, minus ".zip", when neither holds a number.
 fn version_of(display_name: &str, file_name: &str) -> String {
     static RE: OnceLock<Regex> = OnceLock::new();
-    let re = RE
-        .get_or_init(|| Regex::new(r"\d+(?:\.\d+)+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?").unwrap());
+    static NOTES: OnceLock<Regex> = OnceLock::new();
+    // The addon's own number, with a pre-release tag if it has one.
+    let re = RE.get_or_init(|| {
+        Regex::new(r"(?i)\d+(?:\.\d+)+(?:-(?:alpha|beta|rc|pre|dev)[0-9a-z.]*)?").unwrap()
+    });
+    // Bracketed parts usually name the game version: "Foo 2.1 (1.60.1)".
+    let notes = NOTES.get_or_init(|| Regex::new(r"\([^)]*\)|\[[^\]]*\]").unwrap());
     let strip = |s: &str| {
         let s = s.trim();
         s.strip_suffix(".zip")
@@ -290,7 +295,10 @@ fn version_of(display_name: &str, file_name: &str) -> String {
     };
     let (d, f) = (strip(display_name), strip(file_name));
     for name in [&d, &f] {
-        if let Some(m) = re.find_iter(name).last() {
+        // The first number, not the last: a game version tends to follow
+        // the addon's ("Foo-2.1-for-1.15.7"), and reading it instead would
+        // hide every update.
+        if let Some(m) = re.find(&notes.replace_all(name, " ")) {
             return m.as_str().to_string();
         }
     }
@@ -568,10 +576,20 @@ impl Source for CurseForge {
         ids: &[String],
         flavour: Flavour,
         channel: Channel,
-    ) -> Result<HashMap<String, Release>> {
-        let nums: Vec<u64> = ids.iter().filter_map(|i| i.trim().parse().ok()).collect();
+    ) -> Result<super::Latest> {
+        let mut out = super::Latest::default();
+        let mut nums: Vec<u64> = Vec::new();
+        for id in ids {
+            match id.trim().parse() {
+                Ok(n) => nums.push(n),
+                Err(_) => {
+                    out.failed
+                        .insert(id.clone(), format!("{id} is not a CurseForge Project ID."));
+                }
+            }
+        }
         if nums.is_empty() {
-            return Ok(HashMap::new());
+            return Ok(out);
         }
         let body = serde_json::json!({ "modIds": nums, "filterPcOnly": true }).to_string();
         let text = self
@@ -587,7 +605,15 @@ impl Source for CurseForge {
             .map_err(bad)?
             .data;
         let want = game_version_type(flavour);
-        let mut out = HashMap::new();
+        // Asked for but not returned: deleted or hidden on CurseForge.
+        for n in &nums {
+            if !mods.iter().any(|m| m.id == *n) {
+                out.failed.insert(
+                    n.to_string(),
+                    "CurseForge no longer lists this addon.".into(),
+                );
+            }
+        }
         for m in mods {
             let from_files = m
                 .latest_files
@@ -618,7 +644,7 @@ impl Source for CurseForge {
                     })
             });
             if let Some(r) = release {
-                out.insert(m.id.to_string(), r);
+                out.found.insert(m.id.to_string(), r);
             }
         }
         Ok(out)
@@ -652,6 +678,14 @@ mod tests {
         );
         assert_eq!(version_of("DungeonJournalTBC 1.5.5.zip", ""), "1.5.5");
         assert_eq!(version_of("Addon 2.0.1-beta.2", ""), "2.0.1-beta.2");
+        // A game version after the addon's own must not be read instead.
+        assert_eq!(version_of("Foo 2.1 (1.60.1)", ""), "2.1");
+        assert_eq!(version_of("Foo-2.1-for-1.15.7", ""), "2.1");
+        assert_eq!(version_of("Foo [1.15.7] 3.0.2", ""), "3.0.2");
+        assert!(crate::version::is_newer(
+            &version_of("Foo 2.2 (1.60.1)", ""),
+            &version_of("Foo 2.1 (1.60.1)", "")
+        ));
         assert_eq!(
             version_of("DungeonJournalClassicEra.zip", ""),
             "DungeonJournalClassicEra"

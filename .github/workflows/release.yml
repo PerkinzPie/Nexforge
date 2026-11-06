@@ -13,17 +13,31 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
+      # A tag that disagrees with the app's own version would ship an app
+      # that reports the old number, and its update check would nag forever.
+      - name: Check the tag matches the app version
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          cargo_v=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
+          tauri_v=$(node -p "require('./app/src-tauri/tauri.conf.json').version")
+          if [ "$tag" != "$cargo_v" ] || [ "$tag" != "$tauri_v" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match Cargo.toml ($cargo_v) and tauri.conf.json ($tauri_v)."
+            exit 1
+          fi
       - run: pnpm install --frozen-lockfile
         working-directory: app
       - run: cargo test -p nexforge-core
@@ -34,5 +48,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # A checksum next to the installer, so a download can be checked.
+          (cd target/release/bundle/msi && sha256sum *.msi > SHA256SUMS)
           gh release create "$GITHUB_REF_NAME" target/release/bundle/msi/*.msi \
+            target/release/bundle/msi/SHA256SUMS \
             --title "Nexforge ${GITHUB_REF_NAME#v}" --generate-notes

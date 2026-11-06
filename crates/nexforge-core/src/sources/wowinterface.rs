@@ -272,20 +272,26 @@ impl Source for WowInterface {
         ids: &[String],
         flavour: Flavour,
         _channel: Channel,
-    ) -> Result<HashMap<String, Release>> {
+    ) -> Result<super::Latest> {
         let list = self.filelist().await?;
         let by_id: HashMap<String, &Value> = list
             .iter()
             .filter_map(|e| Some((s(e, "UID")?, e)))
             .collect();
-        let mut out = HashMap::new();
+        let mut out = super::Latest::default();
         for id in ids {
-            let Some(e) = by_id.get(id) else { continue };
+            let Some(e) = by_id.get(id) else {
+                out.failed.insert(
+                    id.clone(),
+                    format!("WoWInterface no longer lists this addon (id {id})."),
+                );
+                continue;
+            };
             let (flavours, _) = compat(e);
             if !flavours.is_empty() && !flavours.contains(&flavour) {
                 continue;
             }
-            out.insert(
+            out.found.insert(
                 id.clone(),
                 Release {
                     version: s(e, "UIVersion").unwrap_or_default(),

@@ -55,8 +55,15 @@ pub enum Error {
     #[error("The folder {folder} belongs to {owner}. Remove that addon first, or install this one somewhere else.")]
     FolderOwned { folder: String, owner: String },
 
-    #[error("AddOns already has a folder called {0} that Nexforge does not manage. Run `nexforge reconcile` so it can be adopted first.")]
+    #[error("AddOns already has a folder called {0} that Nexforge doesn't manage yet. Refresh to pick it up, then choose Identify source on it.")]
     FolderUnmanaged(String),
+
+    #[error("{name} is already installed from {from}. To get it from {to} instead, choose Change source on it.")]
+    AlreadyInstalled {
+        name: String,
+        from: String,
+        to: String,
+    },
 
     #[error("{0} is pinned. Unpin it before updating.")]
     Pinned(String),

@@ -113,12 +113,17 @@ impl AddonsFile {
         }
     }
 
-    /// Load, or start empty if the file does not exist yet.
+    /// Load, or start empty if the file does not exist yet. Folder names
+    /// that could reach outside AddOns (empty, `.`, `..`, or with a path
+    /// separator) are dropped, so nothing can ever act on them.
     pub fn load_or_new(path: &Path, flavour: Flavour) -> Result<Self> {
         if !path.exists() {
             return Ok(Self::new(flavour));
         }
-        let file: AddonsFile = read_toml(path)?;
+        let mut file: AddonsFile = read_toml(path)?;
+        for a in &mut file.addons {
+            a.folders.retain(|f| valid_folder_name(f));
+        }
         if file.schema > SCHEMA {
             return Err(Error::BadStateFile {
                 path: path.into(),
@@ -278,16 +283,58 @@ impl Default for Config {
 
 impl Config {
     pub fn load_or_default(path: &Path) -> Result<Config> {
-        if path.exists() {
-            read_toml(path)
-        } else {
-            Ok(Config::default())
+        Self::load_or_reset(path).map(|(c, _)| c)
+    }
+
+    /// Load settings. A file that does not parse is set aside (see
+    /// [`quarantine`]) and defaults are used, so one bad edit never locks the
+    /// player out; the second value says where the old file went.
+    pub fn load_or_reset(path: &Path) -> Result<(Config, Option<PathBuf>)> {
+        if !path.exists() {
+            return Ok((Config::default(), None));
+        }
+        match read_toml::<Config>(path) {
+            Ok(mut c) => {
+                // At least one previous version, or rollback has nothing.
+                c.keep_previous_versions = c.keep_previous_versions.clamp(1, 20);
+                Ok((c, None))
+            }
+            Err(Error::BadStateFile { .. }) => {
+                let moved = quarantine(path)?;
+                Ok((Config::default(), Some(moved)))
+            }
+            Err(e) => Err(e),
         }
     }
 
     pub fn save(&self, path: &Path) -> Result<()> {
         write_toml(path, self, "# Nexforge settings.\n\n")
     }
+}
+
+/// Is `f` a single folder name directly inside AddOns? Rejects anything
+/// that could name AddOns itself, its parent, or a path elsewhere.
+pub fn valid_folder_name(f: &str) -> bool {
+    let t = f.trim();
+    !t.is_empty()
+        && t == f
+        && f != "."
+        && f != ".."
+        && !f.contains(['/', '\\', ':'])
+        && !f.chars().any(char::is_control)
+}
+
+/// Move a state file that cannot be read out of the way
+/// (`addons.toml.broken-20261106-091500`), keeping it for the player.
+pub fn quarantine(path: &Path) -> Result<PathBuf> {
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "state".into());
+    let stamp = Utc::now().format("%Y%m%d-%H%M%S");
+    let to = path.with_file_name(format!("{name}.broken-{stamp}"));
+    std::fs::rename(path, &to).ctx("set aside", path)?;
+    Ok(to)
 }
 
 fn read_toml<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {
@@ -380,5 +427,48 @@ channel = "stable"
         });
         assert_eq!(f.unique_id("Foo"), "foo-2");
         assert_eq!(f.owner_of("FOO").unwrap().id, "foo");
+    }
+
+    #[test]
+    fn folder_names_that_leave_addons_are_dropped() {
+        for bad in [
+            "", ".", "..", "../WTF", "a/b", "a\\b", "C:", " Foo", "Foo ", "a\tb",
+        ] {
+            assert!(!valid_folder_name(bad), "{bad:?}");
+        }
+        assert!(valid_folder_name("Foo_Extra"));
+        let dir = tempfile::tempdir().unwrap();
+        let p = dir.path().join("addons.toml");
+        std::fs::write(
+            &p,
+            "schema = 1\nflavour = \"forever\"\n[[addon]]\nid = \"foo\"\nname = \"Foo\"\nfolders = [\"Foo\", \"..\", \"../WTF\"]\n",
+        )
+        .unwrap();
+        let f = AddonsFile::load_or_new(&p, Flavour::Forever).unwrap();
+        assert_eq!(f.get("foo").unwrap().folders, vec!["Foo"]);
+    }
+
+    #[test]
+    fn broken_settings_are_set_aside_and_keep_is_at_least_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let p = dir.path().join("config.toml");
+        std::fs::write(&p, "schema = 1\nkeep_previous_versions = 0\n").unwrap();
+        let (c, moved) = Config::load_or_reset(&p).unwrap();
+        assert_eq!(c.keep_previous_versions, 1);
+        assert!(moved.is_none());
+
+        std::fs::write(&p, "this is [not toml").unwrap();
+        let (c, moved) = Config::load_or_reset(&p).unwrap();
+        assert_eq!(
+            c.keep_previous_versions,
+            Config::default().keep_previous_versions
+        );
+        let moved = moved.expect("set aside");
+        assert!(moved.exists() && !p.exists());
+        assert!(moved
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .starts_with("config.toml.broken-"));
     }
 }

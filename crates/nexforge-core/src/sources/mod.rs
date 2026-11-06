@@ -218,16 +218,32 @@ pub trait Source: Send + Sync {
         ids: &[String],
         flavour: Flavour,
         channel: Channel,
-    ) -> Result<HashMap<String, Release>> {
-        let mut out = HashMap::new();
+    ) -> Result<Latest> {
+        let mut out = Latest::default();
         for id in ids {
-            let rels = self.releases(id, flavour).await?;
-            if let Some(r) = pick_release(&rels, flavour, channel) {
-                out.insert(id.clone(), r.clone());
+            match self.releases(id, flavour).await {
+                Ok(rels) => {
+                    if let Some(r) = pick_release(&rels, flavour, channel) {
+                        out.found.insert(id.clone(), r.clone());
+                    }
+                }
+                Err(e @ crate::error::Error::RateLimited { .. }) => return Err(e),
+                Err(e) => {
+                    out.failed.insert(id.clone(), e.to_string());
+                }
             }
         }
         Ok(out)
     }
+}
+
+/// What an update check learned per id. An id in neither map was answered
+/// but has no build for the flavour; one in `failed` could not be checked
+/// (the host errored, or no longer lists it), which is not the same thing.
+#[derive(Debug, Default)]
+pub struct Latest {
+    pub found: HashMap<String, Release>,
+    pub failed: HashMap<String, String>,
 }
 
 /// Newest release acceptable on `channel`, preferring one that names

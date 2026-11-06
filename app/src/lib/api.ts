@@ -26,6 +26,12 @@ export interface Snapshot {
   addons: Addon[]; stateExists: boolean; addonsDirExists: boolean; adoptedNow: boolean; firstRun: boolean;
   lastRun: { at: string; count: number } | null;
   settings: Settings; sourcesOn: string[];
+  /** addons.toml could not be read: why. */
+  stateError: string | null;
+  /** config.toml could not be read and was set aside here. */
+  configReset: string | null;
+  /** Folders an interrupted update or removal had moved aside, now put back. */
+  recovered: string[];
 }
 export interface ReleaseInfo {
   version: string; publishedAt: string | null; size: number | null; channel: string;
@@ -70,6 +76,8 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 export const api = {
   snapshot: (installationId: string | null) => call<Snapshot>("snapshot", { installationId }),
   reconcile: (installationId: string) => call<number>("reconcile_now", { installationId }),
+  /** Set an unreadable addons.toml aside and adopt AddOns afresh; returns where it went. */
+  resetState: (installationId: string) => call<string>("reset_state", { installationId }),
   adoptAll: () => call<Adopted[]>("adopt_all"),
   selfUpdate: (now = false) => call<{ version: string; url: string } | null>("self_update", { now }),
   check: (installationId: string) => call<CheckResult>("check", { installationId }),

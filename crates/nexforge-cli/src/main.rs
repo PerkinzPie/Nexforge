@@ -233,6 +233,13 @@ async fn run(cli: Cli) -> Result<()> {
         }
         _ => {
             let ctx = context(&cli)?;
+            // Commands that change addons hold the same lock as the app, so
+            // the two never edit one installation at once.
+            let _lock = if changes_addons(&cli.cmd) {
+                Some(ctx.mgr.paths.lock(&ctx.inst.id)?)
+            } else {
+                None
+            };
             dispatch(&cli.cmd, ctx).await
         }
     }
@@ -511,6 +518,20 @@ fn status_text(s: &Status, flavour: Flavour) -> (String, String) {
         Status::NotManaged => ("".into(), "Identify source".into()),
         Status::SourceUnavailable(s) => ("".into(), format!("{} not available yet", s.label())),
         Status::Failed(e) => ("".into(), format!("Failed: {e}")),
+    }
+}
+
+fn changes_addons(cmd: &Cmd) -> bool {
+    match cmd {
+        Cmd::Reconcile { dry_run } => !dry_run,
+        Cmd::Update { .. }
+        | Cmd::Install { .. }
+        | Cmd::Remove { .. }
+        | Cmd::Pin { .. }
+        | Cmd::Unpin { .. }
+        | Cmd::Skip { .. }
+        | Cmd::Rollback { .. } => true,
+        _ => false,
     }
 }
 

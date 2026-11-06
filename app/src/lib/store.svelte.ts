@@ -176,6 +176,13 @@ class Store {
       }
       this.snap = s;
       this.loadError = null;
+      if (s.recovered.length) {
+        this.say("ok", `Put back ${s.recovered.join(", ")} after an update was interrupted.`);
+      }
+      if (s.configReset && !this.#toldReset) {
+        this.#toldReset = true;
+        this.say("err", `Settings couldn't be read, so they were reset. The old file is kept as ${s.configReset}.`);
+      }
       if (s.current) this.recent = await api.recent(s.current).catch(() => []);
     } catch (e) {
       this.loadError = (e as Error).message;
@@ -212,10 +219,20 @@ class Store {
     }
   }
 
+  #toldReset = false;
+  #checkingFor: string | null = null;
+  #recheck = false;
+
   async check() {
     const inst = this.current;
-    if (!inst || this.checking) return;
+    if (!inst) return;
+    if (this.checking) {
+      // Switched client mid-check: check this one when that finishes.
+      if (this.#checkingFor !== inst) this.#recheck = true;
+      return;
+    }
     this.checking = true;
+    this.#checkingFor = inst;
     try {
       const r = await api.check(inst);
       if (inst !== this.current) return;
@@ -229,6 +246,24 @@ class Store {
       this.say("err", (e as Error).message);
     } finally {
       this.checking = false;
+      this.#checkingFor = null;
+      if (this.#recheck) {
+        this.#recheck = false;
+        void this.check();
+      }
+    }
+  }
+
+  /** addons.toml could not be read: set it aside and adopt AddOns afresh. */
+  async resetState() {
+    const inst = this.current;
+    if (!inst) return;
+    try {
+      const kept = await api.resetState(inst);
+      await this.load();
+      this.say("ok", `Started a fresh list. The old addons.toml is kept as ${kept}.`);
+    } catch (e) {
+      this.say("err", (e as Error).message);
     }
   }
 

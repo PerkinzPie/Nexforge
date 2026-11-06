@@ -68,6 +68,19 @@ impl Installation {
         })
     }
 
+    /// The name shown for it: "Classic Era", or "Classic Era 2" for a second
+    /// client of the same flavour (id `classic-era-2`).
+    pub fn label(&self) -> String {
+        match self
+            .id
+            .strip_prefix(self.flavour.as_str())
+            .and_then(|r| r.strip_prefix('-'))
+        {
+            Some(n) if !n.is_empty() => format!("{} {n}", self.flavour.label()),
+            _ => self.flavour.label().to_string(),
+        }
+    }
+
     pub fn to_config(&self) -> InstallationConfig {
         InstallationConfig {
             id: self.id.clone(),
@@ -229,5 +242,100 @@ mod tests {
         assert!(found[1]
             .state_file()
             .ends_with("Interface/AddOns/addons.toml"));
+    }
+}
+
+/// Add `inst` to the configured installations (Settings → Add installation),
+/// or with `replace`, point that installation at the new folder. Each client
+/// folder gets its own id, so its backups and history stay its own: a second
+/// Classic Era client becomes `classic-era-2` rather than replacing the
+/// first. Retail is refused, as detection does.
+pub fn add_to_config(
+    cfg: &mut Vec<InstallationConfig>,
+    mut inst: Installation,
+    replace: Option<&str>,
+) -> Result<Installation> {
+    if inst.flavour == Flavour::Retail {
+        return Err(Error::NoInstallation(
+            "Retail is not supported yet. Choose a _forever_, _classic_era_ or _anniversary_ folder."
+                .into(),
+        ));
+    }
+    let same_path = |c: &InstallationConfig| {
+        c.path.to_string_lossy().to_lowercase() == inst.path.to_string_lossy().to_lowercase()
+    };
+    if let Some(old) = replace {
+        // "Change": the same installation, now in another folder.
+        if let Some(c) = cfg.iter().find(|c| c.id == old) {
+            if c.flavour == inst.flavour {
+                inst.id = c.id.clone();
+            }
+        }
+        cfg.retain(|c| c.id != old);
+    } else if let Some(c) = cfg.iter().find(|c| same_path(c)) {
+        // Already added: nothing changes.
+        return Ok(Installation::from_config(c));
+    }
+    if cfg.iter().any(|c| c.id == inst.id) {
+        let base = inst.flavour.as_str();
+        let n = (2..).find(|n| !cfg.iter().any(|c| c.id == format!("{base}-{n}")));
+        inst.id = format!("{base}-{}", n.unwrap_or(2));
+    }
+    cfg.push(inst.to_config());
+    Ok(inst)
+}
+
+#[cfg(test)]
+mod add_tests {
+    use super::*;
+
+    fn at(flavour: Flavour, path: &str) -> Installation {
+        Installation {
+            id: flavour.as_str().into(),
+            flavour,
+            path: PathBuf::from(path),
+        }
+    }
+
+    #[test]
+    fn a_second_client_of_a_flavour_gets_its_own_id() {
+        let mut cfg = Vec::new();
+        let a = add_to_config(
+            &mut cfg,
+            at(Flavour::ClassicEra, r"E:\WoW\_classic_era_"),
+            None,
+        )
+        .unwrap();
+        let b = add_to_config(
+            &mut cfg,
+            at(Flavour::ClassicEra, r"D:\PTR\_classic_era_"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            (a.id.as_str(), b.id.as_str()),
+            ("classic-era", "classic-era-2")
+        );
+        assert_eq!(cfg.len(), 2, "the first is not replaced");
+        assert_eq!(b.label(), "Classic Era 2");
+        // The same folder again (any case) changes nothing.
+        let again = add_to_config(
+            &mut cfg,
+            at(Flavour::ClassicEra, r"e:\wow\_CLASSIC_ERA_"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(again.id, "classic-era");
+        assert_eq!(cfg.len(), 2);
+        // Change keeps the id (and so its backups).
+        let moved = add_to_config(
+            &mut cfg,
+            at(Flavour::ClassicEra, r"F:\WoW\_classic_era_"),
+            Some("classic-era-2"),
+        )
+        .unwrap();
+        assert_eq!(moved.id, "classic-era-2");
+        assert_eq!(cfg.len(), 2);
+        assert!(add_to_config(&mut cfg, at(Flavour::Retail, r"E:\WoW\_retail_"), None).is_err());
     }
 }

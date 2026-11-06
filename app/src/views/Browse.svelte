@@ -2,6 +2,8 @@
   import AddonCard from "../components/AddonCard.svelte";
   import Icon from "../components/Icon.svelte";
   import NoBuild from "../components/NoBuild.svelte";
+  import Tip from "../components/Tip.svelte";
+  import { mergeProps } from "bits-ui";
   import PageHead from "../components/PageHead.svelte";
   import ProgressButton from "../components/ProgressButton.svelte";
   import RowMenu from "../components/RowMenu.svelte";
@@ -126,10 +128,14 @@
   <div class="filters narrow">
     <button type="button" class="chip" class:on={source === "all"} onclick={() => (source = "all")}>All sources</button>
     {#each chips as c (c.id)}
-      <button type="button" class="chip" class:on={source === c.id} disabled={!c.enabled} title={c.enabled ? "" : c.why}
-        onclick={() => (source = c.id)}>
-        {c.label}
-      </button>
+      <!-- Off sources stay focusable (aria-disabled), so the reason in their
+           tooltip reaches keyboard and screen-reader users too. -->
+      <Tip text={c.enabled ? null : c.why}>
+        {#snippet children({ props })}
+          <button {...mergeProps(props, { onclick: () => c.enabled && (source = c.id) })} type="button" class="chip"
+            class:on={source === c.id} aria-disabled={!c.enabled}>{c.label}</button>
+        {/snippet}
+      </Tip>
     {/each}
   </div>
 

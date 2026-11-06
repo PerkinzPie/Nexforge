@@ -74,7 +74,7 @@ const snap = (current: string | null): Snapshot => ({
   addons, stateExists: true, addonsDirExists: true, adoptedNow: false,
   firstRun: typeof location !== "undefined" && location.search.includes("firstrun") && !welcomed,
   lastRun: { at: new Date(Date.now() - 20 * 3600 * 1000).toISOString(), count: 2 },
-  settings, sourcesOn: ["github", "wowinterface"],
+  settings, sourcesOn: ["github", "wowinterface"], stateError: null, configReset: null, recovered: [],
 });
 
 let listeners: ((p: Progress) => void)[] = [];
@@ -102,6 +102,7 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
     case "check": await wait(600); return { ...check, results: check.results.map((x) => ({ ...x })), checkedAt: new Date().toISOString() };
     case "recent": return recent;
     case "reconcile_now": return 0;
+    case "reset_state": return "C:\\Games\\World of Warcraft\\_forever_\\Interface\\AddOns\\addons.toml.broken-20261106-120000";
     case "rollback": {
       await wait(400);
       const ad = addons.find((x) => x.id === args.id)!;

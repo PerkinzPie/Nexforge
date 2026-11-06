@@ -86,6 +86,8 @@ pub struct Manager {
     sources: Vec<Arc<dyn Source>>,
     /// Browse index; `None` if it could not be opened (search goes live).
     catalogue: Option<Arc<crate::catalogue::Catalogue>>,
+    /// Where an unreadable `config.toml` was moved when defaults replaced it.
+    pub config_reset: Option<std::path::PathBuf>,
 }
 
 /// How long a full catalogue refresh stays fresh.
@@ -94,16 +96,22 @@ const CATALOGUE_TTL: chrono::Duration = chrono::Duration::hours(24);
 impl Manager {
     /// Real network, config from disk, keys from the credential store.
     pub fn open(paths: AppPaths) -> Result<Manager> {
-        let config = Config::load_or_default(&paths.config_file())?;
         let net = Net::new(Some(paths.network_log()), Some(paths.http_cache()))?;
+        Self::open_shared(paths, Arc::new(net), SourceKeys::from_credential_store())
+    }
+
+    /// Like [`Manager::open`] with an HTTP client and keys the caller keeps
+    /// (the app reuses both instead of rebuilding them for every command).
+    pub fn open_shared(
+        paths: AppPaths,
+        fetch: Arc<dyn Fetch>,
+        keys: SourceKeys,
+    ) -> Result<Manager> {
+        let (config, reset) = Config::load_or_reset(&paths.config_file())?;
         let catalogue = crate::catalogue::Catalogue::open(&paths.catalogue()).ok();
-        let mut mgr = Self::with_fetch(
-            paths,
-            config,
-            Arc::new(net),
-            SourceKeys::from_credential_store(),
-        );
+        let mut mgr = Self::with_fetch(paths, config, fetch, keys);
         mgr.catalogue = catalogue.map(Arc::new);
+        mgr.config_reset = reset;
         Ok(mgr)
     }
 
@@ -222,6 +230,7 @@ impl Manager {
             fetch,
             sources,
             catalogue: None,
+            config_reset: None,
         }
     }
 
@@ -242,7 +251,8 @@ impl Manager {
         Engine::new(
             self.fetch.clone(),
             self.paths.clone(),
-            self.config.keep_previous_versions,
+            // At least one: otherwise the version just replaced is pruned at once.
+            self.config.keep_previous_versions.max(1),
         )
     }
 
@@ -293,7 +303,10 @@ impl Manager {
                 }
                 Ok(latest) => {
                     for entry in entries.iter() {
-                        let status = status_for(entry, latest.get(&entry.source_id));
+                        let status = match latest.failed.get(&entry.source_id) {
+                            Some(msg) => Status::Failed(msg.clone()),
+                            None => status_for(entry, latest.found.get(&entry.source_id)),
+                        };
                         report.results.push(CheckResult {
                             id: entry.id.clone(),
                             status,
@@ -579,14 +592,41 @@ impl Manager {
                     .cloned()
                     .ok_or_else(|| Error::UnknownAddon(id.into()))?,
             ),
-            None => state
-                .addons
-                .iter()
-                .find(|e| {
-                    (e.source == Some(source) && e.source_id == source_id)
-                        || (!e.is_managed() && e.ids.get(source) == Some(source_id.as_str()))
-                })
-                .cloned(),
+            None => {
+                // GitHub names ignore case (Questie/Questie is questie/questie).
+                let same = |a: &str| {
+                    if source == SourceId::Github {
+                        a.eq_ignore_ascii_case(&source_id)
+                    } else {
+                        a == source_id
+                    }
+                };
+                // The same addon managed from another host: say so, rather
+                // than make a second entry that then collides on its folders.
+                if let Some(other) = state.addons.iter().find(|e| {
+                    e.is_managed()
+                        && e.source != Some(source)
+                        && e.ids.get(source).is_some_and(same)
+                }) {
+                    return Err(Error::AlreadyInstalled {
+                        name: other.name.clone(),
+                        from: other
+                            .source
+                            .map(|s| s.label())
+                            .unwrap_or("another host")
+                            .into(),
+                        to: source.label().into(),
+                    });
+                }
+                state
+                    .addons
+                    .iter()
+                    .find(|e| {
+                        (e.source == Some(source) && same(&e.source_id))
+                            || (!e.is_managed() && e.ids.get(source).is_some_and(same))
+                    })
+                    .cloned()
+            }
         };
 
         let mut entry = match existing {

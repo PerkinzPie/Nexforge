@@ -55,6 +55,10 @@ pub const IMAGE_HOSTS: &[&str] = &[
 
 /// Largest image Nexforge will fetch.
 pub const MAX_IMAGE_BYTES: u64 = 10 * 1024 * 1024;
+/// Largest addon download accepted (the biggest real addons are tens of MB).
+pub const MAX_DOWNLOAD_BYTES: u64 = 512 * 1024 * 1024;
+/// The one host that receives an API key in a header (CurseForge).
+const KEYED_API_HOST: &str = "api.curseforge.com";
 
 fn norm(host: &str) -> String {
     host.trim_end_matches('.').to_ascii_lowercase()
@@ -303,6 +307,15 @@ fn build_client(allowed: fn(&str) -> bool) -> Result<reqwest::Client> {
             return attempt.error("too many redirects");
         }
         let host = attempt.url().host_str().unwrap_or("").to_string();
+        // Requests to CurseForge's API carry the player's key in a header
+        // that a redirect would forward: never let it leave that host.
+        let from_keyed_api = attempt
+            .previous()
+            .iter()
+            .any(|u| u.host_str() == Some(KEYED_API_HOST));
+        if from_keyed_api && host != KEYED_API_HOST {
+            return attempt.error(Error::HostNotAllowed { host });
+        }
         if attempt.url().scheme() == "https" && allowed(&host) {
             attempt.follow()
         } else {
@@ -521,6 +534,14 @@ impl Fetch for Net {
             });
         }
         let total = resp.content_length();
+        let too_big = |host: &str| Error::BadResponse {
+            host: host.to_string(),
+            message: "the download is larger than 512 MB, far more than any addon".into(),
+        };
+        if total.is_some_and(|n| n > MAX_DOWNLOAD_BYTES) {
+            self.log(&host, &path, "refused", 0, &format!("{reason} (too large)"));
+            return Err(too_big(&host));
+        }
         if let Some(dir) = dest.parent() {
             tokio::fs::create_dir_all(dir).await.ctx("create", dir)?;
         }
@@ -530,8 +551,15 @@ impl Fetch for Net {
         progress(0, total);
         while let Some(chunk) = stream.next().await {
             let chunk = chunk.map_err(|e| self.map_send_error(&url, e, reason))?;
-            file.write_all(&chunk).await.ctx("write", dest)?;
             written += chunk.len() as u64;
+            // A server can lie about the size; count what actually arrives.
+            if written > MAX_DOWNLOAD_BYTES {
+                drop(file);
+                let _ = tokio::fs::remove_file(dest).await;
+                self.log(&host, &path, "refused", 0, &format!("{reason} (too large)"));
+                return Err(too_big(&host));
+            }
+            file.write_all(&chunk).await.ctx("write", dest)?;
             progress(written, total);
         }
         file.flush().await.ctx("write", dest)?;
@@ -602,12 +630,11 @@ impl Fetch for Net {
                 return Err(too_big(&host));
             }
         }
-        // Trust the bytes, not just the label: CurseForge's CDN serves its
-        // screenshot thumbnails as `application/x-amz-json-1.0` (seen
-        // 2026-11-05). Anything that is not a known image format is refused.
-        let content_type = if content_type.starts_with("image/") {
-            content_type
-        } else if let Some(t) = sniff_image(&bytes) {
+        // Trust the bytes, never the label: only JPEG, PNG, GIF and WebP
+        // pass, whatever the server says. CurseForge's CDN labels its
+        // thumbnails `application/x-amz-json-1.0` (seen 2026-11-05), and an
+        // SVG labelled `image/svg+xml` can carry script.
+        let content_type = if let Some(t) = sniff_image(&bytes) {
             t.to_string()
         } else {
             self.log(
