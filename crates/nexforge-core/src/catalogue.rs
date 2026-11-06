@@ -69,6 +69,46 @@ fn fts_query(q: &str) -> Option<String> {
     (!words.is_empty()).then(|| words.join(" "))
 }
 
+/// The words of a search, lower-cased; symbols ("Forever++") are dropped.
+fn query_words(q: &str) -> Vec<String> {
+    q.split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .map(str::to_lowercase)
+        .collect()
+}
+
+/// Does every word of `q` appear in the entry's name, authors or summary?
+/// Live host searches (CurseForge) also return loose matches; this keeps
+/// them to what the local catalogue would have found.
+pub fn matches_words(q: &str, e: &CatalogueEntry) -> bool {
+    let hay = format!(
+        "{} {} {}",
+        e.name,
+        e.authors.join(" "),
+        e.summary.as_deref().unwrap_or("")
+    )
+    .to_lowercase();
+    query_words(q).iter().all(|w| hay.contains(w.as_str()))
+}
+
+/// How well an entry's name matches `q`, best first: 0 the exact name,
+/// 1 the name starts with it, 2 the name contains it (symbols and all),
+/// 3 the name holds every word, 4 only the authors or summary match.
+pub fn relevance(q: &str, e: &CatalogueEntry) -> u8 {
+    let (name, ql) = (e.name.to_lowercase(), q.trim().to_lowercase());
+    if name == ql {
+        0
+    } else if name.starts_with(&ql) {
+        1
+    } else if name.contains(&ql) {
+        2
+    } else if query_words(q).iter().all(|w| name.contains(w.as_str())) {
+        3
+    } else {
+        4
+    }
+}
+
 impl Catalogue {
     /// Open (or create) the catalogue. A damaged file is deleted and rebuilt.
     pub fn open(path: &Path) -> Result<Catalogue> {
@@ -370,6 +410,28 @@ mod tests {
             updated_at: None,
             icon_url: Some(format!("https://cdn-wow.mmoui.com/{id}.jpg")),
         }
+    }
+
+    #[test]
+    fn relevance_and_word_matching() {
+        let cf = SourceId::Curseforge;
+        let exact = e(cf, "1", "Forever++", "x", 1, &[]);
+        let named = e(cf, "2", "AtlasLoot Classic Forever", "x", 1, &[]);
+        let mut summary_only = e(cf, "3", "Baganator", "plusmouse", 9, &[]);
+        summary_only.summary = Some("Bags for Forever and Classic".into());
+        let mut unrelated = e(cf, "4", "Chattynator", "plusmouse", 9, &[]);
+        unrelated.summary = Some("Chat frames".into());
+
+        assert_eq!(relevance("forever++", &exact), 0, "exact, symbols and all");
+        assert_eq!(relevance("Forever++", &named), 3, "every word in the name");
+        assert_eq!(relevance("Forever++", &summary_only), 4);
+        assert_eq!(relevance("atlas", &named), 1);
+        assert_eq!(relevance("loot classic", &named), 2);
+
+        // A loose live match with none of the words anywhere is dropped.
+        assert!(matches_words("Forever++", &summary_only));
+        assert!(!matches_words("Forever++", &unrelated));
+        assert!(matches_words("plusmouse chat", &unrelated), "authors count");
     }
 
     #[test]

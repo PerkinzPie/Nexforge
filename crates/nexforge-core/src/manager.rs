@@ -1,6 +1,7 @@
 //! High-level operations shared by the CLI and (later) the app: update
 //! checks, update, install, pin. Thin over sources + engine + state.
 
+use crate::catalogue::{matches_words, relevance};
 use crate::error::{Error, Result};
 use crate::flavour::Flavour;
 use crate::install::{Engine, Target};
@@ -468,7 +469,7 @@ impl Manager {
                 match r {
                     Ok(h) => {
                         let _ = cat.upsert(&h);
-                        hits.extend(h);
+                        hits.extend(h.into_iter().filter(|e| matches_words(q, e)));
                     }
                     Err(e) => errors.push((id, e.to_string())),
                 }
@@ -476,10 +477,11 @@ impl Manager {
             // The catalogue and a live search can both list the same addon.
             let mut seen = std::collections::HashSet::new();
             hits.retain(|h| seen.insert((h.source, h.source_id.clone())));
+            // Best name match first; popularity only breaks ties.
             hits.sort_by_key(|h| {
                 (
+                    relevance(q, h),
                     !(h.flavours.contains(&flavour) || h.flavours.is_empty()),
-                    !h.name.to_lowercase().starts_with(&q.trim().to_lowercase()),
                     std::cmp::Reverse(h.downloads),
                 )
             });
@@ -493,14 +495,16 @@ impl Manager {
         let mut errors = Vec::new();
         for (id, r) in join_all(jobs).await {
             match r {
-                Ok(h) => hits.extend(h),
+                Ok(h) => hits.extend(h.into_iter().filter(|e| matches_words(q, e))),
                 Err(e) => errors.push((id, e.to_string())),
             }
         }
-        // Builds for this flavour first, then by downloads; GitHub index
-        // entries (curated, no download counts) lead within each band.
+        // Best name match first, then builds for this flavour, then by
+        // downloads; GitHub index entries (curated, no download counts) lead
+        // within each band.
         hits.sort_by_key(|h| {
             (
+                relevance(q, h),
                 !(h.flavours.contains(&flavour) || h.flavours.is_empty()),
                 h.source != SourceId::Github,
                 std::cmp::Reverse(h.downloads),
