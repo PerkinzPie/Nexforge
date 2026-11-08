@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { api } from "../api";
 import type { Addon, AddonStatus, Snapshot } from "../api";
 import { store } from "../store.svelte";
 
@@ -64,5 +65,37 @@ describe("toasts", () => {
     expect(undone).toBe(true);
     store.toast = null;
     expect(store.toast).toBeNull();
+  });
+});
+
+describe("Update all", () => {
+  it("runs once however often it is clicked, and never resets a running download", async () => {
+    seed();
+    store.statuses.dbm = status("dbm", "available");
+    const calls: string[] = [];
+    const finish: Record<string, () => void> = {};
+    const update = vi.spyOn(api, "update").mockImplementation((_inst, id) => {
+      calls.push(id);
+      return new Promise((resolve) => (finish[id] = () => resolve(null)));
+    });
+    const snapshot = vi.spyOn(api, "snapshot").mockImplementation(async () => store.snap!);
+    const tick = () => new Promise((r) => setTimeout(r, 0));
+
+    const first = store.updateAll();
+    expect(store.updatingAll).toBe(true);
+    await tick();
+    store.progress.questie = 40;
+    const second = store.updateAll();
+    await store.update("questie");
+    expect(store.progress.questie).toBe(40);
+
+    finish.questie();
+    await tick();
+    finish.dbm();
+    await Promise.all([first, second]);
+    expect(calls).toEqual(["questie", "dbm"]);
+    expect(store.updatingAll).toBe(false);
+    update.mockRestore();
+    snapshot.mockRestore();
   });
 });

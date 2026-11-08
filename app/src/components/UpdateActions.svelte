@@ -18,7 +18,7 @@
   {/snippet}
 </Tip>
 <!-- Fixed width: the count changing ("Update all 3" → 2) never moves Refresh. -->
-<button type="button" class="btn all" class:btn-primary={updatable.length > 0} onclick={() => store.updateAll()} disabled={!updatable.length}>
+<button type="button" class="btn all" class:btn-primary={updatable.length > 0} onclick={() => store.updateAll()} disabled={!updatable.length || store.updatingAll}>
   <Icon name="download" size={15} stroke={2.4} />{updatable.length ? `Update all ${updatable.length}` : "Update all"}
 </button>
 

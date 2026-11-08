@@ -42,6 +42,8 @@ class Store {
   progress = $state<Record<string, number | null>>({});
   /** id → what is happening ("Updating", "Rolling back" …). */
   busy = $state<Record<string, string>>({});
+  /** Update all is working through the list; its button stays disabled until done. */
+  updatingAll = $state(false);
   toast = $state<Toast | null>(null);
   /** Installs started from Install from URL, shown in the activity tray. */
   jobs = $state<Record<string, { title: string }>>({});
@@ -295,7 +297,8 @@ class Store {
   async update(id: string) {
     const inst = this.current;
     const a = this.addons.find((x) => x.id === id);
-    if (!inst || !a) return;
+    // Already updating: a second click must not reset its progress bar.
+    if (!inst || !a || this.busy[id]) return;
     this.progress[id] = 0;
     const r = await this.run(id, "Updating", () => api.update(inst, id), (r) =>
       r ? `Updated ${r.name} to ${r.version}.` : `${a.name} is up to date.`,
@@ -311,7 +314,18 @@ class Store {
   }
 
   async updateAll() {
-    for (const a of this.updates.filter((x) => !x.pinned)) await this.update(a.id);
+    if (this.updatingAll) return;
+    this.updatingAll = true;
+    try {
+      for (const a of this.updates.filter((x) => !x.pinned)) {
+        // Updated from its own button, pinned or skipped since the list was taken.
+        const now = this.addons.find((x) => x.id === a.id);
+        if (this.statuses[a.id]?.kind !== "available" || !now || now.pinned) continue;
+        await this.update(a.id);
+      }
+    } finally {
+      this.updatingAll = false;
+    }
   }
 
   async setPinned(a: Addon, pinned: boolean) {
