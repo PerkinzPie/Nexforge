@@ -56,3 +56,7 @@ jobs:
         working-directory: app
       - run: cargo clippy -p nexforge-app --all-targets -- -D warnings
       - run: cargo test -p nexforge-app
+      # The installer is built here too, so a bundling problem shows up on
+      # the push that caused it, not when a release is being published.
+      - run: pnpm tauri build
+        working-directory: app
