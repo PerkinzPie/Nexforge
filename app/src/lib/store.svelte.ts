@@ -1,6 +1,7 @@
 // App state. Paints from the local snapshot first; network results update in place.
 
 import { api, inTauri, onProgress, type Addon, type AddonStatus, type Hit, type Recent, type Snapshot, type SourceError } from "./api";
+import { plural } from "./format";
 
 export type View = "installed" | "updates" | "browse" | "settings";
 export type InstalledTab = "all" | "updates" | "attention" | "pinned";
@@ -18,7 +19,10 @@ export type Dialog =
   | { kind: "install"; adopt?: Addon; initial?: string }
   | { kind: "remove"; addon: Addon }
   | { kind: "key"; name: "curseforge" | "github" }
-  | { kind: "anyway"; spec: string; name: string };
+  | { kind: "anyway"; spec: string; name: string; adopt?: Addon };
+
+interface Jobs { busy: Record<string, string>; progress: Record<string, number | null> }
+type Updated = "updated" | "current" | "failed" | "busy";
 
 class Store {
   snap = $state<Snapshot | null>(null);
@@ -38,12 +42,21 @@ class Store {
   checkedAt = $state<string | null>(null);
   checking = $state(false);
   sourceErrors = $state<SourceError[]>([]);
+  // Jobs belong to the game client they were started on: addon ids repeat
+  // across clients, so `progress` and `busy` hold the current client's jobs
+  // and the rest wait in `#parked` until that client is shown again.
   /** id → percent (null while the size is unknown). Present while downloading. */
   progress = $state<Record<string, number | null>>({});
   /** id → what is happening ("Updating", "Rolling back" …). */
   busy = $state<Record<string, string>>({});
-  /** Update all is working through the list; its button stays disabled until done. */
-  updatingAll = $state(false);
+  #parked = $state<Record<string, Jobs>>({});
+  #updatingAllOn = $state<Record<string, boolean>>({});
+  /** Update all is working through this client's list; its button stays disabled until done. */
+  get updatingAll() {
+    return !!this.#updatingAllOn[this.current ?? ""];
+  }
+  /** id → why its last update failed. Cleared by a retry or the next check. */
+  failed = $state<Record<string, string>>({});
   toast = $state<Toast | null>(null);
   /** Installs started from Install from URL, shown in the activity tray. */
   jobs = $state<Record<string, { title: string }>>({});
@@ -85,6 +98,12 @@ class Store {
     if (!a.managed || k === "no_build" || k === "failed" || k === "unavailable") return true;
     return !k && a.flavourMismatch;
   }
+  /** Why "All up to date" can't be said after the last check, if it can't. */
+  get unchecked(): string | null {
+    const n = this.addons.filter((a) => ["failed", "unavailable"].includes(this.statuses[a.id]?.kind ?? "")).length;
+    if (n) return `${plural(n, "addon")} couldn't be checked.`;
+    return this.sourceErrors.length ? "Some addons couldn't be checked." : null;
+  }
   get attentionCount() {
     return this.addons.filter((a) => this.needsLook(a)).length;
   }
@@ -92,7 +111,8 @@ class Store {
   inTab(a: Addon, t: InstalledTab): boolean {
     switch (t) {
       case "all": return true;
-      case "updates": return this.statuses[a.id]?.kind === "available" || this.busy[a.id] === "Updating";
+      // A row stays until the next check once its update is done, so the list never closes up under the pointer.
+      case "updates": return this.statuses[a.id]?.kind === "available" || this.busy[a.id] === "Updating" || a.id in this.updatedNow;
       case "attention": return this.needsLook(a);
       case "pinned": return a.pinned;
     }
@@ -107,9 +127,14 @@ class Store {
 
   async start() {
     await onProgress((p) => {
-      if (p.id in this.progress || p.id in this.busy) this.progress[p.id] = p.percent;
+      const j = p.installation === this.current ? this : this.#parked[p.installation];
+      if (j && (p.id in j.progress || p.id in j.busy)) j.progress[p.id] = p.percent;
     });
     await this.load(null);
+    // Back from copying addons in by hand: look again (at most every few seconds).
+    window.addEventListener("focus", () => {
+      if (Date.now() - this.#rescannedAt > 3000) this.rescan();
+    });
     if (this.snap?.firstRun) {
       this.firstRun = true;
       return; // the welcome screen adopts, then calls finishFirstRun()
@@ -119,16 +144,33 @@ class Store {
     } else {
       await this.rescan();
     }
-    // Back from copying addons in by hand: look again (at most every few seconds).
-    window.addEventListener("focus", () => {
-      if (Date.now() - this.#rescannedAt > 3000) this.rescan();
-    });
-    if (this.snap?.settings.checkOnLaunch && this.current) {
-      await this.check();
-      if (this.snap?.settings.autoApply) await this.updateAll();
-    }
+    const st = this.snap?.settings;
+    if ((st?.checkOnLaunch || st?.autoApply) && this.current) await this.check();
+    if (st?.autoApply) void this.#applyElsewhere();
     this.refreshCatalogue();
     this.checkSelf();
+  }
+
+  /** Auto-apply for the clients not on screen: check each, update what it
+   *  lists (pinned and skipped addons are not listed), and say how it went. */
+  async #applyElsewhere() {
+    for (const i of this.snap?.installations ?? []) {
+      if (i.id === this.current || !i.detected) continue;
+      let done = 0;
+      let failed = 0;
+      try {
+        const r = await api.check(i.id);
+        for (const x of r.results.filter((x) => x.kind === "available")) {
+          const u = await this.update(x.id, { inst: i.id, name: x.id, quiet: true });
+          if (u === "updated") done++;
+          if (u === "failed") failed++;
+        }
+      } catch {
+        continue; // its own check says why when that client is opened
+      }
+      if (failed) this.say("err", `${i.label}: updated ${plural(done, "addon")}, ${failed} failed.`);
+      else if (done) this.say("ok", `${i.label}: updated ${plural(done, "addon")}.`);
+    }
   }
 
   /** Opt-in: is there a newer Nexforge? (Off unless turned on in Settings.) */
@@ -163,13 +205,31 @@ class Store {
     await this.load(null);
     if (this.snap?.settings.checkOnLaunch && this.current) await this.check();
     this.refreshCatalogue();
+    this.checkSelf();
+  }
+
+  /** The jobs of one client: the visible maps for the current one. The maps
+   *  themselves are returned, so a job keeps its own through a switch. */
+  #jobsOf(inst: string): Jobs {
+    if (inst === this.current) return { busy: this.busy, progress: this.progress };
+    if (!this.#parked[inst]) this.#parked[inst] = { busy: {}, progress: {} };
+    return this.#parked[inst];
   }
 
   /** Re-read local state (fast; no network). */
   async load(installationId: string | null = this.current) {
     try {
       const s = await api.snapshot(installationId);
-      if (s.current !== this.snap?.current) {
+      const old = this.snap?.current;
+      if (s.current !== old) {
+        // Another client: its running jobs come back, this one's are set aside.
+        if (old) this.#parked[old] = { busy: this.busy, progress: this.progress };
+        const back = s.current ? this.#parked[s.current] : undefined;
+        this.busy = back?.busy ?? {};
+        this.progress = back?.progress ?? {};
+        if (s.current) delete this.#parked[s.current];
+        this.failed = {};
+        this.skippedNow = {};
         this.tab = "all";
         this.statuses = {};
         this.updatedNow = {};
@@ -202,7 +262,7 @@ class Store {
   async refresh() {
     if (this.checking) return;
     await this.rescan();
-    await this.check();
+    await this.check(true);
   }
 
   #rescannedAt = 0;
@@ -225,7 +285,10 @@ class Store {
   #checkingFor: string | null = null;
   #recheck = false;
 
-  async check() {
+  /** Check this client for updates. `fresh` (the Refresh button) asks the
+   *  hosts again rather than trusting a list from earlier today. With
+   *  auto-apply on, what the check finds is then updated. */
+  async check(fresh = false) {
     const inst = this.current;
     if (!inst) return;
     if (this.checking) {
@@ -236,14 +299,17 @@ class Store {
     this.checking = true;
     this.#checkingFor = inst;
     try {
-      const r = await api.check(inst);
+      const r = await api.check(inst, fresh);
       if (inst !== this.current) return;
       const next: Record<string, AddonStatus> = {};
       for (const s of r.results) next[s.id] = s;
       this.statuses = next;
       this.updatedNow = {};
+      this.skippedNow = {};
+      this.failed = {};
       this.checkedAt = r.checkedAt;
       this.sourceErrors = r.sourceErrors;
+      if (this.snap?.settings.autoApply && !this.firstRun) void this.updateAll();
     } catch (e) {
       this.say("err", (e as Error).message);
     } finally {
@@ -269,151 +335,192 @@ class Store {
     }
   }
 
+  /** Run one job on client `inst`. Errors go to `onError`, or a toast. */
   async run<T>(
+    inst: string,
     id: string,
     label: string,
     job: () => Promise<T>,
     done?: (r: T) => string | null,
     undo?: (r: T) => (() => void) | undefined,
+    onError?: (message: string) => void,
   ): Promise<T | undefined> {
-    if (this.busy[id]) return;
-    this.busy[id] = label;
+    const jobs = this.#jobsOf(inst);
+    if (jobs.busy[id]) return;
+    jobs.busy[id] = label;
     try {
       const r = await job();
       const msg = done?.(r);
       if (msg) this.say("ok", msg, undo?.(r));
       return r;
     } catch (e) {
-      this.say("err", (e as Error).message);
+      const m = (e as Error).message;
+      if (onError) onError(m);
+      else this.say("err", m);
     } finally {
-      delete this.busy[id];
-      delete this.progress[id];
+      delete jobs.busy[id];
+      delete jobs.progress[id];
     }
   }
 
   /** id → version updated to since the last check; Updates keeps their cards in place. */
   updatedNow = $state<Record<string, string>>({});
+  /** id → version skipped since the last check; its card stays too. */
+  skippedNow = $state<Record<string, string>>({});
 
-  async update(id: string) {
-    const inst = this.current;
-    const a = this.addons.find((x) => x.id === id);
+  /** Update one addon on client `inst` (the current one unless given).
+   *  `quiet` leaves the toast to the caller (Update all sums up). */
+  async update(id: string, opts: { inst?: string; name?: string; quiet?: boolean } = {}): Promise<Updated> {
+    const inst = opts.inst ?? this.current;
+    if (!inst) return "failed";
+    const here = () => inst === this.current;
+    const name = opts.name ?? this.addons.find((x) => x.id === id)?.name;
+    const jobs = this.#jobsOf(inst);
     // Already updating: a second click must not reset its progress bar.
-    if (!inst || !a || this.busy[id]) return;
-    this.progress[id] = 0;
-    const r = await this.run(id, "Updating", () => api.update(inst, id), (r) =>
-      r ? `Updated ${r.name} to ${r.version}.` : `${a.name} is up to date.`,
-      (r) => (r ? () => this.rollback(id, a.name) : undefined),
+    if (!name || jobs.busy[id]) return "busy";
+    jobs.progress[id] = 0;
+    if (here()) delete this.failed[id];
+    let error: string | null = null;
+    const r = await this.run(inst, id, "Updating", () => api.update(inst, id), (r) =>
+      opts.quiet ? null : r ? `Updated ${r.name} to ${r.version}.` : `${name} is up to date.`,
+      (r) => (r ? () => this.rollback(id, name, null, inst) : undefined),
+      (m) => {
+        error = m;
+        if (!opts.quiet) this.say("err", m);
+      },
     );
-    if (r) this.updatedNow[id] = r.version;
-    if (r !== undefined) {
+    if (error !== null) {
+      // The row keeps the reason until a retry or the next check.
+      if (here()) this.failed[id] = error;
+      return "failed";
+    }
+    if (here()) {
+      if (r) this.updatedNow[id] = r.version;
       const s = this.statuses[id];
       // Keep the release (its notes) so the Updates card keeps its size until the next check.
       if (s) this.statuses[id] = { ...s, kind: "up_to_date" };
       await this.load();
     }
+    return r ? "updated" : "current";
   }
 
+  /** Update everything listed for this client, then say how it went. The
+   *  list belongs to the client it was clicked on, wherever the player goes. */
   async updateAll() {
-    if (this.updatingAll) return;
-    this.updatingAll = true;
+    const inst = this.current;
+    if (!inst || this.#updatingAllOn[inst]) return;
+    this.#updatingAllOn[inst] = true;
+    const done: string[] = [];
+    const failed: string[] = [];
     try {
       for (const a of this.updates.filter((x) => !x.pinned)) {
-        // Updated from its own button, pinned or skipped since the list was taken.
-        const now = this.addons.find((x) => x.id === a.id);
-        if (this.statuses[a.id]?.kind !== "available" || !now || now.pinned) continue;
-        await this.update(a.id);
+        if (inst === this.current) {
+          // Updated from its own button, pinned or skipped since the list was taken.
+          const now = this.addons.find((x) => x.id === a.id);
+          if (this.statuses[a.id]?.kind !== "available" || !now || now.pinned) continue;
+        }
+        const r = await this.update(a.id, { inst, name: a.name, quiet: true });
+        if (r === "updated") done.push(a.name);
+        if (r === "failed") failed.push(a.name);
       }
     } finally {
-      this.updatingAll = false;
+      delete this.#updatingAllOn[inst];
+    }
+    const ok = done.length === 1 ? `Updated ${done[0]}.` : done.length ? `Updated ${done.length} addons.` : "";
+    if (failed.length) {
+      const which = failed.length > 3 ? plural(failed.length, "addon") : failed.join(", ");
+      this.say("err", `${ok} Couldn't update ${which}.`.trim());
+    } else if (ok) {
+      this.say("ok", ok);
     }
   }
 
-  async setPinned(a: Addon, pinned: boolean) {
-    const inst = this.current;
+  async setPinned(a: Addon, pinned: boolean, inst = this.current) {
     if (!inst) return;
-    await this.run(a.id, pinned ? "Pinning" : "Unpinning", () => api.setPinned(inst, a.id, pinned),
-      () => `${pinned ? "Pinned" : "Unpinned"} ${a.name}.`, () => () => this.setPinned(a, !pinned));
+    const ok = await this.run(inst, a.id, pinned ? "Pinning" : "Unpinning", () => api.setPinned(inst, a.id, pinned).then(() => true),
+      () => `${pinned ? "Pinned" : "Unpinned"} ${a.name}.`, () => () => this.setPinned(a, !pinned, inst));
+    if (!ok || inst !== this.current) return;
     await this.load();
     const s = this.statuses[a.id];
     if (s && pinned && s.kind === "available") this.statuses[a.id] = { ...s, kind: "pinned" };
     if (s && !pinned && s.kind === "pinned") this.statuses[a.id] = { ...s, kind: s.release ? "available" : "up_to_date" };
   }
 
-  async skip(a: Addon, version: string) {
-    const inst = this.current;
+  /** Skip `version` of an addon; an empty version stops skipping. */
+  async skip(a: Addon, version: string, inst = this.current) {
     if (!inst) return;
-    await this.run(a.id, "Skipping", () => api.skip(inst, a.id, version),
-      () => (version ? `Skipping ${a.name} ${version}.` : null),
-      () => (version ? () => this.skip(a, "") : undefined));
+    const ok = await this.run(inst, a.id, "Skipping", () => api.skip(inst, a.id, version).then(() => true),
+      () => (version ? `Skipping ${a.name} ${version}.` : `No longer skipping ${a.name} updates.`),
+      () => (version ? () => this.skip(a, "", inst) : undefined));
+    if (!ok || inst !== this.current) return;
     const s = this.statuses[a.id];
-    if (s?.release) this.statuses[a.id] = { ...s, kind: "skipped" };
+    if (s?.release) this.statuses[a.id] = { ...s, kind: version ? "skipped" : a.pinned ? "pinned" : "available" };
+    if (version) this.skippedNow[a.id] = version;
+    else delete this.skippedNow[a.id];
     await this.load();
   }
 
-  async rollback(id: string, name: string, to: string | null = null) {
-    const inst = this.current;
+  async rollback(id: string, name: string, to: string | null = null, inst = this.current) {
     if (!inst) return;
-    const r = await this.run(id, "Rolling back", () => api.rollback(inst, id, to), (r) =>
+    const r = await this.run(inst, id, "Rolling back", () => api.rollback(inst, id, to), (r) =>
       `Rolled ${name} back to ${r.to}.`,
     );
-    if (r) {
+    if (r && inst === this.current) {
+      delete this.updatedNow[id];
       const s = this.statuses[id];
-      if (s) this.statuses[id] = { ...s, kind: "skipped" };
+      // Back on the newest release: nothing is being held back.
+      if (s) this.statuses[id] = { ...s, kind: s.release?.version === r.to ? "up_to_date" : "skipped" };
       await this.load();
     }
   }
 
-  async remove(a: Addon) {
-    const inst = this.current;
+  async remove(a: { id: string; name: string }, inst = this.current) {
     if (!inst) return;
-    const ok = await this.run(a.id, "Removing", () => api.remove(inst, a.id).then(() => true), () =>
+    const ok = await this.run(inst, a.id, "Removing", () => api.remove(inst, a.id).then(() => true), () =>
       `Removed ${a.name}.`,
-      () => () => this.restore(a.id, a.name),
+      () => () => this.restore(a.id, a.name, inst),
     );
-    if (ok) {
+    if (ok && inst === this.current) {
       delete this.statuses[a.id];
       await this.load();
     }
   }
 
   /** Put a removed addon back (undo of remove). */
-  async restore(id: string, name: string) {
-    const inst = this.current;
+  async restore(id: string, name: string, inst = this.current) {
     if (!inst) return;
     this.jobs[id] = { title: name };
-    const r = await this.run(id, "Restoring", () => api.restore(inst, id), (e) => `Restored ${e.name}.`);
+    const r = await this.run(inst, id, "Restoring", () => api.restore(inst, id), (e) => `Restored ${e.name}.`);
     delete this.jobs[id];
-    if (r) await this.load();
+    if (r && inst === this.current) await this.load();
   }
 
   /** Install by spec (source:id, URL or name). `title` puts it in the
    *  activity tray (used when there is no row to show progress on). */
-  async install(spec: string, adopt: Addon | null, anyway: boolean, title?: string): Promise<boolean> {
+  async install(spec: string, adopt: Addon | null, anyway: boolean, title?: string, onError?: (message: string) => void): Promise<boolean> {
     const inst = this.current;
     if (!inst) return false;
     const key = adopt?.id ?? spec;
-    const existed = adopt ? this.addons.some((x) => x.id === adopt.id && x.managed) : false;
-    this.progress[key] = 0;
+    const jobs = this.#jobsOf(inst);
+    if (jobs.busy[key]) return false;
+    // Folders already in AddOns that this install replaces were the
+    // player's: Undo puts them back. Only a brand-new addon is removed.
+    const before = this.addons;
+    const replaced = (folders: string[]) =>
+      before.some((x) => x.folders.some((f) => folders.some((g) => g.toLowerCase() === f.toLowerCase())));
+    jobs.progress[key] = 0;
     if (title) this.jobs[key] = { title };
-    const r = await this.run(key, "Installing", () => api.install(inst, spec, adopt?.id ?? null, anyway), (e) =>
+    const r = await this.run(inst, key, "Installing", () => api.install(inst, spec, adopt?.id ?? null, anyway), (e) =>
       `Installed ${e.name} ${e.version}.`,
-      // Undo a fresh install by removing it; a re-install by rolling back.
-      (e) => () => (existed ? this.rollback(e.id, e.name) : this.removeQuietly(e.id, e.name)),
+      (e) => () => (replaced(e.folders) ? this.rollback(e.id, e.name, null, inst) : this.remove(e, inst)),
+      onError,
     );
     delete this.jobs[key];
-    if (r) {
+    if (r && inst === this.current) {
       this.statuses[r.id] = { id: r.id, kind: "up_to_date", release: null, message: null };
       await this.load();
-      return true;
     }
-    return false;
-  }
-
-  /** Remove without the confirm dialog (undo of an install). */
-  async removeQuietly(id: string, name: string) {
-    const a = this.addons.find((x) => x.id === id);
-    if (a) await this.remove(a);
-    else this.say("err", `${name} is no longer installed.`);
+    return !!r;
   }
 }
 

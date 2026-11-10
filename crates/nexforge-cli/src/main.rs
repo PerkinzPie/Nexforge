@@ -58,7 +58,7 @@ enum Cmd {
         #[arg(long)]
         dry_run: bool,
     },
-    /// Search GitHub (bundled index) and WoWInterface by name.
+    /// Search GitHub (bundled index), WoWInterface and CurseForge (with a key) by name.
     Search {
         query: Vec<String>,
     },
@@ -144,7 +144,16 @@ fn paths(cli: &Cli) -> Result<AppPaths> {
 fn context(cli: &Cli) -> Result<Ctx> {
     let mgr = Manager::open(paths(cli)?)?;
     let inst = if let Some(dir) = &cli.addons_dir {
-        Installation::from_addons_dir(dir, cli.flavour)?
+        let mut inst = Installation::from_addons_dir(dir, cli.flavour)?;
+        // The same folder as a client in config.toml is that client: it
+        // shares its lock and kept versions with the app.
+        let same = |c: &&nexforge_core::state::InstallationConfig| {
+            c.path.to_string_lossy().to_lowercase() == inst.path.to_string_lossy().to_lowercase()
+        };
+        if let Some(c) = mgr.config.installations.iter().find(same) {
+            inst.id = c.id.clone();
+        }
+        inst
     } else {
         let cfg = &mgr.config.installations;
         let pick = match &cli.installation {
@@ -516,7 +525,7 @@ fn status_text(s: &Status, flavour: Flavour) -> (String, String) {
         Status::Skipped(r) => (r.version.clone(), "Skipped".into()),
         Status::NoFlavourBuild => ("".into(), format!("No {} build", flavour.short_label())),
         Status::NotManaged => ("".into(), "Identify source".into()),
-        Status::SourceUnavailable(s) => ("".into(), format!("{} not available yet", s.label())),
+        Status::SourceUnavailable(s) => ("".into(), format!("{} is off or needs a key", s.label())),
         Status::Failed(e) => ("".into(), format!("Failed: {e}")),
     }
 }
@@ -734,7 +743,7 @@ async fn dispatch(cmd: &Cmd, ctx: Ctx) -> Result<()> {
             };
             let e = ctx.mgr.engine().remove(&mut t, id)?;
             println!(
-                "Removed {} ({}). A copy is kept; `nexforge kept {}` lists it.",
+                "Removed {} ({}). A copy is kept; the app's Undo puts it back, and `nexforge kept {}` lists it.",
                 e.name,
                 e.folders.join(", "),
                 e.id

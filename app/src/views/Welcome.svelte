@@ -22,6 +22,7 @@
   }
 
   async function addFolder() {
+    error = null;
     try {
       const added = await api.addInstallation(null);
       if (added) await adopt();
@@ -41,7 +42,7 @@
     <h1 class="h1">Your game clients</h1>
 
     {#if error}
-      <div class="notice err"><Icon name="warn" size={16} /><span>{error}</span></div>
+      <div class="notice err"><Icon name="warn" size={16} /><span class="grow">{error}</span>{#if rows === null}<button type="button" class="btn btn-sm" onclick={adopt}>Try again</button>{/if}</div>
     {/if}
 
     <div class="panel list">
@@ -68,13 +69,13 @@
           </div>
         {/each}
       {:else if rows}
-        <div class="row"><span class="dim">No World of Warcraft client found.</span></div>
+        <div class="row"><span class="dim">No World of Warcraft client found. Add its folder, or add one later in Settings.</span></div>
       {/if}
     </div>
 
     <div class="actions">
       <button type="button" class="btn" onclick={addFolder}>Add a folder</button>
-      <button type="button" class="btn btn-primary" disabled={rows === null || !rows.length} onclick={() => store.finishFirstRun()}>Done</button>
+      <button type="button" class="btn btn-primary" disabled={rows === null && !error} onclick={() => store.finishFirstRun()}>Done</button>
     </div>
   </div>
 </div>

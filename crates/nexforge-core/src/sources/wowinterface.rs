@@ -81,6 +81,12 @@ fn compat(v: &Value) -> (Vec<Flavour>, bool) {
         .collect();
     out.sort();
     out.dedup();
+    // Only game versions Nexforge does not manage (Wrath, Cata, older
+    // Retail): that is "not for this client", not "unknown". Retail stands
+    // for all of them.
+    if out.is_empty() && !list.is_empty() {
+        out.push(Flavour::Retail);
+    }
     (out, !list.is_empty())
 }
 

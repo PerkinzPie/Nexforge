@@ -195,6 +195,13 @@ impl Engine {
         for f in &new_folders {
             match t.state.owner_of(f) {
                 Some(o) if o.id.eq_ignore_ascii_case(&entry.id) => {}
+                // A pin on a hand-installed addon means "leave this alone".
+                Some(o) if !o.is_managed() && o.pinned => {
+                    return Err(Error::FolderOwned {
+                        folder: f.clone(),
+                        owner: o.name.clone(),
+                    })
+                }
                 Some(o) if !o.is_managed() => absorbed.push(f.clone()),
                 Some(o) => {
                     return Err(Error::FolderOwned {
@@ -264,7 +271,7 @@ impl Engine {
 
         // 5a. Make sure the version being replaced can be restored.
         if !old_folders.is_empty() {
-            self.ensure_backup(&bdir, &addons, &backup_version, &old_folders)?;
+            self.ensure_backup(&bdir, &addons, &backup_version, &old_folders, Some(version))?;
         }
 
         // 5c. Keep this archive before touching AddOns: it is the "previous
@@ -285,35 +292,33 @@ impl Engine {
             if kept_new {
                 self.forget(&bdir, version);
             }
+            drop_swap(&swap);
             return Err(e);
-        }
-        let _ = std::fs::remove_dir_all(&swap);
-        if let Some(parent) = swap.parent() {
-            let _ = std::fs::remove_dir(parent); // only if empty
         }
         self.set_fingerprint(&bdir, version, archive::fingerprint(&addons, &new_folders));
 
-        // 7. State.
+        // 7. State, saved while the old folders are still set aside: if the
+        // list cannot be written, they go back and nothing has changed.
+        let mut next = t.state.clone();
         entry.installed_version = version.to_string();
         entry.installed_at = Some(Utc::now());
-        entry.folders = order_folders(new_folders, &entry.name);
+        entry.folders = order_folders(new_folders.clone(), &entry.name);
         if let Some(o) = &old {
             entry.pinned = o.pinned;
             if entry.ids.is_empty() {
                 entry.ids = o.ids.clone();
             }
         }
-        match t.state.get_mut(&entry.id) {
+        match next.get_mut(&entry.id) {
             Some(slot) => *slot = entry.clone(),
-            None => t.state.addons.push(entry.clone()),
+            None => next.addons.push(entry.clone()),
         }
-        for other in t.state.addons.iter_mut().filter(|a| !a.is_managed()) {
+        for other in next.addons.iter_mut().filter(|a| !a.is_managed()) {
             other
                 .folders
                 .retain(|f| !absorbed.iter().any(|x| x.eq_ignore_ascii_case(f)));
         }
-        t.state
-            .addons
+        next.addons
             .retain(|a| a.is_managed() || !a.folders.is_empty());
         for f in &left_in_place {
             let toc = crate::toc::read_folder(&addons.join(f), t.installation.flavour)
@@ -324,7 +329,7 @@ impl Engine {
                 .and_then(|x| x.toc.title.clone())
                 .unwrap_or_else(|| f.clone());
             let lone = AddonEntry {
-                id: t.state.unique_id(&name),
+                id: next.unique_id(&name),
                 name,
                 source: None,
                 source_id: String::new(),
@@ -341,10 +346,27 @@ impl Engine {
                 flavour_mismatch: toc.as_ref().is_some_and(|x| !x.flavour_match),
                 ids: Default::default(),
             };
-            t.state.addons.push(lone);
+            next.addons.push(lone);
         }
-        t.state.addons.sort_by_key(|a| a.name.to_ascii_lowercase());
-        t.state.save(t.state_path)?;
+        next.addons.sort_by_key(|a| a.name.to_ascii_lowercase());
+        if let Err(e) = next.save(t.state_path) {
+            for f in &new_folders {
+                let _ = std::fs::remove_dir_all(addons.join(f));
+            }
+            for f in &old_folders {
+                let _ = std::fs::rename(swap.join("old").join(f), addons.join(f));
+            }
+            if kept_new {
+                self.forget(&bdir, version);
+            }
+            drop_swap(&swap);
+            return Err(e);
+        }
+        *t.state = next;
+        let _ = std::fs::remove_dir_all(&swap);
+        if let Some(parent) = swap.parent() {
+            let _ = std::fs::remove_dir(parent); // only if empty
+        }
         Ok(entry)
     }
 
@@ -405,6 +427,7 @@ impl Engine {
         addons: &Path,
         version: &str,
         folders: &[String],
+        incoming: Option<&str>,
     ) -> Result<()> {
         let mut idx = Self::read_index(bdir);
         // Skip only when a kept copy of this version matches what is on disk
@@ -418,10 +441,21 @@ impl Engine {
         }) {
             return Ok(());
         }
+        // The copy on disk has the version about to be installed (an adopted
+        // addon identified at the version it already has, or a reinstall
+        // over edits): the incoming archive takes that version's name, so
+        // this copy is kept under its own, and rollback can pick it.
+        let clashes =
+            incoming.is_some_and(|v| sanitize(v).eq_ignore_ascii_case(&sanitize(version)));
+        let version = if clashes {
+            format!("{version}-local")
+        } else {
+            version.to_string()
+        };
         let base = sanitize(if version.is_empty() {
             "unknown"
         } else {
-            version
+            &version
         });
         let plain = format!("{base}.zip");
         let file = if bdir.join(&plain).exists() {
@@ -431,7 +465,7 @@ impl Engine {
         };
         archive::zip_folders(addons, folders, &bdir.join(&file))?;
         idx.kept.push(Kept {
-            version: version.to_string(),
+            version,
             file,
             saved_at: Utc::now(),
             folders: folders.to_vec(),
@@ -622,7 +656,7 @@ impl Engine {
         }
         let bdir = self.backup_dir(t, &entry.id);
         if !present.is_empty() {
-            self.ensure_backup(&bdir, &addons, &entry.installed_version, &present)?;
+            self.ensure_backup(&bdir, &addons, &entry.installed_version, &present, None)?;
         }
         // Move every folder aside first: if one is locked (the game is
         // running), the ones already moved go back and nothing changes.
@@ -675,6 +709,21 @@ impl Engine {
         if let Some(parent) = swap.parent() {
             let _ = std::fs::remove_dir(parent); // only if empty
         }
+        // A removed addon keeps only the copy that puts it back.
+        let mut idx = Self::read_index(&bdir);
+        idx.kept.sort_by_key(|a| std::cmp::Reverse(a.saved_at));
+        if let Some(last) = idx
+            .kept
+            .iter()
+            .find(|k| k.version == entry.installed_version)
+            .cloned()
+        {
+            for k in idx.kept.iter().filter(|k| k.file != last.file) {
+                let _ = std::fs::remove_file(bdir.join(&k.file));
+            }
+            idx.kept = vec![last];
+            let _ = Self::write_index(&bdir, &idx);
+        }
         Ok(entry)
     }
 
@@ -714,6 +763,21 @@ impl Engine {
 }
 
 const REMOVED_FILE: &str = "removed.toml";
+
+/// Clear the swap area after everything was put back, so a later run has
+/// nothing to act on. A folder that could not be moved back is still in
+/// there: it stays, and recovery returns it.
+fn drop_swap(swap: &Path) {
+    let stranded = std::fs::read_dir(swap.join("old"))
+        .map(|mut d| d.next().is_some())
+        .unwrap_or(false);
+    if !stranded {
+        let _ = std::fs::remove_dir_all(swap);
+        if let Some(parent) = swap.parent() {
+            let _ = std::fs::remove_dir(parent); // only if empty
+        }
+    }
+}
 
 fn write_manifest(swap: &Path, old: &[String], new: &[String]) -> Result<()> {
     std::fs::create_dir_all(swap).ctx("create", swap)?;
@@ -895,6 +959,11 @@ mod tests {
         env.engine.remove(&mut t, "foo").unwrap();
         assert!(!addons.join("Foo").exists());
         assert!(t.state.get("foo").is_none());
+        assert_eq!(
+            env.engine.kept_versions(&t, "foo").len(),
+            1,
+            "a removed addon keeps only its last version"
+        );
 
         // Undo the removal: folders and entry come back as they were.
         let back = env.engine.restore(&mut t, "foo").unwrap();
@@ -1114,6 +1183,98 @@ mod tests {
             "edited",
             "rolling back restores the player's edits"
         );
+    }
+
+    #[test]
+    fn the_players_copy_survives_an_install_of_the_same_version() {
+        let env = env();
+        let addons = env.inst.addons_dir();
+        // Adopted by hand: an entry with no source, at version 1.0.
+        std::fs::create_dir_all(addons.join("Foo")).unwrap();
+        std::fs::write(
+            addons.join("Foo/Foo.toc"),
+            "## Title: Foo
+## Version: 1.0
+",
+        )
+        .unwrap();
+        std::fs::write(addons.join("Foo/core.lua"), "mine").unwrap();
+        let mut state = AddonsFile::new(Flavour::Forever);
+        let mut adopted = entry();
+        adopted.source = None;
+        adopted.source_id = String::new();
+        adopted.installed_version = "1.0".into();
+        adopted.folders = vec!["Foo".into()];
+        state.addons.push(adopted);
+        let mut t = target(&env, &mut state);
+
+        // Its source is identified; the latest release is also 1.0.
+        env.engine
+            .apply_archive(&mut t, entry(), &zip(&env, "1.0", false), "1.0")
+            .unwrap();
+        assert_eq!(
+            std::fs::read_to_string(addons.join("Foo/core.lua")).unwrap(),
+            "1.0"
+        );
+        let (_, to) = env.engine.rollback(&mut t, "foo", None).unwrap();
+        assert_eq!(to, "1.0-local");
+        assert_eq!(
+            std::fs::read_to_string(addons.join("Foo/core.lua")).unwrap(),
+            "mine",
+            "rolling back restores the copy the player had"
+        );
+    }
+
+    #[test]
+    fn a_pinned_hand_installed_folder_is_not_taken_over() {
+        let env = env();
+        let addons = env.inst.addons_dir();
+        std::fs::create_dir_all(addons.join("Foo_Extra")).unwrap();
+        std::fs::write(addons.join("Foo_Extra/keep.lua"), "mine").unwrap();
+        let mut state = AddonsFile::new(Flavour::Forever);
+        let mut lib = entry();
+        lib.id = "foo-extra".into();
+        lib.name = "Foo Extra".into();
+        lib.source = None;
+        lib.source_id = String::new();
+        lib.folders = vec!["Foo_Extra".into()];
+        lib.pinned = true;
+        state.addons.push(lib);
+        let mut t = target(&env, &mut state);
+        let r = env
+            .engine
+            .apply_archive(&mut t, entry(), &zip(&env, "1.0", true), "1.0");
+        assert!(matches!(r, Err(Error::FolderOwned { .. })), "{r:?}");
+        assert_eq!(
+            std::fs::read_to_string(addons.join("Foo_Extra/keep.lua")).unwrap(),
+            "mine"
+        );
+    }
+
+    #[test]
+    fn a_list_that_cannot_be_saved_leaves_the_old_version_in_place() {
+        let env = env();
+        let addons = env.inst.addons_dir();
+        let mut state = AddonsFile::new(Flavour::Forever);
+        let mut t = target(&env, &mut state);
+        env.engine
+            .apply_archive(&mut t, entry(), &zip(&env, "1.0", false), "1.0")
+            .unwrap();
+        // addons.toml cannot be replaced: a folder sits where it goes.
+        std::fs::remove_file(&env.state_path).unwrap();
+        std::fs::create_dir_all(env.state_path.join("x")).unwrap();
+        let e = t.state.get("foo").unwrap().clone();
+        let r = env
+            .engine
+            .apply_archive(&mut t, e, &zip(&env, "2.0", true), "2.0");
+        assert!(r.is_err());
+        assert_eq!(
+            std::fs::read_to_string(addons.join("Foo/core.lua")).unwrap(),
+            "1.0"
+        );
+        assert!(!addons.join("Foo_Extra").exists());
+        assert_eq!(t.state.get("foo").unwrap().installed_version, "1.0");
+        assert!(!addons.parent().unwrap().join(".nexforge-swap").exists());
     }
 
     #[test]

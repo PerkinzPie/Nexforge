@@ -185,7 +185,10 @@ td.actions { width: 1%; padding-right: 8px; text-align: right; white-space: nowr
    things fetched from the network; local state paints at once. */
 .skel { display: block; border-radius: var(--r-sm); background-color: var(--raised); animation: skel 1.2s ease-in-out infinite alternate; }
 @keyframes skel { from { background-color: var(--raised); } to { background-color: var(--raised-hover); } }
-@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .skel { animation: none; }
+  .bar.indeterminate > span { animation: none; width: 100% !important; opacity: 0.55; }
+}
 
 /* Thin, dark scroll bars to match the surfaces. */
 :root { scrollbar-color: var(--raised-hover) transparent; }

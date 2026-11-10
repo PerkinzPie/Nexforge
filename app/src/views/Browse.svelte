@@ -161,7 +161,7 @@
   <div class="results narrow">
     <!-- The count's line is kept while results load, so they never jump. -->
     {#if query.trim()}
-      <span class="dim count">{#if shown.length && !(loading && stale)}{shown.length} result{shown.length === 1 ? "" : "s"}{/if}</span>
+      <span class="dim count">{#if shown.length && !(loading && stale)}{hits.length >= 60 ? `First ${shown.length} results` : `${shown.length} result${shown.length === 1 ? "" : "s"}`}{/if}</span>
     {/if}
     {#if !query.trim() && (source === "all" ? loading && stale : !topLoaded)}
       <section class="popular" aria-busy="true">

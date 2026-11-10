@@ -337,8 +337,12 @@ async fn reconcile_now(installation_id: String, writes: State<'_, Writes>) -> Re
 }
 
 #[tauri::command]
-async fn check(installation_id: String) -> Res<CheckDto> {
+async fn check(installation_id: String, fresh: Option<bool>) -> Res<CheckDto> {
     let mgr = manager()?;
+    // The Refresh button: don't answer from a day-old list.
+    if fresh.unwrap_or(false) {
+        mgr.look_again();
+    }
     let inst = installation(&mgr, &installation_id)?;
     let state = load_state(&inst)?;
     let report = mgr.check(inst.flavour, &state).await;
@@ -362,8 +366,13 @@ async fn check(installation_id: String) -> Res<CheckDto> {
 }
 
 /// A progress callback that emits `progress` events when the percent changes.
-fn progress(app: &AppHandle, id: &str) -> impl Fn(u64, Option<u64>) + Send + Sync {
+fn progress(
+    app: &AppHandle,
+    installation: &str,
+    id: &str,
+) -> impl Fn(u64, Option<u64>) + Send + Sync {
     let app = app.clone();
+    let installation = installation.to_string();
     let id = id.to_string();
     let last = AtomicU64::new(u64::MAX);
     move |done, total| {
@@ -373,6 +382,7 @@ fn progress(app: &AppHandle, id: &str) -> impl Fn(u64, Option<u64>) + Send + Syn
             let _ = app.emit(
                 "progress",
                 ProgressDto {
+                    installation: installation.clone(),
                     id: id.clone(),
                     done,
                     total,
@@ -394,7 +404,7 @@ async fn update(
     let inst = installation(&mgr, &installation_id)?;
     let _w = write_lock(&writes, &mgr, &inst).await?;
     let mut state = load_state(&inst)?;
-    let cb = progress(&app, &id);
+    let cb = progress(&app, &inst.id, &id);
     let r = mgr
         .update(&inst, &mut state, &inst.state_file(), &id, &cb)
         .await
@@ -415,7 +425,7 @@ async fn install(
     let inst = installation(&mgr, &installation_id)?;
     let _w = write_lock(&writes, &mgr, &inst).await?;
     let mut state = load_state(&inst)?;
-    let cb = progress(&app, adopt.as_deref().unwrap_or(&spec));
+    let cb = progress(&app, &inst.id, adopt.as_deref().unwrap_or(&spec));
     let e = mgr
         .install(
             &inst,
@@ -646,7 +656,7 @@ async fn self_update(now: Option<bool>) -> Res<Option<NewVersionDto>> {
     if !now && !mgr.config.self_update_check {
         return Ok(None);
     }
-    let found = mgr.newer_nexforge(env!("CARGO_PKG_VERSION")).await;
+    let found = mgr.newer_nexforge(env!("CARGO_PKG_VERSION"), now).await;
     let found = if now {
         found.map_err(err)?
     } else {
@@ -916,6 +926,9 @@ fn set_key(name: String, value: String) -> Res<SettingsDto> {
 
 #[tauri::command]
 fn clear_key(name: String) -> Res<SettingsDto> {
+    if !keys::KNOWN.contains(&name.as_str()) {
+        return Err(format!("Unknown key \"{name}\"."));
+    }
     keys::delete(&name).map_err(err)?;
     forget_keys();
     let mut mgr = manager()?;
@@ -994,18 +1007,48 @@ async fn add_installation(app: AppHandle, replace: Option<String>) -> Res<Option
         return Ok(None);
     };
     let path = picked.into_path().map_err(err)?;
-    let inst = Installation::from_client_dir(&path)
-        .or_else(|_| Installation::from_addons_dir(&path, None))
-        .map_err(err)?;
     let mut mgr = manager()?;
-    let inst = nexforge_core::installations::add_to_config(
-        &mut mgr.config.installations,
-        inst,
-        replace.as_deref(),
-    )
-    .map_err(err)?;
+    // A client folder, its Interface/AddOns folder, or the World of Warcraft
+    // folder that holds the clients (every supported one in it is added).
+    let found = match Installation::from_client_dir(&path)
+        .or_else(|_| Installation::from_addons_dir(&path, None))
+    {
+        Ok(inst) => vec![inst],
+        Err(_) if replace.is_none() => detect_in(&path)
+            .0
+            .into_iter()
+            .filter(|i| i.flavour != nexforge_core::flavour::Flavour::Retail)
+            .collect(),
+        Err(_) => vec![],
+    };
+    if found.is_empty() {
+        return Err(format!(
+            "No supported World of Warcraft client in {}. Choose a folder such as _forever_ or _classic_era_.",
+            path.display()
+        ));
+    }
+    let mut first = None;
+    for inst in found {
+        let inst = nexforge_core::installations::add_to_config(
+            &mut mgr.config.installations,
+            inst,
+            replace.as_deref(),
+        )
+        .map_err(err)?;
+        first.get_or_insert(inst);
+    }
     mgr.save_config().map_err(err)?;
-    Ok(Some(InstallationDto::from(&inst)))
+    Ok(first.as_ref().map(InstallationDto::from))
+}
+
+/// Take a client off the list. Its AddOns folder, addons.toml and kept
+/// versions stay where they are; adding the folder again brings it back.
+#[tauri::command]
+async fn remove_installation(id: String, writes: State<'_, Writes>) -> Res<()> {
+    let _w = writes.0.lock().await;
+    let mut mgr = manager()?;
+    mgr.config.installations.retain(|c| c.id != id);
+    mgr.save_config().map_err(err)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1053,6 +1096,7 @@ pub fn run() {
             open,
             open_url,
             add_installation,
+            remove_installation,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Nexforge");

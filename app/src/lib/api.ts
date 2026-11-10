@@ -43,7 +43,7 @@ export type StatusKind = "up_to_date" | "available" | "pinned" | "skipped" | "no
 export interface AddonStatus { id: string; kind: StatusKind; release: ReleaseInfo | null; message: string | null }
 export interface SourceError { source: string; sourceLabel: string; message: string }
 export interface CheckResult { checkedAt: string; results: AddonStatus[]; sourceErrors: SourceError[] }
-export interface Progress { id: string; done: number; total: number | null; percent: number | null }
+export interface Progress { installation: string; id: string; done: number; total: number | null; percent: number | null }
 export interface Recent { id: string; name: string; source: string | null; from: string; to: string; at: string }
 export interface Hit {
   source: string; sourceLabel: string; sourceId: string; spec: string; name: string; authors: string[];
@@ -62,8 +62,11 @@ export type SettingsInput = Pick<Settings, "checkOnLaunch" | "autoApply" | "keep
 
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
+/** Sample data stands in for the app in a plain browser, in dev builds only. */
+const sample = import.meta.env.DEV && !inTauri;
+
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
-  if (!inTauri) {
+  if (sample) {
     const { preview } = await import("./preview");
     return preview(cmd, args ?? {}) as Promise<T>;
   }
@@ -82,7 +85,7 @@ export const api = {
   resetState: (installationId: string) => call<string>("reset_state", { installationId }),
   adoptAll: () => call<Adopted[]>("adopt_all"),
   selfUpdate: (now = false) => call<{ version: string; url: string } | null>("self_update", { now }),
-  check: (installationId: string) => call<CheckResult>("check", { installationId }),
+  check: (installationId: string, fresh = false) => call<CheckResult>("check", { installationId, fresh }),
   update: (installationId: string, id: string) => call<Addon | null>("update", { installationId, id }),
   install: (installationId: string, spec: string, adopt: string | null, anyway: boolean) =>
     call<Addon>("install", { installationId, spec, adopt, anyway }),
@@ -107,11 +110,12 @@ export const api = {
     call<void>("open", { what, installationId, id }),
   openUrl: (url: string) => call<void>("open_url", { url }),
   details: (source: string, sourceId: string) => call<Details>("details", { source, sourceId }),
+  removeInstallation: (id: string) => call<void>("remove_installation", { id }),
   addInstallation: (replace: string | null) => call<Installation | null>("add_installation", { replace }),
 };
 
 export async function onProgress(cb: (p: Progress) => void): Promise<UnlistenFn> {
-  if (!inTauri) {
+  if (sample) {
     const { onPreviewProgress } = await import("./preview");
     return onPreviewProgress(cb);
   }

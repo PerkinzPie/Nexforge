@@ -1,6 +1,7 @@
 <script lang="ts">
   // An action button that becomes its own progress bar while the job runs:
-  // the coral fill tracks the download, then "Unpacking…" while it is swapped in.
+  // the coral fill tracks the download with its percentage. No words: before
+  // the size is known and while unpacking, the bar alone moves.
   let {
     label,
     busy = null,
@@ -18,7 +19,7 @@
   } = $props();
 
   const text = $derived(
-    !busy ? label : pct == null ? `${busy}…` : pct >= 100 ? "Unpacking…" : `${pct}%`,
+    !busy ? label : pct == null || pct >= 100 ? "" : `${pct}%`,
   );
 </script>
 
@@ -33,7 +34,7 @@
 
 <style>
   /* The button and its progress bar are the same fixed width, so nothing
-     around them moves as an install runs ("Update" → 34% → Unpacking…). */
+     around them moves as an install runs ("Update" → 34%). */
   .pbtn { width: 96px; }
   .pb { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 96px; height: 28px; padding: 0 6px; border-radius: var(--r-sm); background: var(--accent-tint); overflow: hidden; }
   .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent-fill); transition: width 0.25s linear; }

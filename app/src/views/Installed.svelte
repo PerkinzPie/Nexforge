@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Tabs } from "bits-ui";
+  import { Tabs, mergeProps } from "bits-ui";
   import { untrack } from "svelte";
   import Icon from "../components/Icon.svelte";
   import NoBuild from "../components/NoBuild.svelte";
@@ -146,17 +146,31 @@
                 {:else if busy}
                   <span class="dim state">{busy}…</span>
                 {:else if !a.managed}
-                  <!-- No source yet: "Identify source" is in the row's menu. -->
+                  <button type="button" class="btn btn-quiet ident" onclick={() => (store.dialog = { kind: "install", adopt: a })}>Identify</button>
                 {:else if a.pinned}
                   <span class="pin"><Icon name="pin" size={14} stroke={2.2} />Pinned</span>
+                {:else if s?.kind === "available" && store.failed[a.id]}
+                  <!-- The update failed: the reason is on the button, which tries again. -->
+                  <Tip text={store.failed[a.id]}>
+                    {#snippet children({ props })}
+                      <button {...mergeProps(props, { onclick: () => store.update(a.id) })} type="button" class="warn"><Icon name="warn" size={12} stroke={2.4} />Retry</button>
+                    {/snippet}
+                  </Tip>
                 {:else if s?.kind === "available"}
                   <ProgressButton label="Update" busy={null} onclick={() => store.update(a.id)} />
                 {:else if s?.kind === "no_build"}
                   <NoBuild text="May not load in {flavour}." />
-                {:else if s?.kind === "failed" || s?.kind === "unavailable"}
+                {:else if s?.kind === "failed"}
                   <Tip text={s.message}>
                     {#snippet children({ props })}
-                      <button {...props} type="button" class="warn" data-row-open><Icon name="warn" size={12} stroke={2.4} />{s.kind === "failed" ? "Check failed" : "Needs key"}</button>
+                      <button {...props} type="button" class="warn" data-row-open><Icon name="warn" size={12} stroke={2.4} />Check failed</button>
+                    {/snippet}
+                  </Tip>
+                {:else if s?.kind === "unavailable"}
+                  <!-- The fix is in Settings (add a key, or turn the source on): go there. -->
+                  <Tip text={s.message}>
+                    {#snippet children({ props })}
+                      <button {...mergeProps(props, { onclick: () => (store.view = "settings") })} type="button" class="warn"><Icon name="warn" size={12} stroke={2.4} />{a.source === "curseforge" && !store.snap?.settings.keyCurseforge ? "Needs key" : "Source off"}</button>
                     {/snippet}
                   </Tip>
                 {:else if s?.kind === "up_to_date" || s?.kind === "skipped"}
@@ -183,7 +197,7 @@
     {:else if store.filter}
       <div class="empty">No matches.</div>
     {:else if store.tab === "updates"}
-      <div class="empty">{store.checkedAt ? "All up to date." : "Not checked yet."}</div>
+      <div class="empty">{!store.checkedAt ? "Not checked yet." : (store.unchecked ?? "All up to date.")}</div>
     {:else if store.tab !== "all"}
       <div class="empty">None.</div>
     {:else}
@@ -219,6 +233,7 @@
   .open-row { cursor: pointer; }
   .open-row:hover td { background: var(--raised); }
   .quiet { font-size: 12px; color: var(--text-3); }
+  .ident { width: 96px; }
   .dated { text-decoration: underline dashed; text-underline-offset: 3px; text-decoration-thickness: 1px; }
   .pillskel { display: block; width: 76px; height: 14px; margin: 0 auto; }
   .names { display: flex; flex-direction: column; gap: 0; min-width: 0; line-height: 1.3; }

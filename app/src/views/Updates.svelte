@@ -13,7 +13,7 @@
 
   // Cards that finished updating stay (marked Updated) until the next check,
   // so the list doesn't close up under the pointer.
-  const cards = $derived(store.addons.filter((a) => store.status(a.id)?.kind === "available" || store.busy[a.id] === "Updating" || a.id in store.updatedNow));
+  const cards = $derived(store.addons.filter((a) => store.status(a.id)?.kind === "available" || store.busy[a.id] === "Updating" || a.id in store.updatedNow || a.id in store.skippedNow));
 
   // Opening Updates before anything was checked (launch checks off, or a
   // different client) checks once for this client; it only lists updates.
@@ -71,9 +71,12 @@
             </span>
           </button>
           {#if store.updatedNow[a.id] && !busy}<span class="ok done-st"><Icon name="check" size={14} stroke={2.6} />Updated</span>
+          {:else if store.skippedNow[a.id] && !busy}
+            <button type="button" class="btn btn-quiet" onclick={() => store.skip(a, "")}>Undo</button>
+            <span class="dim done-st">Skipped</span>
           {:else}
             {#if r}<button type="button" class="btn btn-quiet" disabled={!!busy} onclick={() => store.skip(a, r.version)}>Skip {r.version}</button>{/if}
-            {#if r || busy}<ProgressButton label="Update" busy={busy ?? null} {pct} onclick={() => store.update(a.id)} />{/if}
+            {#if r || busy}<ProgressButton label={store.failed[a.id] ? "Retry" : "Update"} busy={busy ?? null} {pct} onclick={() => store.update(a.id)} />{/if}
           {/if}
         </div>
         <!-- One size whether notes are loading, short or long: the cards
@@ -86,8 +89,9 @@
           {/if}
         </div>
         <div class="nmore">
+          {#if store.failed[a.id] && !busy}<span class="fail" title={store.failed[a.id]}>Update failed. {store.failed[a.id]}</span>{/if}
           {#if a.website && (r?.hasMoreNotes || extra?.hasMore || !notes.length)}
-            <a href={a.website} class="more" onclick={(e) => { e.preventDefault(); api.openUrl(a.website!).catch((err) => store.say("err", err.message)); }}>Full release notes</a>
+            <button type="button" class="more" onclick={() => api.openUrl(a.website!).catch((err) => store.say("err", err.message))}>Addon page</button>
           {/if}
         </div>
       </div>
@@ -102,7 +106,7 @@
       {:else if !store.recent.length}
         <!-- Nothing else on the page: say so. Otherwise each row says it. -->
         <div class="panel empty">
-          {#if !store.checkedAt}Not checked yet.{:else}<span class="ok"><Icon name="check" size={14} stroke={2.6} />All up to date</span>{/if}
+          {#if !store.checkedAt}Not checked yet.{:else if store.unchecked}{store.unchecked}{:else}<span class="ok"><Icon name="check" size={14} stroke={2.6} />All up to date</span>{/if}
         </div>
       {/if}
     {/each}
@@ -144,7 +148,7 @@
   .open-card { cursor: pointer; }
   .skcards { display: flex; flex-direction: column; gap: 12px; }
   .quiet { font-size: 12px; color: var(--text-3); }
-  .done-st { width: 96px; justify-content: center; }
+  .done-st { width: 96px; justify-content: center; text-align: center; font-size: 12px; font-weight: 600; }
   .avail { font-size: 12px; font-weight: 600; color: var(--accent-text); }
   .stsk { width: 64px; height: 12px; }
   .skcard { flex-direction: row; align-items: center; }
@@ -154,12 +158,15 @@
   .skels .skel { height: 12px; }
   /* Room for three note lines and the link line, whatever arrives. */
   .nbody { min-height: 60px; }
-  .nmore { min-height: 18px; margin-top: -6px; }
+  .nmore { display: flex; align-items: baseline; gap: 12px; min-height: 18px; margin-top: -6px; }
+  .nmore .more { flex: none; }
+  .fail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--accent-text); }
   .n { font-size: 15px; font-weight: 700; }
   .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .line strong { color: var(--text); font-weight: 600; }
   .small { font-size: 11px; }
-  .more { font-size: 12px; font-weight: 700; }
+  .more { padding: 0; border: 0; background: none; color: var(--info); font: 700 12px var(--sans); cursor: pointer; }
+  .more:hover { color: #c3c6f5; }
   .recent { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
   .rmeta { display: flex; flex-direction: column; gap: 0; margin-right: auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
   .rmeta:disabled { cursor: default; }

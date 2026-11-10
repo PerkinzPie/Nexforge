@@ -89,6 +89,9 @@ pub enum Error {
     /// Fixed in Settings under Sources; the CLI adds its own hint.
     #[error("CurseForge needs an API key.")]
     CurseForgeKeyNeeded,
+    #[error("GitHub refused the token. Replace or remove it in Settings.")]
+    GitHubTokenRejected,
+
     #[error("CurseForge refused the API key.")]
     CurseForgeKeyRejected,
     /// CurseForge answers bursts of searches with 403 (its rate limit).

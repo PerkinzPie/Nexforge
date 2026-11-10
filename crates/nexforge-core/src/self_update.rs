@@ -32,14 +32,17 @@ struct Latest {
     prerelease: bool,
 }
 
-/// The newest stable release if it is newer than `current`.
-pub async fn check(fetch: &dyn Fetch, current: &str) -> Result<Option<NewVersion>> {
-    let req = Get::new(
+/// The newest stable release if it is newer than `current`. `ask` goes to
+/// the host even when an answer from the last six hours is at hand.
+pub async fn check(fetch: &dyn Fetch, current: &str, ask: bool) -> Result<Option<NewVersion>> {
+    let mut req = Get::new(
         format!("https://api.github.com/repos/{RELEASES_REPO}/releases/latest"),
         "Nexforge update check",
     )
-    .header("Accept", "application/vnd.github+json")
-    .fresh_for(Duration::from_secs(6 * 3600));
+    .header("Accept", "application/vnd.github+json");
+    if !ask {
+        req = req.fresh_for(Duration::from_secs(6 * 3600));
+    }
     let body = match fetch.get_text(req).await {
         Ok(b) => b,
         // No release published yet.
@@ -71,18 +74,18 @@ mod tests {
     async fn reports_only_newer_stable_releases() {
         let f = FixtureFetch::new();
         f.route(URL, r#"{"tag_name":"v0.2.0","html_url":"https://github.com/PerkinzPie/Nexforge/releases/tag/v0.2.0","published_at":"2026-11-10T12:00:00Z"}"#);
-        let n = check(&f, "0.1.0").await.unwrap().unwrap();
+        let n = check(&f, "0.1.0", false).await.unwrap().unwrap();
         assert_eq!(n.version, "0.2.0");
         assert!(n.url.starts_with("https://github.com/"));
-        assert!(check(&f, "0.2.0").await.unwrap().is_none());
-        assert!(check(&f, "0.3.0").await.unwrap().is_none());
+        assert!(check(&f, "0.2.0", false).await.unwrap().is_none());
+        assert!(check(&f, "0.3.0", false).await.unwrap().is_none());
 
         f.route(
             URL,
             r#"{"tag_name":"v0.9.0","html_url":"x","prerelease":true}"#,
         );
         assert!(
-            check(&f, "0.1.0").await.unwrap().is_none(),
+            check(&f, "0.1.0", false).await.unwrap().is_none(),
             "pre-releases are ignored"
         );
     }
@@ -90,7 +93,7 @@ mod tests {
     #[tokio::test]
     async fn no_release_yet_is_not_an_error() {
         // FixtureFetch answers 404 for unknown URLs, as GitHub does here.
-        assert!(check(&FixtureFetch::new(), "0.1.0")
+        assert!(check(&FixtureFetch::new(), "0.1.0", false)
             .await
             .unwrap()
             .is_none());

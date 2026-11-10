@@ -227,8 +227,10 @@ pub trait Source: Send + Sync {
                         out.found.insert(id.clone(), r.clone());
                     }
                 }
-                Err(e @ crate::error::Error::RateLimited { .. }) => return Err(e),
                 Err(e) => {
+                    if matches!(e, crate::error::Error::RateLimited { .. }) {
+                        out.warning.get_or_insert(e.to_string());
+                    }
                     out.failed.insert(id.clone(), e.to_string());
                 }
             }
@@ -244,6 +246,9 @@ pub trait Source: Send + Sync {
 pub struct Latest {
     pub found: HashMap<String, Release>,
     pub failed: HashMap<String, String>,
+    /// Something that hit the whole source part-way (a rate limit): the
+    /// ids in `failed` are the ones it cost; the rest were answered.
+    pub warning: Option<String>,
 }
 
 /// Newest release acceptable on `channel`, preferring one that names

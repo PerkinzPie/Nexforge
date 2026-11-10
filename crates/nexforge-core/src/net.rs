@@ -151,6 +151,9 @@ pub type Progress<'a> = &'a (dyn Fn(u64, Option<u64>) + Send + Sync);
 pub trait Fetch: Send + Sync {
     async fn get_text(&self, req: Get) -> Result<String>;
     async fn post_json(&self, req: Post) -> Result<String>;
+    /// The player asked to look again: cached answers older than `cap`
+    /// are asked for again, whatever a request's own `fresh_for` says.
+    fn cap_freshness(&self, _cap: Duration) {}
     /// Stream `url` to `dest`. Returns bytes written.
     async fn download(
         &self,
@@ -205,6 +208,8 @@ pub struct Net {
     log_path: Option<PathBuf>,
     cache_dir: Option<PathBuf>,
     log_lock: Mutex<()>,
+    /// Seconds; 0 means no cap (see [`Fetch::cap_freshness`]).
+    fresh_cap: std::sync::atomic::AtomicU64,
 }
 
 impl Net {
@@ -215,6 +220,7 @@ impl Net {
             log_path,
             cache_dir,
             log_lock: Mutex::new(()),
+            fresh_cap: std::sync::atomic::AtomicU64::new(0),
         })
     }
 
@@ -386,7 +392,12 @@ impl Fetch for Net {
         let cached = self.read_cache(&req.url);
         let now = chrono::Utc::now().timestamp();
         if let (Some(c), Some(fresh)) = (&cached, req.fresh_for) {
-            if now - c.fetched_at < fresh.as_secs() as i64 {
+            let cap = self.fresh_cap.load(std::sync::atomic::Ordering::Relaxed);
+            let fresh = match cap {
+                0 => fresh.as_secs(),
+                cap => fresh.as_secs().min(cap),
+            };
+            if now - c.fetched_at < fresh as i64 {
                 return Ok(c.body.clone());
             }
         }
@@ -446,14 +457,24 @@ impl Fetch for Net {
             body.len() as u64,
             &req.reason,
         );
-        self.write_cache(&CacheEntry {
-            url: req.url.clone(),
-            etag,
-            last_modified,
-            fetched_at: now,
-            body: body.clone(),
-        });
+        // Every text reply Nexforge asks for is JSON. One that is not (an
+        // error page, an empty body) is not kept, or it would be served
+        // again for as long as the request's `fresh_for`.
+        if serde_json::from_str::<serde::de::IgnoredAny>(&body).is_ok() {
+            self.write_cache(&CacheEntry {
+                url: req.url.clone(),
+                etag,
+                last_modified,
+                fetched_at: now,
+                body: body.clone(),
+            });
+        }
         Ok(body)
+    }
+
+    fn cap_freshness(&self, cap: Duration) {
+        self.fresh_cap
+            .store(cap.as_secs().max(1), std::sync::atomic::Ordering::Relaxed);
     }
 
     async fn post_json(&self, req: Post) -> Result<String> {

@@ -41,7 +41,11 @@ export function ago(iso: string | null | undefined, now = Date.now()): string {
 
 export function shortDate(iso: string | null | undefined): string {
   if (!iso) return "";
-  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  // Another year is named, so an old release never reads as recent.
+  const year = d.getFullYear() === new Date().getFullYear() ? undefined : "numeric";
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year });
 }
 
 /** "3 November 2026". */
@@ -71,7 +75,7 @@ export function size(bytes: number | null | undefined): string {
 
 export function count(n: number | null | undefined): string {
   if (n == null) return "";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (n >= 999_500) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
   if (n >= 1000) return `${Math.round(n / 1000)}K`;
   return String(n);
 }

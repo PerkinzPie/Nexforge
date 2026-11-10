@@ -335,6 +335,8 @@ pub struct CheckDto {
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ProgressDto {
+    /// The installation the job runs on (addon ids repeat across clients).
+    pub installation: String,
     pub id: String,
     pub done: u64,
     pub total: Option<u64>,

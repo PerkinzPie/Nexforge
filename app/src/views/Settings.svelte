@@ -38,6 +38,16 @@
     }
   }
 
+  async function removeClient(id: string, label: string) {
+    try {
+      await api.removeInstallation(id);
+      await store.load(id === store.current ? null : store.current);
+      store.say("ok", `${label} is off the list. Its addons are untouched.`);
+    } catch (e) {
+      store.say("err", (e as Error).message);
+    }
+  }
+
   async function clearKey(name: string) {
     try {
       const saved = await api.clearKey(name);
@@ -69,6 +79,7 @@
             <div class="lbl"><span class="t">{i.label}</span><span class="mono s">{i.path}</span></div>
             {#if !i.detected}<span class="pill pill-attn">No AddOns folder</span>{/if}
             <button type="button" class="btn btn-sm" onclick={() => pick(i.id)}>Change</button>
+            <button type="button" class="btn btn-sm" onclick={() => removeClient(i.id, i.label)}>Remove</button>
           </div>
         {:else}
           <div class="frow"><div class="lbl"><span class="t">No installation found</span></div></div>
@@ -84,7 +95,7 @@
           <input id="check-launch" type="checkbox" checked={s.checkOnLaunch} onchange={(e) => save({ checkOnLaunch: e.currentTarget.checked })} />
         </label>
         <label class="frow toggle" for="auto-apply">
-          <Tip text="Pinned addons are never updated automatically.">{#snippet children({ props })}<span {...props} class="t">Apply updates automatically</span>{/snippet}</Tip>
+          <Tip text="After every check, on every game client. Pinned addons are never updated automatically.">{#snippet children({ props })}<span {...props} class="t">Apply updates automatically</span>{/snippet}</Tip>
           <input id="auto-apply" type="checkbox" checked={s.autoApply} onchange={(e) => save({ autoApply: e.currentTarget.checked })} />
         </label>
         <label class="frow field" for="keep-versions">

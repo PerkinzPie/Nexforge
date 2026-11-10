@@ -212,6 +212,14 @@ impl GitHub {
         GitHub { fetch, token }
     }
 
+    /// A refused token is a setup problem the player can fix; say so.
+    fn explain(&self, e: Error) -> Error {
+        match e {
+            Error::Http { status: 401, .. } if self.token.is_some() => Error::GitHubTokenRejected,
+            other => other,
+        }
+    }
+
     fn api(&self, path: &str, reason: String) -> Get {
         let mut g = Get::new(format!("{API}{path}"), reason)
             .header("Accept", "application/vnd.github+json")
@@ -303,7 +311,8 @@ impl Source for GitHub {
                 &format!("/repos/{repo}"),
                 format!("repo details for {repo}"),
             ))
-            .await?;
+            .await
+            .map_err(|e| self.explain(e))?;
         let r: GhRepo = serde_json::from_str(&text).map_err(bad)?;
         let _ = r.full_name;
         Ok(AddonInfo {
@@ -332,7 +341,8 @@ impl Source for GitHub {
                 &format!("/repos/{repo}/releases?per_page={per_page}"),
                 format!("releases for {repo}"),
             ))
-            .await?;
+            .await
+            .map_err(|e| self.explain(e))?;
         let releases: Vec<GhRelease> = serde_json::from_str(&text).map_err(bad)?;
         let releases = tagged(releases, tag);
         let hint = crate::known::by_source_id(source_id)
@@ -372,9 +382,8 @@ impl Source for GitHub {
         Ok(out)
     }
 
-    /// One request per repo (cached 10 minutes), at most 4 at a time. A rate
-    /// limit fails the whole batch so the UI can say when to retry; any other
-    /// per-repo failure just leaves that repo out.
+    /// One request per repo (cached 10 minutes), at most 4 at a time. A
+    /// failure, rate limit included, is recorded for that repo alone.
     async fn batch_latest(
         &self,
         ids: &[String],
@@ -397,10 +406,13 @@ impl Source for GitHub {
                         out.found.insert(id, rel.clone());
                     }
                 }
-                Err(e @ Error::RateLimited { .. }) => return Err(e),
                 // One repo failing (renamed, timed out) is that addon's
-                // problem, not "no build for this flavour".
+                // problem, not "no build for this flavour". A rate limit
+                // costs only the repos not answered before it.
                 Err(e) => {
+                    if matches!(e, Error::RateLimited { .. }) {
+                        out.warning.get_or_insert(e.to_string());
+                    }
                     out.failed.insert(id, e.to_string());
                 }
             }

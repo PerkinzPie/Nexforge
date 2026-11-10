@@ -134,14 +134,14 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
     case "settings": return settings;
     case "save_settings": Object.assign(settings, args.s); return settings;
     case "update": {
-      for (let p = 0; p <= 100; p += 10) { listeners.forEach((l) => l({ id: args.id, done: p, total: 100, percent: p })); await wait(120); }
+      for (let p = 0; p <= 100; p += 10) { listeners.forEach((l) => l({ installation: args.installationId, id: args.id, done: p, total: 100, percent: p })); await wait(120); }
       const addon = addons.find((x) => x.id === args.id)!;
       const r = check.results.find((x) => x.id === args.id);
       if (r?.release) { addon.version = r.release.version; r.kind = "up_to_date"; r.release = null; }
       return addon;
     }
     case "install": {
-      for (let p = 0; p <= 100; p += 5) { listeners.forEach((l) => l({ id: args.adopt ?? args.spec, done: p, total: 100, percent: p })); await wait(90); }
+      for (let p = 0; p <= 100; p += 5) { listeners.forEach((l) => l({ installation: args.installationId, id: args.adopt ?? args.spec, done: p, total: 100, percent: p })); await wait(90); }
       await wait(700);
       const name = String(args.spec).split(/[:/]/).pop() ?? "Addon";
       const added = { ...addons[0], id: name.toLowerCase(), name, version: "1.0.0", folders: [name] };
@@ -164,6 +164,7 @@ export async function preview(cmd: string, args: Record<string, any>): Promise<u
     case "self_update": return settings.selfUpdateCheck || args.now ? { version: "0.2.0", url: "https://github.com/PerkinzPie/Nexforge/releases" } : null;
     case "refresh_catalogue": await wait(300); return { total: 8264, refreshedAt: new Date().toISOString(), errors: [] };
     case "popular": return args.source ? hits.filter((h) => h.source === args.source) : hits.filter((h) => h.forFlavour).map((h) => ({ ...h }));
+    case "remove_installation": return undefined;
     default: throw new Error(`"${cmd}" is not available in the browser preview.`);
   }
 }

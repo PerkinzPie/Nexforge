@@ -11,7 +11,11 @@ export function addonMenu(a: Addon, opts: { details?: boolean } = {}): Item[] {
   if (a.managed) items.push({ label: a.pinned ? "Unpin" : "Pin (never update)", run: () => store.setPinned(a, !a.pinned) });
   if (s?.release && (s.kind === "available" || s.kind === "pinned"))
     items.push({ label: `Skip ${s.release.version}`, run: () => store.skip(a, s.release!.version) });
-  if (a.kept.length) items.push({ label: `Roll back to ${a.kept[0]}`, run: () => store.rollback(a.id, a.name, a.kept[0]) });
+  if (s?.kind === "skipped" && a.skippedVersion)
+    items.push({ label: `Stop skipping ${a.skippedVersion}`, run: () => store.skip(a, "") });
+  // After a rollback the newest kept version is the newer one.
+  const back = s?.release?.version === a.kept[0] ? "Return to" : "Roll back to";
+  if (a.kept.length) items.push({ label: `${back} ${a.kept[0]}`, run: () => store.rollback(a.id, a.name, a.kept[0]) });
   items.push({ label: a.managed ? "Change source" : "Identify source", run: () => (store.dialog = { kind: "install", adopt: a }) });
   items.push({ label: "Open folder", run: () => api.open("addon", store.current!, a.id).catch((e) => store.say("err", e.message)) });
   if (a.website) items.push({ label: "Open website", run: () => api.openUrl(a.website!).catch((e) => store.say("err", e.message)) });

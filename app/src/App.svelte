@@ -53,16 +53,21 @@
       <!-- Local state loads in milliseconds; no spinner. -->
     {:else if store.firstRun}
       <Welcome />
-    {:else if store.detail}
-      {#key store.detail}<Details target={store.detail} />{/key}
-    {:else if store.view === "installed"}
-      <Installed bind:filterInput />
-    {:else if store.view === "updates"}
-      <Updates />
-    {:else if store.view === "browse"}
-      <Browse />
     {:else}
-      <Settings />
+      {#if store.detail}{#key store.detail}<Details target={store.detail} />{/key}{/if}
+      <!-- Kept under an open details page, so Back returns to the same
+           scroll position, filters and results. -->
+      <div class="view" class:under={!!store.detail} inert={!!store.detail}>
+        {#if store.view === "installed"}
+          <Installed bind:filterInput />
+        {:else if store.view === "updates"}
+          <Updates />
+        {:else if store.view === "browse"}
+          <Browse />
+        {:else}
+          <Settings />
+        {/if}
+      </div>
     {/if}
   </main>
 </div>
@@ -77,6 +82,8 @@
 <style>
   .shell { display: flex; height: 100%; min-width: 900px; }
   main { flex: 1 1 auto; min-width: 0; height: 100%; display: flex; flex-direction: column; }
+  .view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .view.under { flex: 0 0 0; overflow: hidden; visibility: hidden; }
   .dock { position: fixed; right: 24px; bottom: 24px; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none; }
   .dock > :global(*) { pointer-events: auto; }
   .preview { flex: 0 0 auto; padding: 6px 32px; font-size: 12px; font-weight: 600; color: var(--attention); background: var(--attn-tint); }

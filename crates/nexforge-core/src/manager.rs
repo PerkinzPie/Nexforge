@@ -183,11 +183,19 @@ impl Manager {
     }
 
     /// Opt-in: a newer Nexforge than `current`, if one is published.
+    /// The player asked to look again: answers cached for longer than ten
+    /// minutes are fetched afresh for the rest of this manager's life.
+    pub fn look_again(&self) {
+        self.fetch
+            .cap_freshness(std::time::Duration::from_secs(600));
+    }
+
     pub async fn newer_nexforge(
         &self,
         current: &str,
+        ask: bool,
     ) -> Result<Option<crate::self_update::NewVersion>> {
-        crate::self_update::check(self.fetch.as_ref(), current).await
+        crate::self_update::check(self.fetch.as_ref(), current, ask).await
     }
 
     /// Most downloaded from one host, from the catalogue.
@@ -302,6 +310,9 @@ impl Manager {
                     report.source_errors.push((s, msg));
                 }
                 Ok(latest) => {
+                    if let Some(w) = &latest.warning {
+                        report.source_errors.push((s, w.clone()));
+                    }
                     for entry in entries.iter() {
                         let status = match latest.failed.get(&entry.source_id) {
                             Some(msg) => Status::Failed(msg.clone()),

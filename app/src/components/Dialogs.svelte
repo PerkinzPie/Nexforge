@@ -2,6 +2,7 @@
   // Install from URL / Identify source / Remove / API key / Install anyway.
   // Bits UI Dialog: focus trap, Escape, click-outside and screen-reader roles.
   import { Dialog } from "bits-ui";
+  import { untrack } from "svelte";
   import Icon from "./Icon.svelte";
   import { api } from "../lib/api";
   import { store } from "../lib/store.svelte";
@@ -13,13 +14,24 @@
   let cancel = $state<HTMLButtonElement | null>(null);
 
   const d = $derived(store.dialog);
+
+  /** The job key of an install the dialog is waiting on. */
+  let watching = $state<string | null>(null);
+  // Progress has moved off 0: the link was good and the download is running.
+  $effect(() => {
+    if (watching && store.dialog?.kind === "install" && watching in store.progress && store.progress[watching] !== 0) store.dialog = null;
+  });
   const flavour = $derived(store.snap?.flavourShort ?? "Forever");
 
+  // Reset when a dialog opens (not when the snapshot behind it is re-read,
+  // which would wipe what was typed).
   $effect(() => {
     if (!d) return;
-    error = null;
-    working = false;
-    value = d.kind === "install" ? (d.initial ?? suggestion(d.adopt)) : "";
+    untrack(() => {
+      error = null;
+      working = false;
+      value = d.kind === "install" ? (d.initial ?? suggestion(d.adopt)) : "";
+    });
   });
 
   // Nothing to type (Remove, Install anyway): focus Cancel, so Enter never
@@ -51,17 +63,26 @@
       if (cur.kind === "install") {
         const spec = value.trim();
         if (!spec) throw new Error("Paste a link or type an addon name.");
-        store.dialog = null;
-        const ok = await store.install(spec, cur.adopt ?? null, false, cur.adopt?.name ?? spec);
-        if (!ok && store.toast?.text.includes("No release of")) {
-          store.dialog = { kind: "anyway", spec, name: spec };
-          store.toast = null;
+        // Stay open while the link is looked up; `started` closes the
+        // dialog once the download begins.
+        let failed: string | null = null;
+        watching = cur.adopt?.id ?? spec;
+        const ok = await store.install(spec, cur.adopt ?? null, false, cur.adopt?.name ?? spec, (m) => (failed = m));
+        watching = null;
+        const open = store.dialog === cur;
+        if (ok) {
+          if (open) store.dialog = null;
+        } else if (failed && (failed as string).includes("No release of")) {
+          store.dialog = { kind: "anyway", spec, name: cur.adopt?.name ?? spec, adopt: cur.adopt };
+        } else if (failed) {
+          if (open) error = failed;
+          else store.say("err", failed);
         }
         return;
       }
       if (cur.kind === "anyway") {
         store.dialog = null;
-        await store.install(cur.spec, null, true, cur.name);
+        await store.install(cur.spec, cur.adopt ?? null, true, cur.name);
         return;
       }
       if (cur.kind === "remove") {
@@ -75,6 +96,8 @@
         store.dialog = null;
         store.say("ok", cur.name === "curseforge" ? "CurseForge key saved." : "GitHub token saved.");
         await store.load();
+        // Addons waiting on the key get checked now, not at the next Refresh.
+        void store.check();
       }
     } catch (err) {
       // Errors after the dialog closed still reach the player.
@@ -116,7 +139,7 @@
         <label class="sr" for="dlg-key">Key</label>
         <input id="dlg-key" class="text-input" type="password" bind:this={input} bind:value autocomplete="off" spellcheck="false" />
       {:else}
-        <p class="dim">It may not load on {flavour}.</p>
+        <p class="dim">{d.name} may not load in {flavour}.</p>
       {/if}
 
       {#if error}<p class="err" role="alert">{error}</p>{/if}

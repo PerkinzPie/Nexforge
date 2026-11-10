@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ago, count, flavourTile, monogram, plural, size, tint } from "../format";
+import { ago, count, flavourTile, monogram, plural, shortDate, size, tint } from "../format";
 
 describe("format", () => {
   it("relative times", () => {
@@ -19,6 +19,7 @@ describe("format", () => {
     expect(count(1_700_000)).toBe("1.7M");
     expect(count(2_000_000)).toBe("2M");
     expect(count(840_000)).toBe("840K");
+    expect(count(999_600)).toBe("1M");
     expect(plural(1, "addon")).toBe("1 addon");
     expect(plural(3, "addon")).toBe("3 addons");
   });
@@ -29,5 +30,14 @@ describe("format", () => {
     expect(monogram("???")).toBe("?");
     expect(flavourTile("forever").letter).toBe("F");
     expect(flavourTile("classic-era").letter).toBe("E");
+  });
+});
+
+describe("dates", () => {
+  it("name the year unless it is this one", () => {
+    const now = new Date();
+    expect(shortDate(new Date(now.getFullYear(), 0, 5).toISOString())).not.toMatch(/\d{4}/);
+    expect(shortDate("2019-03-02T12:00:00Z")).toContain("2019");
+    expect(shortDate("not a date")).toBe("");
   });
 });
