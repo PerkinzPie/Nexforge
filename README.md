@@ -29,6 +29,8 @@ An addon manager for World of Warcraft: **WoW Forever**, **Classic Era** and **A
 
 Download the `.msi` from the [latest release](https://github.com/PerkinzPie/Nexforge/releases/latest). Windows 10 or 11.
 
+The installer is not code-signed yet, so Windows shows a SmartScreen prompt: choose More info, then Run anyway. Each release lists the installer's SHA-256 in `SHA256SUMS` if you want to check the download.
+
 On first launch Nexforge finds your game clients and adopts their AddOns folders: it writes an `addons.toml` and moves nothing.
 
 ## Sources
@@ -52,7 +54,7 @@ pnpm tauri dev                  # run the app
 pnpm tauri build                # release build and .msi
 ```
 
-The `nexforge` command-line tool (`crates/nexforge-cli`) does everything the app does: `detect`, `reconcile`, `search`, `check`, `update`, `install`, `remove`, `pin`, `rollback` and more.
+The `nexforge` command-line tool (`crates/nexforge-cli`) covers the same core actions as the app: `detect`, `reconcile`, `search`, `check`, `update`, `install`, `remove`, `pin`, `rollback` and more.
 
 ## Releases
 
