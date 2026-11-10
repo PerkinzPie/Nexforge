@@ -9,6 +9,8 @@ export interface Installation { id: string; flavour: string; label: string; shor
 export interface Addon {
   id: string; name: string; author: string | null; folders: string[];
   source: string | null; sourceLabel: string; sourceId: string; version: string;
+  /** When this version was installed; null for addons adopted as found. */
+  installedAt: string | null;
   pinned: boolean; skippedVersion: string; flavourMismatch: boolean; managed: boolean;
   website: string | null; iconUrl: string | null; knownIds: [string, string][];
   /** Kept versions to roll back to, newest first. */

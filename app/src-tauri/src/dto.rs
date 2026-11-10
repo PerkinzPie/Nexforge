@@ -60,6 +60,8 @@ pub struct AddonDto {
     pub source_label: String,
     pub source_id: String,
     pub version: String,
+    /// When this version was installed; None for addons adopted as found.
+    pub installed_at: Option<DateTime<Utc>>,
     pub pinned: bool,
     pub skipped_version: String,
     pub flavour_mismatch: bool,
@@ -88,6 +90,7 @@ impl From<&AddonEntry> for AddonDto {
             source_label: a.source.map(|s| s.label()).unwrap_or("Unknown").into(),
             source_id: a.source_id.clone(),
             version: a.installed_version.clone(),
+            installed_at: a.installed_at,
             pinned: a.pinned,
             skipped_version: a.skipped_version.clone(),
             flavour_mismatch: a.flavour_mismatch,

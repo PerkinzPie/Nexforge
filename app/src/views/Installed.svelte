@@ -11,7 +11,7 @@
   import SourceTag from "../components/SourceTag.svelte";
   import Tile from "../components/Tile.svelte";
   import type { Addon } from "../lib/api";
-  import { plural } from "../lib/format";
+  import { longDate, plural } from "../lib/format";
   import { addonMenu, clickRow, openDetails } from "../lib/menu";
   import { store, type InstalledTab } from "../lib/store.svelte";
 
@@ -160,7 +160,15 @@
                     {/snippet}
                   </Tip>
                 {:else if s?.kind === "up_to_date" || s?.kind === "skipped"}
-                  <span class="quiet">Up to date</span>
+                  {#if a.installedAt}
+                    <Tip text="{a.kept.length ? 'Updated' : 'Installed'} {longDate(a.installedAt)}">
+                      {#snippet children({ props })}
+                        <span {...props} class="quiet dated">Up to date</span>
+                      {/snippet}
+                    </Tip>
+                  {:else}
+                    <span class="quiet">Up to date</span>
+                  {/if}
                 {:else if a.flavourMismatch}
                   <NoBuild text="May not load in {flavour}." />
                 {:else}
@@ -211,6 +219,7 @@
   .open-row { cursor: pointer; }
   .open-row:hover td { background: var(--raised); }
   .quiet { font-size: 12px; color: var(--text-3); }
+  .dated { text-decoration: underline dashed; text-underline-offset: 3px; text-decoration-thickness: 1px; }
   .pillskel { display: block; width: 76px; height: 14px; margin: 0 auto; }
   .names { display: flex; flex-direction: column; gap: 0; min-width: 0; line-height: 1.3; }
   .n { font-weight: 700; }

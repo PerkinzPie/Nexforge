@@ -15,7 +15,7 @@ const settings: Settings = {
 const a = (id: string, name: string, author: string, folders: number, source: string | null, version: string, extra: Partial<Addon> = {}): Addon => ({
   id, name, author, folders: Array.from({ length: folders }, (_, i) => (i ? `${name}_${i}` : name)),
   source, sourceLabel: { github: "GitHub", wowinterface: "WoWInterface", curseforge: "CurseForge", wago: "Wago" }[source ?? ""] ?? "Unknown",
-  sourceId: source ? id : "", version, pinned: false, skippedVersion: "", flavourMismatch: false,
+  sourceId: source ? id : "", version, installedAt: null, pinned: false, skippedVersion: "", flavourMismatch: false,
   managed: source !== null, website: null, iconUrl: null, knownIds: [], kept: [], ...extra,
 });
 
@@ -23,8 +23,8 @@ const addons: Addon[] = [
   a("questie", "Questie", "AeroScripts", 4, "github", "10.4.1"),
   a("dbm", "Deadly Boss Mods", "MysticalOS", 9, "github", "11.2.9"),
   a("details", "Details! Damage Meter", "Terciob", 5, "curseforge", "12.4.0"),
-  a("weakauras", "WeakAuras", "WeakAuras team", 5, "github", "5.19.4", { kept: ["5.19.3", "5.19.2"] }),
-  a("bagnon", "Bagnon", "Tuller", 3, "wowinterface", "11.0.5"),
+  a("weakauras", "WeakAuras", "WeakAuras team", 5, "github", "5.19.4", { kept: ["5.19.3", "5.19.2"], installedAt: new Date(Date.now() - 20 * 3600 * 1000).toISOString() }),
+  a("bagnon", "Bagnon", "Tuller", 3, "wowinterface", "11.0.5", { installedAt: "2026-10-28T19:40:00Z" }),
   a("atlasloot", "AtlasLoot Classic", "Lag123", 6, "github", "3.4.6", { pinned: true, skippedVersion: "3.4.8" }),
   a("leatrix", "Leatrix Plus", "Leatrix", 1, "curseforge", "1.15.84"),
   a("plater", "Plater Nameplates", "Terciob", 1, "github", "2.5.3"),

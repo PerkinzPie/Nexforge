@@ -44,6 +44,12 @@ export function shortDate(iso: string | null | undefined): string {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
+/** "3 November 2026". */
+export function longDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+}
+
 /** "Yesterday 21:14", "Today 09:02", "3 Nov 18:20". */
 export function when(iso: string | null | undefined): string {
   if (!iso) return "";
