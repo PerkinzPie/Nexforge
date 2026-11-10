@@ -2,6 +2,21 @@
 
 Notable changes to Nexforge, newest first. Nexforge is in 0.x: a release that changes how something works bumps the middle number, anything else bumps the last.
 
+## 0.1.2 (2026-11-10)
+
+### Features
+
+- Apply updates automatically now works after every check and on every game client. Game clients can be removed in Settings. Back from an addon's page returns to where you were. Install from URL stays open until the link is found. Refresh asks WoWInterface again instead of reusing the morning's list. A removed addon keeps only its last version. The Update button shows a bar and a percentage while it works.
+
+### Fixes
+
+- Shorter, clearer messages and tooltips.
+- New Nexforge icon and colours.
+- Fixed: Undo and Update all could act on the wrong game client; installing a version you already had replaced the kept copy of your own files; "All up to date" showed after a failed check; a failed update now stays marked with Retry; a skipped version can be un-skipped; the welcome screen no longer gets stuck when no client is found.
+- Hand-installed addons have an Identify button; "Needs key" opens Settings and a saved key is used straight away; a pinned hand-installed addon is never replaced by another addon's files; WoWInterface addons made only for other game versions are no longer offered as compatible; older dates show their year; Check for updates in Settings always asks.
+- Hover Up to date to see when an addon was installed or last updated.
+- Update all is disabled while updates are running.
+
 ## 0.1.1 (2026-11-06)
 
 ### Features
